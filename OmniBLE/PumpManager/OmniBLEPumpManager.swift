@@ -8,13 +8,10 @@
 
 import HealthKit
 import LoopKit
-// ZZZ import RileyLinkKit
-// ZZZ import RileyLinkBLEKit
 import UserNotifications
 import os.log
 
 fileprivate let tempBasalConfirmationBeeps: Bool = false // whether to emit temp basal confirmation beeps (for testing use)
-
 
 public enum ReservoirAlertState {
     case ok
@@ -54,7 +51,7 @@ extension OmniBLEPumpManagerError: LocalizedError {
             return nil
         }
     }
-    
+
     public var recoverySuggestion: String? {
         switch self {
         case .noPodPaired:
@@ -67,28 +64,12 @@ extension OmniBLEPumpManagerError: LocalizedError {
     }
 }
 
-public class OmniBLEPumpManager: /* ZZZ RileyLinkPumpManager */ PumpManager {
-    public init(state: OmniBLEPumpManagerState //* ZZZ , rileyLinkDeviceProvider: RileyLinkDeviceProvider, rileyLinkConnectionManager: RileyLinkConnectionManager? = nil */) {
+public class OmniBLEPumpManager: PumpManager {
+    public init(state: OmniBLEPumpManagerState) {
         self.lockedState = Locked(state)
         self.lockedPodComms = Locked(PodComms(podState: state.podState))
-// ZZZ  super.init(rileyLinkDeviceProvider: rileyLinkDeviceProvider, rileyLinkConnectionManager: rileyLinkConnectionManager)
-
         self.podComms.delegate = self
         self.podComms.messageLogger = self
-    }
-
-    public required convenience init?(rawState: PumpManager.RawStateValue) {
-        guard let state = OmniBLEPumpManagerState(rawValue: rawState)
-            /* ZZZ , let connectionManagerState = state.rileyLinkConnectionManagerState */ else
-        {
-            return nil
-        }
-
-// ZZZ  let rileyLinkConnectionManager = RileyLinkConnectionManager(state: connectionManagerState)
-
-        self.init(state: state /* ZZZ , rileyLinkDeviceProvider: rileyLinkConnectionManager.deviceProvider, rileyLinkConnectionManager: rileyLinkConnectionManager */)
-
-// ZZZ  rileyLinkConnectionManager.delegate = self
     }
 
     private var podComms: PodComms {
@@ -99,6 +80,7 @@ public class OmniBLEPumpManager: /* ZZZ RileyLinkPumpManager */ PumpManager {
             lockedPodComms.value = newValue
         }
     }
+    
     private let lockedPodComms: Locked<PodComms>
 
     private let podStateObservers = WeakSynchronizedSet<PodStateObserver>()
@@ -168,6 +150,7 @@ public class OmniBLEPumpManager: /* ZZZ RileyLinkPumpManager */ PumpManager {
 
         return returnType
     }
+    
     private let lockedState: Locked<OmniBLEPumpManagerState>
 
     private let statusObservers = WeakSynchronizedSet<PumpManagerStatusObserver>()
@@ -195,66 +178,8 @@ public class OmniBLEPumpManager: /* ZZZ RileyLinkPumpManager */ PumpManager {
     private let pumpDelegate = WeakSynchronizedDelegate<PumpManagerDelegate>()
 
     public let log = OSLog(category: "OmniBLEPumpManager")
-    
+
     private var lastLoopRecommendation: Date?
-
-
-// ZZZ      // MARK: - RileyLink Updates
-// ZZZ  
-// ZZZ      override public var rileyLinkConnectionManagerState: RileyLinkConnectionManagerState? {
-// ZZZ          get {
-// ZZZ              return state.rileyLinkConnectionManagerState
-// ZZZ          }
-// ZZZ          set {
-// ZZZ              setState { (state) in
-// ZZZ                  state.rileyLinkConnectionManagerState = newValue
-// ZZZ              }
-// ZZZ          }
-// ZZZ      }
-// ZZZ  
-// ZZZ      override public func deviceTimerDidTick(_ device: RileyLinkDevice) {
-// ZZZ          pumpDelegate.notify { (delegate) in
-// ZZZ              delegate?.pumpManagerBLEHeartbeatDidFire(self)
-// ZZZ          }
-// ZZZ      }
-// ZZZ      
-// ZZZ      public var rileyLinkBatteryAlertLevel: Int? {
-// ZZZ          get {
-// ZZZ              return state.rileyLinkBatteryAlertLevel
-// ZZZ          }
-// ZZZ          set {
-// ZZZ              setState { state in
-// ZZZ                  state.rileyLinkBatteryAlertLevel = newValue
-// ZZZ              }
-// ZZZ          }
-// ZZZ      }
-// ZZZ      
-// ZZZ      public override func device(_ device: RileyLinkDevice, didUpdateBattery level: Int) {
-// ZZZ          let repeatInterval: TimeInterval = .hours(1)
-// ZZZ          
-// ZZZ          if let alertLevel = state.rileyLinkBatteryAlertLevel,
-// ZZZ             level <= alertLevel,
-// ZZZ             state.lastRileyLinkBatteryAlertDate.addingTimeInterval(repeatInterval) < Date()
-// ZZZ          {
-// ZZZ              self.setState { state in
-// ZZZ                  state.lastRileyLinkBatteryAlertDate = Date()
-// ZZZ              }
-// ZZZ              
-// ZZZ              // HACK Alert. This is temporary for the 2.2.5 release. Dev and newer releases will use the new Loop Alert facility
-// ZZZ              let notification = UNMutableNotificationContent()
-// ZZZ              notification.body = String(format: LocalizedString("\"%1$@\" has a low battery", comment: "Format string for low battery alert body for RileyLink. (1: device name)"), device.name ?? "unnamed")
-// ZZZ              notification.title = LocalizedString("Low RileyLink Battery", comment: "Title for RileyLink low battery alert")
-// ZZZ              notification.sound = .default
-// ZZZ              notification.categoryIdentifier = LoopNotificationCategory.loopNotRunning.rawValue
-// ZZZ              notification.threadIdentifier = LoopNotificationCategory.loopNotRunning.rawValue
-// ZZZ              let request = UNNotificationRequest(
-// ZZZ                  identifier: "batteryalert.rileylink",
-// ZZZ                  content: notification,
-// ZZZ                  trigger: nil)
-// ZZZ              UNUserNotificationCenter.current().add(request)
-// ZZZ          }
-// ZZZ      }
-
 
     // MARK: - CustomDebugStringConvertible
 
@@ -285,10 +210,6 @@ extension OmniBLEPumpManager {
 
     private func updateBLEHeartbeatPreference() {
         dispatchPrecondition(condition: .notOnQueue(delegateQueue))
-
-// ZZZ          rileyLinkDeviceProvider.timerTickEnabled = self.state.isPumpDataStale || pumpDelegate.call({ (delegate) -> Bool in
-// ZZZ              return delegate?.pumpManagerMustProvideBLEHeartbeat(self) == true
-// ZZZ          })
     }
 
     private func status(for state: OmniBLEPumpManagerState) -> PumpManagerStatus {
@@ -1295,14 +1216,6 @@ extension OmniBLEPumpManager: PumpManager {
                 self.recommendLoopIfNeeded(delegate)
             }
         }
-    }
-    
-// ZZZ    private func checkRileyLinkBattery() {
-// ZZZ        rileyLinkDeviceProvider.getDevices { devices in
-// ZZZ            for device in devices {
-// ZZZ                device.updateBatteryLevel()
-// ZZZ            }
-// ZZZ        }
     }
 
     public func enactBolus(units: Double, at startDate: Date, willRequest: @escaping (DoseEntry) -> Void, completion: @escaping (PumpManagerResult<DoseEntry>) -> Void) {

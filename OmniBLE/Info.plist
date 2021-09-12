@@ -18,5 +18,9 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>com.loopkit.Loop.PumpManagerDisplayName</key>
+	<string>Omnipod Dash</string>
+	<key>com.loopkit.Loop.PumpManagerIdentifier</key>
+	<string>Omnipod Dash</string>
 </dict>
 </plist>
