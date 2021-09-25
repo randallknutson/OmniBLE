@@ -9,7 +9,7 @@
 import UIKit
 import RileyLinkKitUI
 import LoopKit
-import OmniKit
+//import OmniKit
 import LoopKitUI
 
 public class ConfirmationBeepsTableViewCell: TextButtonTableViewCell {
@@ -29,7 +29,7 @@ public class ConfirmationBeepsTableViewCell: TextButtonTableViewCell {
 
 class OmnipodSettingsViewController: RileyLinkSettingsViewController {
 
-    let pumpManager: OmnipodPumpManager
+    let pumpManager: PumpManager
     
     var statusError: Error?
     
@@ -47,7 +47,7 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
     
     private var bolusProgressTimer: Timer?
     
-    init(pumpManager: OmnipodPumpManager) {
+    init(pumpManager: PumpManager) {
         self.pumpManager = pumpManager
         podState = pumpManager.state.podState
         pumpManagerStatus = pumpManager.status

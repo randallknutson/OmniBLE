@@ -7,7 +7,7 @@
 
 import CoreBluetooth
 import os.log
-//import LoopKit
+import LoopKit
 
 let advertisedServiceUUID = CBUUID(string: "00004024-0000-1000-8000-00805f9b34fb")
 
@@ -22,7 +22,7 @@ public class BluetoothManager: NSObject {
     internal let sessionQueue = DispatchQueue(label: "com.omnikit.OmniKit.BluetoothManager.sessionQueue", qos: .unspecified)
 
     // Isolated to centralQueue
-    private var devices: [PodDevice] = [] {
+    private var devices: [OmniBLEDevice] = [] {
         didSet {
             NotificationCenter.default.post(name: .ManagerDevicesDidChange, object: self)
         }
@@ -49,6 +49,12 @@ public class BluetoothManager: NSObject {
             )
         }
     }
+    
+    public func firstConnectedDevice(_ completion: @escaping (_ device: OmniBLEDevice?) -> Void) {
+        getDevices { (devices) in
+            completion(devices.firstConnected)
+        }
+    }
 
     // MARK: - Configuration
 
@@ -60,7 +66,7 @@ public class BluetoothManager: NSObject {
         }
     }
 
-    public var idleListeningState: PodDevice.IdleListeningState {
+    public var idleListeningState: OmniBLEDevice.IdleListeningState {
         get {
             return lockedIdleListeningState.value
         }
@@ -73,7 +79,7 @@ public class BluetoothManager: NSObject {
             }
         }
     }
-    private let lockedIdleListeningState = Locked(PodDevice.IdleListeningState.disabled)
+    private let lockedIdleListeningState = Locked(OmniBLEDevice.IdleListeningState.disabled)
 
     public var timerTickEnabled: Bool {
         get {
@@ -102,7 +108,7 @@ extension BluetoothManager {
         }
     }
     
-    public func connect(_ device: PodDevice) {
+    public func connect(_ device: OmniBLEDevice) {
         centralQueue.async {
             self.autoConnectIDs.insert(device.manager.peripheral.identifier.uuidString)
 
@@ -114,7 +120,7 @@ extension BluetoothManager {
         }
     }
 
-    public func disconnect(_ device: PodDevice) {
+    public func disconnect(_ device: OmniBLEDevice) {
         centralQueue.async {
             self.autoConnectIDs.remove(device.manager.peripheral.identifier.uuidString)
 
@@ -131,7 +137,7 @@ extension BluetoothManager {
     ///
     /// - Parameter device: The device to reload
     /// - Returns: The peripheral instance returned by the central manager
-    private func reloadPeripheral(for device: PodDevice) -> CBPeripheral? {
+    private func reloadPeripheral(for device: OmniBLEDevice) -> CBPeripheral? {
         dispatchPrecondition(condition: .onQueue(centralQueue))
 
         guard let peripheral = central.retrievePeripherals(withIdentifiers: [device.manager.peripheral.identifier]).first else {
@@ -160,12 +166,12 @@ extension BluetoothManager {
     private func addPeripheral(_ peripheral: CBPeripheral, _ advertisementData: [String: Any]?) {
         dispatchPrecondition(condition: .onQueue(centralQueue))
 
-        var device: PodDevice! = devices.first(where: { $0.manager.peripheral.identifier == peripheral.identifier })
+        var device: OmniBLEDevice! = devices.first(where: { $0.manager.peripheral.identifier == peripheral.identifier })
 
         if let device = device {
             device.manager.peripheral = peripheral
         } else {
-            device = PodDevice(peripheralManager: PeripheralManager(peripheral: peripheral, centralManager: central, queue: sessionQueue), advertisementData: advertisementData)
+            device = OmniBLEDevice(peripheralManager: PeripheralManager(peripheral: peripheral, centralManager: central, queue: sessionQueue), advertisementData: advertisementData)
             if peripheral.state == .connected {
                 device.setTimerTickEnabled(timerTickEnabled)
                 device.setIdleListeningState(idleListeningState)
@@ -184,13 +190,13 @@ extension BluetoothManager {
 
 
 extension BluetoothManager {
-    public func getDevices(_ completion: @escaping (_ devices: [PodDevice]) -> Void) {
+    public func getDevices(_ completion: @escaping (_ devices: [OmniBLEDevice]) -> Void) {
         centralQueue.async {
             completion(self.devices)
         }
     }
 
-    public func deprioritize(_ device: PodDevice, completion: (() -> Void)? = nil) {
+    public func deprioritize(_ device: OmniBLEDevice, completion: (() -> Void)? = nil) {
         centralQueue.async {
             self.devices.deprioritize(device)
             completion?()
@@ -198,7 +204,7 @@ extension BluetoothManager {
     }
 }
 
-extension Array where Element == PodDevice {
+extension Array where Element == OmniBLEDevice {
     public var firstConnected: Element? {
         return self.first { (device) -> Bool in
             return device.manager.peripheral.state == .connected

@@ -54,7 +54,7 @@ public struct OmniBLEPumpManagerState: RawRepresentable, Equatable {
 
     // MARK: -
 
-    public init(podState: PodState?, timeZone: TimeZone, basalSchedule: BasalSchedule // ZZZ , rileyLinkConnectionManagerState: RileyLinkConnectionManagerState? //) {
+    public init(podState: PodState?, timeZone: TimeZone, basalSchedule: BasalSchedule) {
         self.podState = podState
         self.timeZone = timeZone
         self.basalSchedule = basalSchedule
@@ -115,7 +115,7 @@ public struct OmniBLEPumpManagerState: RawRepresentable, Equatable {
         self.init(
             podState: podState,
             timeZone: timeZone,
-            basalSchedule: basalSchedule,
+            basalSchedule: basalSchedule
             // ZZZ rileyLinkConnectionManagerState: rileyLinkConnectionManagerState
         )
 

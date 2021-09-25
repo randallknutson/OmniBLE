@@ -64,10 +64,11 @@ extension OmniBLEPumpManagerError: LocalizedError {
     }
 }
 
-public class OmniBLEPumpManager: PumpManager {
+public class OmniBLEPumpManager: NSObject {
     public init(state: OmniBLEPumpManagerState) {
         self.lockedState = Locked(state)
         self.lockedPodComms = Locked(PodComms(podState: state.podState))
+        self.bluetoothManager = BluetoothManager(autoConnectIDs: [state.podState?.address])
         self.podComms.delegate = self
         self.podComms.messageLogger = self
     }
@@ -82,6 +83,8 @@ public class OmniBLEPumpManager: PumpManager {
     }
     
     private let lockedPodComms: Locked<PodComms>
+    
+    private let bluetoothManager: BluetoothManager
 
     private let podStateObservers = WeakSynchronizedSet<PodStateObserver>()
 
@@ -227,10 +230,10 @@ extension OmniBLEPumpManager {
             return HKDevice(
                 name: type(of: self).managerIdentifier,
                 manufacturer: "Insulet",
-                model: "Eros",
+                model: "Dash",
                 hardwareVersion: nil,
                 firmwareVersion: podState.piVersion,
-                softwareVersion: String(OmniBLEKitVersionNumber),
+                softwareVersion: String(OmniBLEVersionNumber),
                 localIdentifier: String(format:"%04X", podState.address),
                 udiDeviceIdentifier: nil
             )
@@ -238,10 +241,10 @@ extension OmniBLEPumpManager {
             return HKDevice(
                 name: type(of: self).managerIdentifier,
                 manufacturer: "Insulet",
-                model: "Eros",
+                model: "Dash",
                 hardwareVersion: nil,
                 firmwareVersion: nil,
-                softwareVersion: String(OmniBLEKitVersionNumber),
+                softwareVersion: String(OmniBLEVersionNumber),
                 localIdentifier: nil,
                 udiDeviceIdentifier: nil
             )
@@ -418,51 +421,51 @@ extension OmniBLEPumpManager {
     }
     
     // MARK: Testing
-    #if targetEnvironment(simulator)
-    private func jumpStartPod(address: UInt32, lot: UInt32, tid: UInt32, fault: DetailedStatus? = nil, startDate: Date? = nil, mockFault: Bool) {
-        let start = startDate ?? Date()
-        var podState = PodState(address: address, piVersion: "jumpstarted", pmVersion: "jumpstarted", lot: lot, tid: tid)
-        podState.setupProgress = .podPaired
-        podState.activatedAt = start
-        podState.expiresAt = start + .hours(72)
-        
-        let fault = mockFault ? try? DetailedStatus(encodedData: Data(hexadecimalString: "020d0000000e00c36a020703ff020900002899080082")!) : nil
-        podState.fault = fault
-
-        self.podComms = PodComms(podState: podState)
-
-        setState({ (state) in
-            state.podState = podState
-            state.expirationReminderDate = start + .hours(70)
-        })
-    }
-    #endif
+//    #if targetEnvironment(simulator)
+//    private func jumpStartPod(address: UInt32, lot: UInt32, tid: UInt32, fault: DetailedStatus? = nil, startDate: Date? = nil, mockFault: Bool) {
+//        let start = startDate ?? Date()
+//        var podState = PodState(address: address, piVersion: "jumpstarted", pmVersion: "jumpstarted", lot: lot, tid: tid)
+//        podState.setupProgress = .podPaired
+//        podState.activatedAt = start
+//        podState.expiresAt = start + .hours(72)
+//
+//        let fault = mockFault ? try? DetailedStatus(encodedData: Data(hexadecimalString: "020d0000000e00c36a020703ff020900002899080082")!) : nil
+//        podState.fault = fault
+//
+//        self.podComms = PodComms(podState: podState)
+//
+//        setState({ (state) in
+//            state.podState = podState
+//            state.expirationReminderDate = start + .hours(70)
+//        })
+//    }
+//    #endif
     
     // MARK: - Pairing
 
     // Called on the main thread
     public func pairAndPrime(completion: @escaping (PumpManagerResult<TimeInterval>) -> Void) {
-        #if targetEnvironment(simulator)
-        // If we're in the simulator, create a mock PodState
-        let mockFaultDuringPairing = false
-        let mockCommsErrorDuringPairing = false
-        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + .seconds(2)) {
-            self.jumpStartPod(address: 0x1f0b3557, lot: 40505, tid: 6439, mockFault: mockFaultDuringPairing)
-            let fault: DetailedStatus? = self.setStateWithResult({ (state) in
-                state.podState?.setupProgress = .priming
-                return state.podState?.fault
-            })
-            if mockFaultDuringPairing {
-                completion(.failure(PodCommsError.podFault(fault: fault!)))
-            } else if mockCommsErrorDuringPairing {
-                completion(.failure(PodCommsError.noResponse))
-            } else {
-                let mockPrimeDuration = TimeInterval(.seconds(3))
-                completion(.success(mockPrimeDuration))
-            }
-        }
-        #else
-// ZZZ          let deviceSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
+//        #if targetEnvironment(simulator)
+//        // If we're in the simulator, create a mock PodState
+//        let mockFaultDuringPairing = false
+//        let mockCommsErrorDuringPairing = false
+//        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + .seconds(2)) {
+//            self.jumpStartPod(address: 0x1f0b3557, lot: 40505, tid: 6439, mockFault: mockFaultDuringPairing)
+//            let fault: DetailedStatus? = self.setStateWithResult({ (state) in
+//                state.podState?.setupProgress = .priming
+//                return state.podState?.fault
+//            })
+//            if mockFaultDuringPairing {
+//                completion(.failure(PodCommsError.podFault(fault: fault!)))
+//            } else if mockCommsErrorDuringPairing {
+//                completion(.failure(PodCommsError.noResponse))
+//            } else {
+//                let mockPrimeDuration = TimeInterval(.seconds(3))
+//                completion(.success(mockPrimeDuration))
+//            }
+//        }
+//        #else
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
         let primeSession = { (result: PodComms.SessionRunResult) in
             switch result {
             case .success(let session):
@@ -528,7 +531,7 @@ extension OmniBLEPumpManager {
                 primeSession(result)
             }
         }
-        #endif
+//        #endif
     }
 
     // Called on the main thread
@@ -570,7 +573,7 @@ extension OmniBLEPumpManager {
             return
         }
 
-// ZZZ          let deviceSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
         let timeZone = self.state.timeZone
 
         self.podComms.runSession(withName: "Insert cannula", using: deviceSelector) { (result) in
@@ -599,7 +602,7 @@ extension OmniBLEPumpManager {
     }
 
     public func checkCannulaInsertionFinished(completion: @escaping (Error?) -> Void) {
-// ZZZ          let deviceSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
         self.podComms.runSession(withName: "Check cannula insertion finished", using: deviceSelector) { (result) in
             switch result {
             case .success(let session):
@@ -633,8 +636,8 @@ extension OmniBLEPumpManager {
             return
         }
         
-// ZZZ          let rileyLinkSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
-        podComms.runSession(withName: "Get pod status", using: rileyLinkSelector) { (result) in
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
+        podComms.runSession(withName: "Get pod status", using: deviceSelector) { (result) in
             do {
                 switch result {
                 case .success(let session):
@@ -665,8 +668,8 @@ extension OmniBLEPumpManager {
             return
         }
 
-// ZZZ          let rileyLinkSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
-        self.podComms.runSession(withName: "Acknowledge Alarms", using: rileyLinkSelector) { (result) in
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
+        self.podComms.runSession(withName: "Acknowledge Alarms", using: deviceSelector) { (result) in
             let session: PodCommsSession
             switch result {
             case .success(let s):
@@ -699,8 +702,8 @@ extension OmniBLEPumpManager {
         }
 
         let timeZone = TimeZone.currentFixed
-// ZZZ          let rileyLinkSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
-        self.podComms.runSession(withName: "Set time zone", using: rileyLinkSelector) { (result) in
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
+        self.podComms.runSession(withName: "Set time zone", using: deviceSelector) { (result) in
             switch result {
             case .success(let session):
                 do {
@@ -747,8 +750,8 @@ extension OmniBLEPumpManager {
 
         let timeZone = self.state.timeZone
 
-// ZZZ          let rileyLinkSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
-        self.podComms.runSession(withName: "Save Basal Profile", using: rileyLinkSelector) { (result) in
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
+        self.podComms.runSession(withName: "Save Basal Profile", using: deviceSelector) { (result) in
             do {
                 switch result {
                 case .success(let session):
@@ -802,8 +805,8 @@ extension OmniBLEPumpManager {
             return
         }
 
-// ZZZ          let rileyLinkSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
-        self.podComms.runSession(withName: "Deactivate pod", using: rileyLinkSelector) { (result) in
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
+        self.podComms.runSession(withName: "Deactivate pod", using: deviceSelector) { (result) in
             switch result {
             case .success(let session):
                 do {
@@ -841,8 +844,8 @@ extension OmniBLEPumpManager {
             return
         }
 
-// ZZZ          let rileyLinkSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
-        podComms.runSession(withName: "Read pod status", using: rileyLinkSelector) { (result) in
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
+        podComms.runSession(withName: "Read pod status", using: deviceSelector) { (result) in
             do {
                 switch result {
                 case .success(let session):
@@ -868,8 +871,8 @@ extension OmniBLEPumpManager {
             return
         }
 
-// ZZZ          let rileyLinkSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
-        self.podComms.runSession(withName: "Testing Commands", using: rileyLinkSelector) { (result) in
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
+        self.podComms.runSession(withName: "Testing Commands", using: deviceSelector) { (result) in
             switch result {
             case .success(let session):
                 do {
@@ -896,8 +899,8 @@ extension OmniBLEPumpManager {
             return
         }
 
-// ZZZ          let rileyLinkSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
-        self.podComms.runSession(withName: "Play Test Beeps", using: rileyLinkSelector) { (result) in
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
+        self.podComms.runSession(withName: "Play Test Beeps", using: deviceSelector) { (result) in
             switch result {
             case .success(let session):
                 let basalCompletionBeep = self.confirmationBeeps
@@ -930,8 +933,8 @@ extension OmniBLEPumpManager {
             return
         }
 
-// ZZZ          let rileyLinkSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
-        self.podComms.runSession(withName: "Read Pulse Log", using: rileyLinkSelector) { (result) in
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
+        self.podComms.runSession(withName: "Read Pulse Log", using: deviceSelector) { (result) in
             switch result {
             case .success(let session):
                 do {
@@ -963,9 +966,9 @@ extension OmniBLEPumpManager {
             return
         }
 
-// ZZZ          let rileyLinkSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
         let name: String = enabled ? "Enable Confirmation Beeps" : "Disable Confirmation Beeps"
-        self.podComms.runSession(withName: name, using: rileyLinkSelector) { (result) in
+        self.podComms.runSession(withName: name, using: deviceSelector) { (result) in
             switch result {
             case .success(let session):
                 let beepConfigType: BeepConfigType = enabled ? .bipBip : .noBeep
@@ -992,6 +995,7 @@ extension OmniBLEPumpManager {
 
 // MARK: - PumpManager
 extension OmniBLEPumpManager: PumpManager {
+    public func setMustProvideBLEHeartbeat(_ mustProvideBLEHeartbeat: Bool) {}
 
     public static let managerIdentifier: String = "Omnipod BLE"
 
@@ -1080,8 +1084,8 @@ extension OmniBLEPumpManager: PumpManager {
             return
         }
 
-// ZZZ          let rileyLinkSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
-        self.podComms.runSession(withName: "Suspend", using: rileyLinkSelector) { (result) in
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
+        self.podComms.runSession(withName: "Suspend", using: deviceSelector) { (result) in
 
             let session: PodCommsSession
             switch result {
@@ -1124,8 +1128,8 @@ extension OmniBLEPumpManager: PumpManager {
             return
         }
 
-// ZZZ          let rileyLinkSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
-        self.podComms.runSession(withName: "Resume", using: rileyLinkSelector) { (result) in
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
+        self.podComms.runSession(withName: "Resume", using: deviceSelector) { (result) in
 
             let session: PodCommsSession
             switch result {
@@ -1168,10 +1172,6 @@ extension OmniBLEPumpManager: PumpManager {
         statusObservers.removeElement(observer)
     }
 
-// ZZZ      public func setMustProvideBLEHeartbeat(_ mustProvideBLEHeartbeat: Bool) {
-// ZZZ          rileyLinkDeviceProvider.timerTickEnabled = self.state.isPumpDataStale || mustProvideBLEHeartbeat
-// ZZZ      }
-    
     // Called only from pumpDelegate notify block
     private func recommendLoopIfNeeded(_ delegate: PumpManagerDelegate?) {
         if lastLoopRecommendation == nil || lastLoopRecommendation!.timeIntervalSinceNow < .minutes(-4.5) {
@@ -1190,8 +1190,6 @@ extension OmniBLEPumpManager: PumpManager {
             return state.isPumpDataStale
         }
         
-// ZZZ        checkRileyLinkBattery()
-
         switch shouldFetchStatus {
         case .none:
             return // No active pod
@@ -1227,8 +1225,8 @@ extension OmniBLEPumpManager: PumpManager {
         // Round to nearest supported volume
         let enactUnits = roundToSupportedBolusVolume(units: units)
 
-// ZZZ        let rileyLinkSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
-        self.podComms.runSession(withName: "Bolus", using: rileyLinkSelector) { (result) in
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
+        self.podComms.runSession(withName: "Bolus", using: deviceSelector) { (result) in
             let session: PodCommsSession
             switch result {
             case .success(let s):
@@ -1301,8 +1299,8 @@ extension OmniBLEPumpManager: PumpManager {
             return
         }
 
-// ZZZ        let rileyLinkSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
-        self.podComms.runSession(withName: "Cancel Bolus", using: rileyLinkSelector) { (result) in
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
+        self.podComms.runSession(withName: "Cancel Bolus", using: deviceSelector) { (result) in
 
             let session: PodCommsSession
             switch result {
@@ -1363,8 +1361,8 @@ extension OmniBLEPumpManager: PumpManager {
         // Round to nearest supported rate
         let rate = roundToSupportedBasalRate(unitsPerHour: unitsPerHour)
 
-// ZZZ        let rileyLinkSelector = self.rileyLinkDeviceProvider.firstConnectedDevice
-        self.podComms.runSession(withName: "Enact Temp Basal", using: rileyLinkSelector) { (result) in
+        let deviceSelector = self.bluetoothManager.firstConnectedDevice
+        self.podComms.runSession(withName: "Enact Temp Basal", using: deviceSelector) { (result) in
             self.log.info("Enact temp basal %.03fU/hr for %ds", rate, Int(duration))
             let session: PodCommsSession
             switch result {
@@ -1514,7 +1512,7 @@ extension OmniBLEPumpManager: MessageLogger {
         log.default("didSend: %{public}@", message.hexadecimalString)
         self.logDeviceCommunication(message.hexadecimalString, type: .send)
     }
-    
+
     func didReceive(_ message: Data) {
         log.default("didReceive: %{public}@", message.hexadecimalString)
         self.logDeviceCommunication(message.hexadecimalString, type: .receive)

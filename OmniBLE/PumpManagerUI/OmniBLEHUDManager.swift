@@ -47,7 +47,7 @@ internal class OmniBLEHUDProvider: NSObject, HUDProvider, PodStateObserver {
     
     private let pumpManager: OmniBLEPumpManager
     
-    private var reservoirView: OmniBLEReservoirView?
+    private var reservoirView: OmnipodReservoirView?
     
     private var podLifeView: PodLifeHUDView?
 
@@ -110,7 +110,7 @@ internal class OmniBLEHUDProvider: NSObject, HUDProvider, PodStateObserver {
     }
     
     public func createHUDViews() -> [BaseHUDView] {
-        self.reservoirView = OmniBLEReservoirView.instantiate()
+        self.reservoirView = OmnipodReservoirView.instantiate()
         self.updateReservoirView()
 
         podLifeView = PodLifeHUDView.instantiate()
@@ -179,7 +179,7 @@ internal class OmniBLEHUDProvider: NSObject, HUDProvider, PodStateObserver {
         let reservoirVolume = rawValue["reservoirVolume"] as? Double
         let validTime = rawValue["validTime"] as? Date
         
-        let reservoirView = OmniBLEReservoirView.instantiate()
+        let reservoirView = OmnipodReservoirView.instantiate()
         if let validTime = validTime
         {
             let reservoirLevel = reservoirVolume?.asReservoirPercentage()

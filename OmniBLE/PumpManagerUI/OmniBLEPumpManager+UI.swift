@@ -26,7 +26,7 @@ extension OmniBLEPumpManager: PumpManagerUI {
     }
     
     public var smallImage: UIImage? {
-        return UIImage(named: "Pod", in: Bundle(for: OmniBLESettingsViewController.self), compatibleWith: nil)!
+        return UIImage(named: "Pod", in: Bundle(for: OmnipodSettingsViewController.self), compatibleWith: nil)!
     }
     
     public func hudProvider() -> HUDProvider? {

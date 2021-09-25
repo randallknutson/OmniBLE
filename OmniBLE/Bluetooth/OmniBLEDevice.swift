@@ -1,6 +1,6 @@
 //
-//  PodDevice.swift
-//  OpenPodSDK
+//  OmniBLEDevice.swift
+//  OmniBLE
 //
 //  Created by Randall Knutson on 8/18/21.
 //
@@ -9,7 +9,7 @@ import Foundation
 import CoreBluetooth
 import OSLog
 
-public class PodDevice {
+public class OmniBLEDevice {
     let MAIN_SERVICE_UUID = "4024"
     let UNKNOWN_THIRD_SERVICE_UUID = "000A"
     let manager: PeripheralManager
@@ -118,7 +118,7 @@ public class PodDevice {
 }
 
 // MARK: - Peripheral operations. Thread-safe.
-extension PodDevice {
+extension OmniBLEDevice {
     public var name: String? {
         return manager.peripheral.name
     }
@@ -159,7 +159,7 @@ extension PodDevice {
 
 
 // MARK: - Idle management
-extension PodDevice {
+extension OmniBLEDevice {
     public enum IdleListeningState {
         case enabled(timeout: TimeInterval, channel: UInt8)
         case disabled
@@ -224,7 +224,7 @@ extension PodDevice {
 }
 
 // MARK: - Timer tick management
-extension PodDevice {
+extension OmniBLEDevice {
     func setTimerTickEnabled(_ enabled: Bool) {
         os_unfair_lock_lock(&lock)
         self.isTimerTickEnabled = enabled
@@ -244,7 +244,7 @@ extension PodDevice {
 }
 
 // MARK: - CBCentralManagerDelegate Proxying
-extension PodDevice {
+extension OmniBLEDevice {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         if case .poweredOn = central.state {
             assertIdleListening(forceRestart: false)
@@ -277,7 +277,7 @@ extension PodDevice {
 }
 
 
-extension PodDevice: PeripheralManagerDelegate {
+extension OmniBLEDevice: PeripheralManagerDelegate {
     func peripheralManager(_ manager: PeripheralManager, didUpdateNotificationStateFor characteristic: CBCharacteristic) {
         log.debug("Did didUpdateNotificationStateFor %@", characteristic)
     }
@@ -293,7 +293,7 @@ extension PodDevice: PeripheralManagerDelegate {
         NotificationCenter.default.post(
             name: .DeviceRSSIDidChange,
             object: self,
-            userInfo: [PodDevice.notificationRSSIKey: RSSI]
+            userInfo: [OmniBLEDevice.notificationRSSIKey: RSSI]
         )
     }
 
@@ -319,7 +319,7 @@ extension PodDevice: PeripheralManagerDelegate {
 }
 
 
-extension PodDevice {
+extension OmniBLEDevice {
     public static let notificationPacketKey = "com.omnikit.OmniKit.PodDevice.NotificationPacket"
 
     public static let notificationRSSIKey = "com.omnikit.OmniKit.PodDevice.NotificationRSSI"

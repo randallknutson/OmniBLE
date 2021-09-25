@@ -1,6 +1,6 @@
 //
-//  Commands.swift
-//  OpenPodSDK
+//  PodCommands.swift
+//  OmniBLE
 //
 //  Created by Randall Knutson on 8/17/21.
 //

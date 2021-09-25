@@ -18,13 +18,13 @@ class LTKExchanger {
     static private let P0 = "P0="
     static private let UNKNOWN_P0_PAYLOAD = Data([0xa5])
 
-    private let device: PodDevice
+    private let device: OmniBLEDevice
     private let ids: Ids
     private let podAddress = Ids.notActivated()
     private let keyExchange = try! KeyExchange(X25519KeyGenerator(), RandomByteGenerator())
     private var seq: UInt8 = 1
     
-    init(device: PodDevice, ids: Ids) {
+    init(device: OmniBLEDevice, ids: Ids) {
         self.device = device
         self.ids = ids
     }

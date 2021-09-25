@@ -1,6 +1,6 @@
 //
 //  Id.swift
-//  OpenPodSDK
+//  OmniBLE
 //
 //  Created by Randall Knutson on 8/5/21.
 //
