@@ -14,7 +14,7 @@ import OmniKit
 
 class InsertCannulaSetupViewController: SetupTableViewController {
     
-    var pumpManager: OmnipodPumpManager!
+    var pumpManager: OmniBLEPumpManager!
     
     // MARK: -
     

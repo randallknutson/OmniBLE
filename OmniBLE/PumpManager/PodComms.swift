@@ -7,7 +7,7 @@
 //
 
 import Foundation
-// ZZZ import RileyLinkBLEKit
+import RileyLinkBLEKit
 import LoopKit
 import os.log
 
@@ -168,8 +168,9 @@ class PodComms: CustomDebugStringConvertible {
                     pmVersion: String(describing: config.pmVersion),
                     lot: config.lot,
                     tid: config.tid,
-                    packetNumber: transport.packetNumber,
-                    messageNumber: transport.messageNumber
+//                    packetNumber: transport.packetNumber,
+                    messageNumber: transport.messageNumber,
+                    ltk: Data()
                 )
                 // podState setupProgress state should be addressAssigned
             }

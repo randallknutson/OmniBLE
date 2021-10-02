@@ -38,7 +38,7 @@ public class OmnipodPumpManagerSetupViewController: RileyLinkManagerSetupViewCon
         }
     }
         
-    private(set) var pumpManager: OmnipodPumpManager?
+    private(set) var pumpManager: OmniBLEPumpManager?
     
     /*
      1. RileyLink
@@ -81,11 +81,8 @@ public class OmnipodPumpManagerSetupViewController: RileyLinkManagerSetupViewCon
             if let deviceProvider = rileyLinkPumpManager?.rileyLinkDeviceProvider, let basalSchedule = basalSchedule {
                 let connectionManagerState = rileyLinkPumpManager?.rileyLinkConnectionManagerState
                 let schedule = BasalSchedule(repeatingScheduleValues: basalSchedule.items)
-                let pumpManagerState = OmnipodPumpManagerState(podState: nil, timeZone: .currentFixed, basalSchedule: schedule, rileyLinkConnectionManagerState: connectionManagerState)
-                let pumpManager = OmnipodPumpManager(
-                    state: pumpManagerState,
-                    rileyLinkDeviceProvider: deviceProvider,
-                    rileyLinkConnectionManager: rileyLinkPumpManager?.rileyLinkConnectionManager)
+                let pumpManagerState = OmniBLEPumpManagerState(podState: nil, timeZone: .currentFixed, basalSchedule: schedule)
+                let pumpManager = OmniBLEPumpManager(state: pumpManagerState)
                 vc.pumpManager = pumpManager
                 setupDelegate?.pumpManagerSetupViewController(self, didSetUpPumpManager: pumpManager)
             }

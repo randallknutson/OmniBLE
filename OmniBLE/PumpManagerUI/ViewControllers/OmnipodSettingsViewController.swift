@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import RileyLinkKit
 import RileyLinkKitUI
 import LoopKit
 //import OmniKit
@@ -49,15 +50,18 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
     
     init(pumpManager: PumpManager) {
         self.pumpManager = pumpManager
-        podState = pumpManager.state.podState
+        // TODO: Fix
+//        podState = pumpManager.state.podState
         pumpManagerStatus = pumpManager.status
         
         let devicesSectionIndex = OmnipodSettingsViewController.sectionList(podState).firstIndex(of: .rileyLinks)!
 
-        super.init(rileyLinkPumpManager: pumpManager, devicesSectionIndex: devicesSectionIndex, style: .grouped)
+        // TODO: Fix
+        super.init(rileyLinkPumpManager: pumpManager as! RileyLinkPumpManager, devicesSectionIndex: devicesSectionIndex, style: .grouped)
         
         pumpManager.addStatusObserver(self, queue: .main)
-        pumpManager.addPodStateObserver(self, queue: .main)
+        // TODO: Fi
+//        pumpManager.addPodStateObserver(self, queue: .main)
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -72,7 +76,7 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
 
     lazy var confirmationBeepsTableViewCell: ConfirmationBeepsTableViewCell = {
         let cell = ConfirmationBeepsTableViewCell(style: .default, reuseIdentifier: nil)
-        cell.updateTextLabel(enabled: pumpManager.confirmationBeeps)
+//        cell.updateTextLabel(enabled: pumpManager.confirmationBeeps)
         return cell
     }()
     
@@ -544,24 +548,24 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
         case .diagnostics:
             switch Diagnostics(rawValue: indexPath.row)! {
             case .readPodStatus:
-                let vc = CommandResponseViewController.readPodStatus(pumpManager: pumpManager)
+                let vc = CommandResponseViewController.readPodStatus(pumpManager: pumpManager as! OmniBLEPumpManager)
                 vc.title = sender?.textLabel?.text
                 show(vc, sender: indexPath)
             case .playTestBeeps:
-                let vc = CommandResponseViewController.playTestBeeps(pumpManager: pumpManager)
+                let vc = CommandResponseViewController.playTestBeeps(pumpManager: pumpManager as! OmniBLEPumpManager)
                 vc.title = sender?.textLabel?.text
                 show(vc, sender: indexPath)
             case .readPulseLog:
-                let vc = CommandResponseViewController.readPulseLog(pumpManager: pumpManager)
+                let vc = CommandResponseViewController.readPulseLog(pumpManager: pumpManager as! OmniBLEPumpManager)
                 vc.title = sender?.textLabel?.text
                 show(vc, sender: indexPath)
             case .testCommand:
-                let vc = CommandResponseViewController.testingCommands(pumpManager: pumpManager)
+                let vc = CommandResponseViewController.testingCommands(pumpManager: pumpManager as! OmniBLEPumpManager)
                 vc.title = sender?.textLabel?.text
                 show(vc, sender: indexPath)
-            case .enableDisableConfirmationBeeps:
-                confirmationBeepsTapped()
-                tableView.deselectRow(at: indexPath, animated: true)
+//            case .enableDisableConfirmationBeeps:
+//                confirmationBeepsTapped()
+//                tableView.deselectRow(at: indexPath, animated: true)
             }
         case .status:
             switch StatusRow(rawValue: indexPath.row)! {
@@ -596,7 +600,7 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
                 tableView.endUpdates()
                 break
             case .timeZoneOffset:
-                let vc = CommandResponseViewController.changeTime(pumpManager: pumpManager)
+                let vc = CommandResponseViewController.changeTime(pumpManager: pumpManager as! OmniBLEPumpManager)
                 vc.title = sender?.textLabel?.text
                 show(vc, sender: indexPath)
             case .replacePod:
@@ -604,11 +608,11 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
                 if podState == nil || podState!.setupProgress.primingNeeded {
                     vc = PodReplacementNavigationController.instantiateNewPodFlow(pumpManager)
                 } else if let podState = podState, podState.isFaulted {
-                    vc = PodReplacementNavigationController.instantiatePodReplacementFlow(pumpManager)
-                } else if let podState = podState, podState.unfinishedPairing {
-                    vc = PodReplacementNavigationController.instantiateInsertCannulaFlow(pumpManager)
+                    vc = PodReplacementNavigationController.instantiatePodReplacementFlow(pumpManager as! OmniBLEPumpManager)
+//                } else if let podState = podState, podState.unfinishedPairing {
+//                    vc = PodReplacementNavigationController.instantiateInsertCannulaFlow(pumpManager)
                 } else {
-                    vc = PodReplacementNavigationController.instantiatePodReplacementFlow(pumpManager)
+                    vc = PodReplacementNavigationController.instantiatePodReplacementFlow(pumpManager as! OmniBLEPumpManager)
                 }
                 if var completionNotifying = vc as? CompletionNotifying {
                     completionNotifying.completionDelegate = self
@@ -684,41 +688,41 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
         }
     }
 
-    private func confirmationBeepsTapped() {
-        let confirmationBeeps: Bool = pumpManager.confirmationBeeps
-        
-        func done() {
-            DispatchQueue.main.async { [weak self] in
-                if let self = self {
-                    self.confirmationBeepsTableViewCell.updateTextLabel(enabled: self.pumpManager.confirmationBeeps)
-                    self.confirmationBeepsTableViewCell.isLoading = false
-                }
-            }
-        }
-
-        confirmationBeepsTableViewCell.isLoading = true
-        if confirmationBeeps {
-            pumpManager.setConfirmationBeeps(enabled: false, completion: { (error) in
-                if let error = error {
-                    DispatchQueue.main.async {
-                        let title = LocalizedString("Error disabling confirmation beeps", comment: "The alert title for disable confirmation beeps error")
-                        self.present(UIAlertController(with: error, title: title), animated: true)
-                    }
-                }
-                done()
-            })
-        } else {
-            pumpManager.setConfirmationBeeps(enabled: true, completion: { (error) in
-                if let error = error {
-                    DispatchQueue.main.async {
-                        let title = LocalizedString("Error enabling confirmation beeps", comment: "The alert title for enable confirmation beeps error")
-                        self.present(UIAlertController(with: error, title: title), animated: true)
-                    }
-                }
-                done()
-            })
-        }
-    }
+//    private func confirmationBeepsTapped() {
+//        let confirmationBeeps: Bool = pumpManager.confirmationBeeps
+//
+//        func done() {
+//            DispatchQueue.main.async { [weak self] in
+//                if let self = self {
+//                    self.confirmationBeepsTableViewCell.updateTextLabel(enabled: self.pumpManager.confirmationBeeps)
+//                    self.confirmationBeepsTableViewCell.isLoading = false
+//                }
+//            }
+//        }
+//
+//        confirmationBeepsTableViewCell.isLoading = true
+//        if confirmationBeeps {
+//            pumpManager.setConfirmationBeeps(enabled: false, completion: { (error) in
+//                if let error = error {
+//                    DispatchQueue.main.async {
+//                        let title = LocalizedString("Error disabling confirmation beeps", comment: "The alert title for disable confirmation beeps error")
+//                        self.present(UIAlertController(with: error, title: title), animated: true)
+//                    }
+//                }
+//                done()
+//            })
+//        } else {
+//            pumpManager.setConfirmationBeeps(enabled: true, completion: { (error) in
+//                if let error = error {
+//                    DispatchQueue.main.async {
+//                        let title = LocalizedString("Error enabling confirmation beeps", comment: "The alert title for enable confirmation beeps error")
+//                        self.present(UIAlertController(with: error, title: title), animated: true)
+//                    }
+//                }
+//                done()
+//            })
+//        }
+//    }
 }
 
 extension OmnipodSettingsViewController: CompletionDelegate {

@@ -17,7 +17,7 @@ class Ids {
     let myId: Id
     let podId: Id
     
-    init(podState: PodStateManager?) {
+    init(podState: PodState?) {
         myId = Id.fromInt(CONTROLLER_ID)
         // TODO:
 //        guard let uniqueId = podState?.uniqueId else {

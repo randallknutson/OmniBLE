@@ -41,7 +41,7 @@ class ReplacePodViewController: SetupTableViewController {
         }
     }
     
-    var pumpManager: OmnipodPumpManager! {
+    var pumpManager: OmniBLEPumpManager! {
         didSet {
             let podState = pumpManager.state.podState
 

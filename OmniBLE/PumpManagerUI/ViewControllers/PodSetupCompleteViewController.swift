@@ -14,7 +14,7 @@ class PodSetupCompleteViewController: SetupTableViewController {
 
     @IBOutlet weak var expirationReminderDateCell: ExpirationReminderDateTableViewCell!
 
-    var pumpManager: OmnipodPumpManager! {
+    var pumpManager: OmniBLEPumpManager! {
         didSet {
             if let expirationReminderDate = pumpManager.expirationReminderDate, let podState = pumpManager.state.podState {
                 expirationReminderDateCell.date = expirationReminderDate

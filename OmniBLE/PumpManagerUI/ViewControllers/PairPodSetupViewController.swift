@@ -19,7 +19,7 @@ class PairPodSetupViewController: SetupTableViewController {
     
     var previouslyEncounteredWeakComms: Bool = false
     
-    var pumpManager: OmnipodPumpManager! {
+    var pumpManager: OmniBLEPumpManager! {
         didSet {
             if oldValue == nil && pumpManager != nil {
                 pumpManagerWasSet()

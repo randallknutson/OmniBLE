@@ -14,25 +14,25 @@ class PodReplacementNavigationController: UINavigationController, UINavigationCo
 
     weak var completionDelegate: CompletionDelegate?
 
-    class func instantiatePodReplacementFlow(_ pumpManager: OmnipodPumpManager) -> PodReplacementNavigationController {
+    class func instantiatePodReplacementFlow(_ pumpManager: OmniBLEPumpManager) -> PodReplacementNavigationController {
         let vc = UIStoryboard(name: "OmnipodPumpManager", bundle: Bundle(for: PodReplacementNavigationController.self)).instantiateViewController(withIdentifier: "PodReplacementFlow") as! PodReplacementNavigationController
         vc.pumpManager = pumpManager
         return vc
     }
 
-    class func instantiateNewPodFlow(_ pumpManager: OmnipodPumpManager) -> PodReplacementNavigationController {
+    class func instantiateNewPodFlow(_ pumpManager: OmniBLEPumpManager) -> PodReplacementNavigationController {
         let vc = UIStoryboard(name: "OmnipodPumpManager", bundle: Bundle(for: PodReplacementNavigationController.self)).instantiateViewController(withIdentifier: "NewPodFlow") as! PodReplacementNavigationController
         vc.pumpManager = pumpManager
         return vc
     }
     
-    class func instantiateInsertCannulaFlow(_ pumpManager: OmnipodPumpManager) -> PodReplacementNavigationController {
+    class func instantiateInsertCannulaFlow(_ pumpManager: OmniBLEPumpManager) -> PodReplacementNavigationController {
         let vc = UIStoryboard(name: "OmnipodPumpManager", bundle: Bundle(for: PodReplacementNavigationController.self)).instantiateViewController(withIdentifier: "InsertCannulaFlow") as! PodReplacementNavigationController
         vc.pumpManager = pumpManager
         return vc
     }
 
-    private(set) var pumpManager: OmnipodPumpManager!
+    private(set) var pumpManager: OmniBLEPumpManager!
 
     override func viewDidLoad() {
         super.viewDidLoad()
