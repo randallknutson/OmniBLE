@@ -135,7 +135,7 @@ internal class OmniBLEHUDProvider: NSObject, HUDProvider, PodStateObserver {
         updatePodLifeView()
         updateReservoirView()
         updateFaultDisplay()
-        pumpManager.refreshStatus()
+        pumpManager.refreshStatus(emitConfirmationBeep: false)
     }
 
     func hudDidDisappear(_ animated: Bool) {

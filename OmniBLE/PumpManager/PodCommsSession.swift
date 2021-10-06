@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import RileyLinkBLEKit
 import LoopKit
 import os.log
 
@@ -20,6 +21,7 @@ public enum PodCommsError: Error {
     case unexpectedResponse(response: MessageBlockType)
     case unknownResponseType(rawType: UInt8)
     case invalidAddress(address: UInt32, expectedAddress: UInt32)
+    case noRileyLinkAvailable
     case unfinalizedBolus
     case unfinalizedTempBasal
     case nonceResyncFailed
@@ -56,6 +58,8 @@ extension PodCommsError: LocalizedError {
             return nil
         case .invalidAddress(address: let address, expectedAddress: let expectedAddress):
             return String(format: LocalizedString("Invalid address 0x%x. Expected 0x%x", comment: "Error message for when unexpected address is received (1: received address) (2: expected address)"), address, expectedAddress)
+        case .noRileyLinkAvailable:
+            return LocalizedString("No RileyLink available", comment: "Error message shown when no response from pod was received")
         case .unfinalizedBolus:
             return LocalizedString("Bolus in progress", comment: "Error message shown when operation could not be completed due to existing bolus in progress")
         case .unfinalizedTempBasal:
@@ -75,9 +79,9 @@ extension PodCommsError: LocalizedError {
             return LocalizedString("Unexpected pod change", comment: "Format string for unexpected pod change")
         case .activationTimeExceeded:
             return LocalizedString("Activation time exceeded", comment: "Format string for activation time exceeded")
-        case .rssiTooLow: // occurs pod is too far from pod for reliable pairing, but can sometimes occur at other distances & positions
+        case .rssiTooLow: // occurs when RileyLink is too far from pod for reliable pairing, but can sometimes occur at other distances & positions
             return LocalizedString("Poor signal strength", comment: "Format string for poor pod signal strength")
-        case .rssiTooHigh: // only occurs when pod is too close to the pod for reliable pairing
+        case .rssiTooHigh: // only occurs when RileyLink is too close to the pod for reliable pairing
             return LocalizedString("Signal strength too high", comment: "Format string for pod signal strength too high")
         case .diagnosticMessage(let str):
             return str
@@ -97,7 +101,7 @@ extension PodCommsError: LocalizedError {
         case .invalidData:
             return nil
         case .noResponse:
-            return LocalizedString("Please try repositioning the pod and try again", comment: "Recovery suggestion when no response is received from pod")
+            return LocalizedString("Please try repositioning the RileyLink and try again", comment: "Recovery suggestion when no response is received from pod")
         case .emptyResponse:
             return nil
         case .podAckedInsteadOfReturningResponse:
@@ -110,6 +114,8 @@ extension PodCommsError: LocalizedError {
             return nil
         case .invalidAddress:
             return LocalizedString("Crosstalk possible. Please move to a new location and try again", comment: "Recovery suggestion when unexpected address received")
+        case .noRileyLinkAvailable:
+            return LocalizedString("Make sure your RileyLink is nearby and powered on", comment: "Recovery suggestion when no RileyLink is available")
         case .unfinalizedBolus:
             return LocalizedString("Wait for existing bolus to finish, or cancel bolus", comment: "Recovery suggestion when operation could not be completed due to existing bolus in progress")
         case .unfinalizedTempBasal:
@@ -129,9 +135,9 @@ extension PodCommsError: LocalizedError {
         case .activationTimeExceeded:
             return nil
         case .rssiTooLow:
-            return LocalizedString("Please reposition the pod closer", comment: "Recovery suggestion when pairing signal strength is too low")
+            return LocalizedString("Please reposition the RileyLink relative to the pod", comment: "Recovery suggestion when pairing signal strength is too low")
         case .rssiTooHigh:
-            return LocalizedString("Please reposition the pod further away", comment: "Recovery suggestion when pairing signal strength is too high")
+            return LocalizedString("Please reposition the RileyLink further from the pod", comment: "Recovery suggestion when pairing signal strength is too high")
         case .diagnosticMessage:
             return nil
         case .podIncompatible:
@@ -209,6 +215,7 @@ public class PodCommsSession {
     ///     - PodCommsError.rejectedMessage
     ///     - PodCommsError.nonceResyncFailed
     ///     - MessageError
+    ///     - RileyLinkDeviceError
     func send<T: MessageBlock>(_ messageBlocks: [MessageBlock], confirmationBeepType: BeepConfigType? = nil, expectFollowOnMessage: Bool = false) throws -> T {
         
         var triesRemaining = 2  // Retries only happen for nonce resync

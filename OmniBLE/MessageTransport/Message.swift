@@ -85,7 +85,7 @@ struct Message {
         
         var data = Data(bytes) + cmdData
         let crc = data.crc16()
-        data.appendBigEndian(crc)
+//        data.appendBigEndian(crc)
         return data
     }
     

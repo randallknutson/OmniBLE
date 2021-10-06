@@ -157,6 +157,15 @@ extension OmniBLEDevice {
     }
 }
 
+extension OmniBLEDevice: Equatable, Hashable {
+    public static func ==(lhs: OmniBLEDevice, rhs: OmniBLEDevice) -> Bool {
+        return lhs === rhs
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(peripheralIdentifier)
+    }
+}
 
 // MARK: - Idle management
 extension OmniBLEDevice {

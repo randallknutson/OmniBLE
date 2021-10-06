@@ -1,6 +1,6 @@
 //
 //  PodState.swift
-//  OmniBLEKit
+//  OmniKit
 //
 //  Created by Pete Schwamb on 10/13/17.
 //  Copyright © 2017 Pete Schwamb. All rights reserved.
@@ -100,12 +100,8 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         }
         return active
     }
-
-    // the following two vars are not persistent across app restarts
-    public var deliveryStatusVerified: Bool
-    public var lastCommsOK: Bool
-
-    public init(address: UInt32, piVersion: String, pmVersion: String, lot: UInt32, tid: UInt32, /* ZZZ packetNumber: Int = 0, */ messageNumber: Int = 0, msgNum: UInt8 = 0, ltk: Data) {
+    
+    public init(address: UInt32, piVersion: String, pmVersion: String, lot: UInt32, tid: UInt32, packetNumber: Int = 0, messageNumber: Int = 0) {
         self.address = address
         self.nonceState = NonceState(lot: lot, tid: tid)
         self.piVersion = piVersion
@@ -117,12 +113,10 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         self.suspendState = .resumed(Date())
         self.fault = nil
         self.activeAlertSlots = .none
-        self.messageTransportState = MessageTransportState(/* ZZZ packetNumber: packetNumber, */ messageNumber: messageNumber, msgNum: msgNum, ltk: ltk)
+        self.messageTransportState = MessageTransportState(packetNumber: packetNumber, messageNumber: messageNumber)
         self.primeFinishTime = nil
         self.setupProgress = .addressAssigned
         self.configuredAlerts = [.slot7: .waitingForPairingReminder]
-        self.deliveryStatusVerified = false
-        self.lastCommsOK = false
     }
     
     public var unfinishedSetup: Bool {
@@ -158,7 +152,9 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
     }
     
     public mutating func resyncNonce(syncWord: UInt16, sentNonce: UInt32, messageSequenceNum: Int) {
-        // doesn't do anything for Dash -- never used?
+        let sum = (sentNonce & 0xffff) + UInt32(crc16Table[messageSequenceNum]) + (lot & 0xffff) + (tid & 0xffff)
+        let seed = UInt16(sum & 0xffff) ^ syncWord
+        nonceState = NonceState(lot: lot, tid: tid, seed: seed)
     }
     
     private mutating func updatePodTimes(timeActive: TimeInterval) -> Date {
@@ -181,14 +177,14 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
 
     public mutating func updateFromStatusResponse(_ response: StatusResponse) {
         let now = updatePodTimes(timeActive: response.timeActive)
-        updateDeliveryStatus(deliveryStatus: response.deliveryStatus, podProgressStatus: response.podProgressStatus, bolusNotDelivered: response.bolusNotDelivered)
+        updateDeliveryStatus(deliveryStatus: response.deliveryStatus)
         lastInsulinMeasurements = PodInsulinMeasurements(insulinDelivered: response.insulin, reservoirLevel: response.reservoirLevel, setupUnitsDelivered: setupUnitsDelivered, validTime: now)
         activeAlertSlots = response.alerts
     }
 
     public mutating func updateFromDetailedStatusResponse(_ response: DetailedStatus) {
         let now = updatePodTimes(timeActive: response.timeActive)
-        updateDeliveryStatus(deliveryStatus: response.deliveryStatus, podProgressStatus: response.podProgressStatus, bolusNotDelivered: response.bolusNotDelivered)
+        updateDeliveryStatus(deliveryStatus: response.deliveryStatus)
         lastInsulinMeasurements = PodInsulinMeasurements(insulinDelivered: response.totalInsulinDelivered, reservoirLevel: response.reservoirLevel, setupUnitsDelivered: setupUnitsDelivered, validTime: now)
         activeAlertSlots = response.unacknowledgedAlerts
     }
@@ -209,21 +205,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         }
     }
     
-    private mutating func updateDeliveryStatus(deliveryStatus: DeliveryStatus, podProgressStatus: PodProgressStatus, bolusNotDelivered: Double) {
-
-        deliveryStatusVerified = true
-        // See if the pod deliveryStatus indicates an active bolus or temp basal that the PodState isn't tracking (possible Loop restart)
-        if deliveryStatus.bolusing && unfinalizedBolus == nil { // active bolus that Loop doesn't know about?
-            deliveryStatusVerified = false // remember that we had inconsistent (bolus) delivery status
-            if podProgressStatus.readyForDelivery {
-                // Create an unfinalizedBolus with the remaining bolus amount to capture what we can.
-                unfinalizedBolus = UnfinalizedDose(bolusAmount: bolusNotDelivered, startTime: Date(), scheduledCertainty: .certain)
-            }
-        }
-        if deliveryStatus.tempBasalRunning && unfinalizedTempBasal == nil { // active temp basal that Loop doesn't know about?
-            deliveryStatusVerified = false // remember that we had inconsistent (temp basal) delivery status
-        }
-
+    private mutating func updateDeliveryStatus(deliveryStatus: DeliveryStatus) {
         finalizeFinishedDoses()
 
         if let bolus = unfinalizedBolus, bolus.scheduledCertainty == .uncertain {
@@ -386,7 +368,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         {
             self.messageTransportState = messageTransportState
         } else {
-            self.messageTransportState = MessageTransportState(/* ZZZ packetNumber: 0, */ messageNumber: 0, msgNum: 0, ltk: []) // ZZZ need default ltk value?
+            self.messageTransportState = MessageTransportState(packetNumber: 0, messageNumber: 0)
         }
 
         if let rawConfiguredAlerts = rawValue["configuredAlerts"] as? [String: PodAlert.RawValue] {
@@ -410,9 +392,6 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         }
         
         self.primeFinishTime = rawValue["primeFinishTime"] as? Date
-
-        self.deliveryStatusVerified = false
-        self.lastCommsOK = false
     }
     
     public var rawValue: RawValue {
@@ -512,38 +491,61 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
 
 fileprivate struct NonceState: RawRepresentable, Equatable {
     public typealias RawValue = [String: Any]
-
-    let nonceConstant: UInt32 = 0x494E532E // always a fixed constant value ("INS.") for Dash
-    let nonce: UInt32
+    
+    var table: [UInt32]
+    var idx: UInt8
     
     public init(lot: UInt32 = 0, tid: UInt32 = 0, seed: UInt16 = 0) {
-        self.nonce = nonceConstant // always a fixed constant for Dash
+        table = Array(repeating: UInt32(0), count: 2 + 16)
+        table[0] = (lot & 0xFFFF) &+ (lot >> 16) &+ 0x55543DC3
+        table[1] = (tid & 0xFFFF) &+ (tid >> 16) &+ 0xAAAAE44E
+        
+        idx = 0
+        
+        table[0] += UInt32((seed & 0x00ff))
+        table[1] += UInt32((seed & 0xff00) >> 8)
+        
+        for i in 0..<16 {
+            table[2 + i] = generateEntry()
+        }
+        
+        idx = UInt8((table[0] + table[1]) & 0x0F)
     }
 
+    private mutating func generateEntry() -> UInt32 {
+        table[0] = (table[0] >> 16) &+ ((table[0] & 0xFFFF) &* 0x5D7F)
+        table[1] = (table[1] >> 16) &+ ((table[1] & 0xFFFF) &* 0x8CA0)
+        return table[1] &+ ((table[0] & 0xFFFF) << 16)
+    }
+    
     public mutating func advanceToNextNonce() {
-        // NOP -- always a fixed constant value for Dash
+        let nonce = currentNonce
+        table[Int(2 + idx)] = generateEntry()
+        idx = UInt8(nonce & 0x0F)
     }
     
     public var currentNonce: UInt32 {
-        return self.nonce // always a fixed constant for Dash
+        return table[Int(2 + idx)]
     }
     
     // RawRepresentable
     public init?(rawValue: RawValue) {
         guard
-            let nonce = rawValue["nonce"] as? UInt32
+            let table = rawValue["table"] as? [UInt32],
+            let idx = rawValue["idx"] as? UInt8
             else {
-                self.nonce = nonceConstant
                 return nil
         }
-        self.nonce = nonce
+        self.table = table
+        self.idx = idx
     }
-
+    
     public var rawValue: RawValue {
         let rawValue: RawValue = [
-            "nonceConstant": nonceConstant,
+            "table": table,
+            "idx": idx,
         ]
-
+        
         return rawValue
     }
 }

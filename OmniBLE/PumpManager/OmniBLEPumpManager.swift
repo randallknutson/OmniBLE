@@ -51,7 +51,7 @@ extension OmniBLEPumpManagerError: LocalizedError {
             return nil
         }
     }
-
+    
     public var recoverySuggestion: String? {
         switch self {
         case .noPodPaired:
@@ -64,13 +64,30 @@ extension OmniBLEPumpManagerError: LocalizedError {
     }
 }
 
-public class OmniBLEPumpManager: NSObject {
+public class OmniBLEPumpManager: DeviceManager {
+    public var debugDescription: String
+    
     public init(state: OmniBLEPumpManagerState) {
         self.lockedState = Locked(state)
         self.lockedPodComms = Locked(PodComms(podState: state.podState))
-        self.bluetoothManager = BluetoothManager(autoConnectIDs: [state.podState?.address])
+        self.bluetoothManager = BluetoothManager(autoConnectIDs: [])
+
+        self.debugDescription = ""
         self.podComms.delegate = self
         self.podComms.messageLogger = self
+    }
+
+    public required convenience init?(rawState: PumpManager.RawStateValue) {
+        guard let state = OmniBLEPumpManagerState(rawValue: rawState) else
+        {
+            return nil
+        }
+
+//        let rileyLinkConnectionManager = RileyLinkConnectionManager(state: connectionManagerState)
+//
+        self.init(state: state)
+
+//        rileyLinkConnectionManager.delegate = self
     }
 
     private var podComms: PodComms {
@@ -184,20 +201,77 @@ public class OmniBLEPumpManager: NSObject {
 
     private var lastLoopRecommendation: Date?
 
+    // MARK: - RileyLink Updates
+
+//    override public var rileyLinkConnectionManagerState: RileyLinkConnectionManagerState? {
+//        get {
+//            return state.rileyLinkConnectionManagerState
+//        }
+//        set {
+//            setState { (state) in
+//                state.rileyLinkConnectionManagerState = newValue
+//            }
+//        }
+//    }
+
+//    override public func deviceTimerDidTick(_ device: RileyLinkDevice) {
+//        pumpDelegate.notify { (delegate) in
+//            delegate?.pumpManagerBLEHeartbeatDidFire(self)
+//        }
+//    }
+    
+//    public var rileyLinkBatteryAlertLevel: Int? {
+//        get {
+//            return state.rileyLinkBatteryAlertLevel
+//        }
+//        set {
+//            setState { state in
+//                state.rileyLinkBatteryAlertLevel = newValue
+//            }
+//        }
+//    }
+    
+//    public override func device(_ device: RileyLinkDevice, didUpdateBattery level: Int) {
+//        let repeatInterval: TimeInterval = .hours(1)
+//
+//        if let alertLevel = state.rileyLinkBatteryAlertLevel,
+//           level <= alertLevel,
+//           state.lastRileyLinkBatteryAlertDate.addingTimeInterval(repeatInterval) < Date()
+//        {
+//            self.setState { state in
+//                state.lastRileyLinkBatteryAlertDate = Date()
+//            }
+//
+//            // HACK Alert. This is temporary for the 2.2.5 release. Dev and newer releases will use the new Loop Alert facility
+//            let notification = UNMutableNotificationContent()
+//            notification.body = String(format: LocalizedString("\"%1$@\" has a low battery", comment: "Format string for low battery alert body for RileyLink. (1: device name)"), device.name ?? "unnamed")
+//            notification.title = LocalizedString("Low RileyLink Battery", comment: "Title for RileyLink low battery alert")
+//            notification.sound = .default
+//            notification.categoryIdentifier = LoopNotificationCategory.loopNotRunning.rawValue
+//            notification.threadIdentifier = LoopNotificationCategory.loopNotRunning.rawValue
+//            let request = UNNotificationRequest(
+//                identifier: "batteryalert.rileylink",
+//                content: notification,
+//                trigger: nil)
+//            UNUserNotificationCenter.current().add(request)
+//        }
+//    }
+
+
     // MARK: - CustomDebugStringConvertible
 
-    override public var debugDescription: String {
-        let lines = [
-            "## OmniBLEPumpManager",
-            "podComms: \(String(reflecting: podComms))",
-            "state: \(String(reflecting: state))",
-            "status: \(String(describing: status))",
-            "podStateObservers.count: \(podStateObservers.cleanupDeallocatedElements().count)",
-            "statusObservers.count: \(statusObservers.cleanupDeallocatedElements().count)",
-            super.debugDescription,
-        ]
-        return lines.joined(separator: "\n")
-    }
+//    override public var debugDescription: String {
+//        let lines = [
+//            "## OmniBLEPumpManager",
+//            "podComms: \(String(reflecting: podComms))",
+//            "state: \(String(reflecting: state))",
+//            "status: \(String(describing: status))",
+//            "podStateObservers.count: \(podStateObservers.cleanupDeallocatedElements().count)",
+//            "statusObservers.count: \(statusObservers.cleanupDeallocatedElements().count)",
+//            super.debugDescription,
+//        ]
+//        return lines.joined(separator: "\n")
+//    }
 }
 
 extension OmniBLEPumpManager {
@@ -213,6 +287,10 @@ extension OmniBLEPumpManager {
 
     private func updateBLEHeartbeatPreference() {
         dispatchPrecondition(condition: .notOnQueue(delegateQueue))
+
+//        rileyLinkDeviceProvider.timerTickEnabled = self.state.isPumpDataStale || pumpDelegate.call({ (delegate) -> Bool in
+//            return delegate?.pumpManagerMustProvideBLEHeartbeat(self) == true
+//        })
     }
 
     private func status(for state: OmniBLEPumpManagerState) -> PumpManagerStatus {
@@ -421,50 +499,50 @@ extension OmniBLEPumpManager {
     }
     
     // MARK: Testing
-//    #if targetEnvironment(simulator)
-//    private func jumpStartPod(address: UInt32, lot: UInt32, tid: UInt32, fault: DetailedStatus? = nil, startDate: Date? = nil, mockFault: Bool) {
-//        let start = startDate ?? Date()
-//        var podState = PodState(address: address, piVersion: "jumpstarted", pmVersion: "jumpstarted", lot: lot, tid: tid)
-//        podState.setupProgress = .podPaired
-//        podState.activatedAt = start
-//        podState.expiresAt = start + .hours(72)
-//
-//        let fault = mockFault ? try? DetailedStatus(encodedData: Data(hexadecimalString: "020d0000000e00c36a020703ff020900002899080082")!) : nil
-//        podState.fault = fault
-//
-//        self.podComms = PodComms(podState: podState)
-//
-//        setState({ (state) in
-//            state.podState = podState
-//            state.expirationReminderDate = start + .hours(70)
-//        })
-//    }
-//    #endif
+    #if targetEnvironment(simulator)
+    private func jumpStartPod(address: UInt32, lot: UInt32, tid: UInt32, fault: DetailedStatus? = nil, startDate: Date? = nil, mockFault: Bool) {
+        let start = startDate ?? Date()
+        var podState = PodState(address: address, piVersion: "jumpstarted", pmVersion: "jumpstarted", lot: lot, tid: tid)
+        podState.setupProgress = .podPaired
+        podState.activatedAt = start
+        podState.expiresAt = start + .hours(72)
+        
+        let fault = mockFault ? try? DetailedStatus(encodedData: Data(hexadecimalString: "020d0000000e00c36a020703ff020900002899080082")!) : nil
+        podState.fault = fault
+
+        self.podComms = PodComms(podState: podState)
+
+        setState({ (state) in
+            state.podState = podState
+            state.expirationReminderDate = start + .hours(70)
+        })
+    }
+    #endif
     
     // MARK: - Pairing
 
     // Called on the main thread
     public func pairAndPrime(completion: @escaping (PumpManagerResult<TimeInterval>) -> Void) {
-//        #if targetEnvironment(simulator)
-//        // If we're in the simulator, create a mock PodState
-//        let mockFaultDuringPairing = false
-//        let mockCommsErrorDuringPairing = false
-//        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + .seconds(2)) {
-//            self.jumpStartPod(address: 0x1f0b3557, lot: 40505, tid: 6439, mockFault: mockFaultDuringPairing)
-//            let fault: DetailedStatus? = self.setStateWithResult({ (state) in
-//                state.podState?.setupProgress = .priming
-//                return state.podState?.fault
-//            })
-//            if mockFaultDuringPairing {
-//                completion(.failure(PodCommsError.podFault(fault: fault!)))
-//            } else if mockCommsErrorDuringPairing {
-//                completion(.failure(PodCommsError.noResponse))
-//            } else {
-//                let mockPrimeDuration = TimeInterval(.seconds(3))
-//                completion(.success(mockPrimeDuration))
-//            }
-//        }
-//        #else
+        #if targetEnvironment(simulator)
+        // If we're in the simulator, create a mock PodState
+        let mockFaultDuringPairing = false
+        let mockCommsErrorDuringPairing = false
+        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + .seconds(2)) {
+            self.jumpStartPod(address: 0x1f0b3557, lot: 40505, tid: 6439, mockFault: mockFaultDuringPairing)
+            let fault: DetailedStatus? = self.setStateWithResult({ (state) in
+                state.podState?.setupProgress = .priming
+                return state.podState?.fault
+            })
+            if mockFaultDuringPairing {
+                completion(.failure(PodCommsError.podFault(fault: fault!)))
+            } else if mockCommsErrorDuringPairing {
+                completion(.failure(PodCommsError.noResponse))
+            } else {
+                let mockPrimeDuration = TimeInterval(.seconds(3))
+                completion(.success(mockPrimeDuration))
+            }
+        }
+        #else
         let deviceSelector = self.bluetoothManager.firstConnectedDevice
         let primeSession = { (result: PodComms.SessionRunResult) in
             switch result {
@@ -531,7 +609,7 @@ extension OmniBLEPumpManager {
                 primeSession(result)
             }
         }
-//        #endif
+        #endif
     }
 
     // Called on the main thread
@@ -995,11 +1073,10 @@ extension OmniBLEPumpManager {
 
 // MARK: - PumpManager
 extension OmniBLEPumpManager: PumpManager {
-    public func setMustProvideBLEHeartbeat(_ mustProvideBLEHeartbeat: Bool) {}
 
-    public static let managerIdentifier: String = "Omnipod BLE"
+    public static let managerIdentifier: String = "Omnipod Dash"
 
-    public static let localizedTitle = LocalizedString("Omnipod BLE", comment: "Generic title of the Omnipod BLE pump manager")
+    public static let localizedTitle = LocalizedString("Omnipod Dash", comment: "Generic title of the omnipod pump manager")
 
     public var supportedBolusVolumes: [Double] {
         // 0.05 units for rates between 0.05-30U/hr
@@ -1172,6 +1249,10 @@ extension OmniBLEPumpManager: PumpManager {
         statusObservers.removeElement(observer)
     }
 
+    public func setMustProvideBLEHeartbeat(_ mustProvideBLEHeartbeat: Bool) {
+//        rileyLinkDeviceProvider.timerTickEnabled = self.state.isPumpDataStale || mustProvideBLEHeartbeat
+    }
+    
     // Called only from pumpDelegate notify block
     private func recommendLoopIfNeeded(_ delegate: PumpManagerDelegate?) {
         if lastLoopRecommendation == nil || lastLoopRecommendation!.timeIntervalSinceNow < .minutes(-4.5) {
@@ -1190,6 +1271,8 @@ extension OmniBLEPumpManager: PumpManager {
             return state.isPumpDataStale
         }
         
+//        checkRileyLinkBattery()
+
         switch shouldFetchStatus {
         case .none:
             return // No active pod
@@ -1215,6 +1298,14 @@ extension OmniBLEPumpManager: PumpManager {
             }
         }
     }
+//
+//    private func checkRileyLinkBattery() {
+//        rileyLinkDeviceProvider.getDevices { devices in
+//            for device in devices {
+//                device.updateBatteryLevel()
+//            }
+//        }
+//    }
 
     public func enactBolus(units: Double, at startDate: Date, willRequest: @escaping (DoseEntry) -> Void, completion: @escaping (PumpManagerResult<DoseEntry>) -> Void) {
         guard self.hasActivePod else {

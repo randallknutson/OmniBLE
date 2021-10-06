@@ -19,7 +19,7 @@ protocol PodCommsDelegate: AnyObject {
 
 class PodComms: CustomDebugStringConvertible {
     
-    // ZZZ private let configuredDevices: Locked<Set<RileyLinkDevice>> = Locked(Set())
+    private let configuredDevices: Locked<Set<OmniBLEDevice>> = Locked(Set())
     
     weak var delegate: PodCommsDelegate?
     
@@ -69,6 +69,7 @@ class PodComms: CustomDebugStringConvertible {
     ///     - MessageError.invalidCrc
     ///     - MessageError.invalidSequence
     ///     - MessageError.invalidAddress
+    ///     - RileyLinkDeviceError
     private func sendPairMessage(address: UInt32, transport: PodMessageTransport, message: Message) throws -> VersionResponse {
 
         defer {
@@ -168,9 +169,8 @@ class PodComms: CustomDebugStringConvertible {
                     pmVersion: String(describing: config.pmVersion),
                     lot: config.lot,
                     tid: config.tid,
-//                    packetNumber: transport.packetNumber,
-                    messageNumber: transport.messageNumber,
-                    ltk: Data()
+                    packetNumber: transport.packetNumber,
+                    messageNumber: transport.messageNumber
                 )
                 // podState setupProgress state should be addressAssigned
             }
@@ -285,7 +285,7 @@ class PodComms: CustomDebugStringConvertible {
     
     func assignAddressAndSetupPod(
         address: UInt32,
-        using deviceSelector: @escaping (_ completion: @escaping (_ device: RileyLinkDevice?) -> Void) -> Void,
+        using deviceSelector: @escaping (_ completion: @escaping (_ device: OmniBLEDevice?) -> Void) -> Void,
         timeZone: TimeZone,
         messageLogger: MessageLogger?,
         _ block: @escaping (_ result: SessionRunResult) -> Void)
@@ -296,41 +296,41 @@ class PodComms: CustomDebugStringConvertible {
                 return
             }
 
-            device.runSession(withName: "Pair Pod") { (commandSession) in
-                do {
-// ZZZ              self.configureDevice(device, with: commandSession)
-                    
-                    if self.podState == nil {
-                        try self.assignAddress(address: address, commandSession: commandSession)
-                    }
-                    
-                    guard self.podState != nil else {
-                        block(.failure(PodCommsError.noPodPaired))
-                        return
-                    }
-
-                    if self.podState!.setupProgress.isPaired == false {
-                        try self.setupPod(podState: self.podState!, timeZone: timeZone, commandSession: commandSession)
-                    }
-
-                    guard self.podState!.setupProgress.isPaired else {
-                        self.log.error("Unexpected podStatus setupProgress value of %{public}@", String(describing: self.podState!.setupProgress))
-                        throw PodCommsError.invalidData
-                    }
-                    self.startingPacketNumber = 0
-
-                    // Run a session now for any post-pairing commands
-                    let transport = PodMessageTransport(session: commandSession, address: self.podState!.address, state: self.podState!.messageTransportState)
-                    transport.messageLogger = self.messageLogger
-                    let podSession = PodCommsSession(podState: self.podState!, transport: transport, delegate: self)
-
-                    block(.success(session: podSession))
-                } catch let error as PodCommsError {
-                    block(.failure(error))
-                } catch {
-                    block(.failure(PodCommsError.commsError(error: error)))
-                }
-            }
+//            device.runSession(withName: "Pair Pod") { (commandSession) in
+//                do {
+//                    self.configureDevice(device, with: commandSession)
+//
+//                    if self.podState == nil {
+//                        try self.assignAddress(address: address, commandSession: commandSession)
+//                    }
+//
+//                    guard self.podState != nil else {
+//                        block(.failure(PodCommsError.noPodPaired))
+//                        return
+//                    }
+//
+//                    if self.podState!.setupProgress.isPaired == false {
+//                        try self.setupPod(podState: self.podState!, timeZone: timeZone, commandSession: commandSession)
+//                    }
+//
+//                    guard self.podState!.setupProgress.isPaired else {
+//                        self.log.error("Unexpected podStatus setupProgress value of %{public}@", String(describing: self.podState!.setupProgress))
+//                        throw PodCommsError.invalidData
+//                    }
+//                    self.startingPacketNumber = 0
+//
+//                    // Run a session now for any post-pairing commands
+//                    let transport = PodMessageTransport(session: commandSession, address: self.podState!.address, state: self.podState!.messageTransportState)
+//                    transport.messageLogger = self.messageLogger
+//                    let podSession = PodCommsSession(podState: self.podState!, transport: transport, delegate: self)
+//
+//                    block(.success(session: podSession))
+//                } catch let error as PodCommsError {
+//                    block(.failure(error))
+//                } catch {
+//                    block(.failure(PodCommsError.commsError(error: error)))
+//                }
+//            }
         }
     }
     
@@ -339,33 +339,33 @@ class PodComms: CustomDebugStringConvertible {
         case failure(PodCommsError)
     }
     
-    // ZZZ not sure how muich of this is needed for Dash as there won't be any selecting of RL to use, but maybe the serialization needed for other reasons
-    func runSession(withName name: String, using deviceSelector: @escaping (_ completion: @escaping (_ device: RileyLinkDevice?) -> Void) -> Void, _ block: @escaping (_ result: SessionRunResult) -> Void) {
+    func runSession(withName name: String, using deviceSelector: @escaping (_ completion: @escaping (_ device: OmniBLEDevice?) -> Void) -> Void, _ block: @escaping (_ result: SessionRunResult) -> Void) {
 
         deviceSelector { (device) in
-// ZZZ      guard let device = device else {
-// ZZZ          block(.failure(PodCommsError.noRileyLinkAvailable))
-// ZZZ          return
-// ZZZ      }
-
-            device.runSession(withName: name) { (commandSession) in
-                guard self.podState != nil else {
-                    block(.failure(PodCommsError.noPodPaired))
-                    return
-                }
-
-// ZZZ          self.configureDevice(device, with: commandSession)
-                let transport = PodMessageTransport(session: commandSession, address: self.podState!.address, state: self.podState!.messageTransportState)
-                transport.messageLogger = self.messageLogger
-                let podSession = PodCommsSession(podState: self.podState!, transport: transport, delegate: self)
-                block(.success(session: podSession))
+            guard let device = device else {
+                block(.failure(PodCommsError.noRileyLinkAvailable))
+                return
             }
+
+            // TODO: Fix this.
+
+//            device.runSession(withName: name) { (commandSession) in
+//                guard self.podState != nil else {
+//                    block(.failure(PodCommsError.noPodPaired))
+//                    return
+//                }
+//
+//                self.configureDevice(device, with: commandSession)
+//                let transport = PodMessageTransport(session: commandSession, address: self.podState!.address, state: self.podState!.messageTransportState)
+//                transport.messageLogger = self.messageLogger
+//                let podSession = PodCommsSession(podState: self.podState!, transport: transport, delegate: self)
+//                block(.success(session: podSession))
+//            }
         }
     }
     
-/* ZZZ shouldn't be needed
-    // Must be called from within the RileyLinkDevice sessionQueue
-    private func configureDevice(_ device: RileyLinkDevice, with session: CommandSession) {
+    // Must be called from within the OmniBLEDevice sessionQueue
+    private func configureDevice(_ device: OmniBLEDevice, with session: CommandSession) {
         session.assertOnSessionQueue()
 
         guard !self.configuredDevices.value.contains(device) else {
@@ -392,7 +392,7 @@ class PodComms: CustomDebugStringConvertible {
     }
     
     @objc private func deviceRadioConfigDidChange(_ note: Notification) {
-        guard let device = note.object as? RileyLinkDevice else {
+        guard let device = note.object as? OmniBLEDevice else {
             return
         }
         log.debug("removing device %{public}@ from configuredDevices", device.name ?? "unknown")
@@ -404,7 +404,6 @@ class PodComms: CustomDebugStringConvertible {
             value.remove(device)
         }
     }
-ZZZ */
     
     // MARK: - CustomDebugStringConvertible
     
@@ -427,7 +426,7 @@ extension PodComms: PodCommsSessionDelegate {
     }
 }
 
-/* ZZZ configureRadio() configures the RL for Eros use
+
 private extension CommandSession {
     
     func configureRadio() throws {
@@ -504,4 +503,3 @@ private extension CommandSession {
         throw PodCommsError.emptyResponse
     }
 }
-ZZZ */
