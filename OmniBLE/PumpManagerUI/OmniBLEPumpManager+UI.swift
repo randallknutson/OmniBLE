@@ -16,17 +16,17 @@ import OmniKit
 extension OmniBLEPumpManager: PumpManagerUI {
     
     static public func setupViewController() -> (UIViewController & PumpManagerSetupViewController & CompletionNotifying) {
-        return OmnipodPumpManagerSetupViewController.instantiateFromStoryboard()
+        return OmniBLEPumpManagerSetupViewController.instantiateFromStoryboard()
     }
     
     public func settingsViewController() -> (UIViewController & CompletionNotifying) {
-        let settings = OmnipodSettingsViewController(pumpManager: self)
+        let settings = OmniBLESettingsViewController(pumpManager: self)
         let nav = SettingsNavigationViewController(rootViewController: settings)
         return nav
     }
     
     public var smallImage: UIImage? {
-        return UIImage(named: "Pod", in: Bundle(for: OmnipodSettingsViewController.self), compatibleWith: nil)!
+        return UIImage(named: "Pod", in: Bundle(for: OmniBLESettingsViewController.self), compatibleWith: nil)!
     }
     
     public func hudProvider() -> HUDProvider? {

@@ -16,8 +16,8 @@ import OmniKit
 
 class PodSettingsSetupViewController: SetupTableViewController {
     
-    private var pumpManagerSetupViewController: OmnipodPumpManagerSetupViewController? {
-        return navigationController as? OmnipodPumpManagerSetupViewController
+    private var pumpManagerSetupViewController: OmniBLEPumpManagerSetupViewController? {
+        return navigationController as? OmniBLEPumpManagerSetupViewController
     }
     
     override func viewDidLoad() {
@@ -25,9 +25,7 @@ class PodSettingsSetupViewController: SetupTableViewController {
 
         updateContinueButton()
         
-// TODO: Fix this.
-
-//        tableView.register(SettingsTableViewCell.self, forCellReuseIdentifier: SettingsTableViewCell.className)
+        tableView.register(SettingsTableViewCell.self, forCellReuseIdentifier: "SettingsTableViewCell")
     }
     
     fileprivate lazy var quantityFormatter: QuantityFormatter = {
@@ -93,44 +91,43 @@ class PodSettingsSetupViewController: SetupTableViewController {
         }
     }
     
-    // TODO: Fix this.
-//    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-//        switch Section(rawValue: indexPath.section)! {
-//        case .description:
-//            return tableView.dequeueReusableCell(withIdentifier: "DescriptionCell", for: indexPath)
-//        case .configuration:
-//            let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.className, for: indexPath)
-//
-//            switch ConfigurationRow(rawValue: indexPath.row)! {
-//            case .basalRates:
-//                cell.textLabel?.text = LocalizedString("Basal Rates", comment: "The title text for the basal rate schedule")
-//                
-//                if let basalRateSchedule = pumpManagerSetupViewController?.basalSchedule, !basalRateSchedule.items.isEmpty {
-//                    if let errorMessage = scheduleErrorMessage {
-//                        cell.detailTextLabel?.text = errorMessage
-//                    } else {
-//                        let unit = HKUnit.internationalUnit()
-//                        let total = HKQuantity(unit: unit, doubleValue: basalRateSchedule.total())
-//                        cell.detailTextLabel?.text = quantityFormatter.string(from: total, for: unit)
-//                    }
-//                } else {
-//                    cell.detailTextLabel?.text = SettingsTableViewCell.TapToSetString
-//                }
-//            case .deliveryLimits:
-//                cell.textLabel?.text = LocalizedString("Delivery Limits", comment: "Title text for delivery limits")
-//
-//                if pumpManagerSetupViewController?.maxBolusUnits == nil || pumpManagerSetupViewController?.maxBasalRateUnitsPerHour == nil {
-//                    cell.detailTextLabel?.text = SettingsTableViewCell.TapToSetString
-//                } else {
-//                    cell.detailTextLabel?.text = SettingsTableViewCell.EnabledString
-//                }
-//            }
-//
-//            cell.accessoryType = .disclosureIndicator
-//
-//            return cell
-//        }
-//    }
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        switch Section(rawValue: indexPath.section)! {
+        case .description:
+            return tableView.dequeueReusableCell(withIdentifier: "DescriptionCell", for: indexPath)
+        case .configuration:
+            let cell = tableView.dequeueReusableCell(withIdentifier: "SettingsTableViewCell", for: indexPath)
+
+            switch ConfigurationRow(rawValue: indexPath.row)! {
+            case .basalRates:
+                cell.textLabel?.text = LocalizedString("Basal Rates", comment: "The title text for the basal rate schedule")
+                
+                if let basalRateSchedule = pumpManagerSetupViewController?.basalSchedule, !basalRateSchedule.items.isEmpty {
+                    if let errorMessage = scheduleErrorMessage {
+                        cell.detailTextLabel?.text = errorMessage
+                    } else {
+                        let unit = HKUnit.internationalUnit()
+                        let total = HKQuantity(unit: unit, doubleValue: basalRateSchedule.total())
+                        cell.detailTextLabel?.text = quantityFormatter.string(from: total, for: unit)
+                    }
+                } else {
+                    cell.detailTextLabel?.text = SettingsTableViewCell.TapToSetString
+                }
+            case .deliveryLimits:
+                cell.textLabel?.text = LocalizedString("Delivery Limits", comment: "Title text for delivery limits")
+
+                if pumpManagerSetupViewController?.maxBolusUnits == nil || pumpManagerSetupViewController?.maxBasalRateUnitsPerHour == nil {
+                    cell.detailTextLabel?.text = SettingsTableViewCell.TapToSetString
+                } else {
+                    cell.detailTextLabel?.text = SettingsTableViewCell.EnabledString
+                }
+            }
+
+            cell.accessoryType = .disclosureIndicator
+
+            return cell
+        }
+    }
     
     override func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
         switch Section(rawValue: indexPath.section)! {

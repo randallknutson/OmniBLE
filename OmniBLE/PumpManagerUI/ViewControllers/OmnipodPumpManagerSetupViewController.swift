@@ -1,5 +1,5 @@
 //
-//  OmnipodPumpManagerSetupViewController.swift
+//  OmniBLEPumpManagerSetupViewController.swift
 //  OmniKitUI
 //
 //  Created by Pete Schwamb on 8/4/18.
@@ -17,10 +17,10 @@ import RileyLinkKit
 import RileyLinkKitUI
 
 // PumpManagerSetupViewController
-public class OmnipodPumpManagerSetupViewController: RileyLinkManagerSetupViewController {
+public class OmniBLEPumpManagerSetupViewController: RileyLinkManagerSetupViewController {
     
-    class func instantiateFromStoryboard() -> OmnipodPumpManagerSetupViewController {
-        return UIStoryboard(name: "OmnipodPumpManager", bundle: Bundle(for: OmnipodPumpManagerSetupViewController.self)).instantiateInitialViewController() as! OmnipodPumpManagerSetupViewController
+    class func instantiateFromStoryboard() -> OmniBLEPumpManagerSetupViewController {
+        return UIStoryboard(name: "OmniBLEPumpManager", bundle: Bundle(for: OmniBLEPumpManagerSetupViewController.self)).instantiateInitialViewController() as! OmniBLEPumpManagerSetupViewController
     }
 
     override public func viewDidLoad() {
@@ -97,7 +97,7 @@ public class OmnipodPumpManagerSetupViewController: RileyLinkManagerSetupViewCon
 
     override open func finishedSetup() {
         if let pumpManager = pumpManager {
-            let settings = OmnipodSettingsViewController(pumpManager: pumpManager)
+            let settings = OmniBLESettingsViewController(pumpManager: pumpManager)
             setViewControllers([settings], animated: true)
         }
     }
@@ -107,7 +107,7 @@ public class OmnipodPumpManagerSetupViewController: RileyLinkManagerSetupViewCon
     }
 }
 
-extension OmnipodPumpManagerSetupViewController: SetupTableViewControllerDelegate {
+extension OmniBLEPumpManagerSetupViewController: SetupTableViewControllerDelegate {
     public func setupTableViewControllerCancelButtonPressed(_ viewController: SetupTableViewController) {
         completionDelegate?.completionNotifyingDidComplete(self)
     }

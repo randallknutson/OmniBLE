@@ -105,7 +105,7 @@
 		8475313F26ED838B009FD801 /* CommandResponseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475312D26ED838A009FD801 /* CommandResponseViewController.swift */; };
 		8475314026ED838B009FD801 /* OmnipodPumpManagerSetupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475312E26ED838A009FD801 /* OmnipodPumpManagerSetupViewController.swift */; };
 		8475314126ED838B009FD801 /* PairPodSetupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475312F26ED838A009FD801 /* PairPodSetupViewController.swift */; };
-		8475314526ED83D2009FD801 /* OmnipodPumpManager.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8475314426ED83D2009FD801 /* OmnipodPumpManager.storyboard */; };
+		8475314526ED83D2009FD801 /* OmniBLEPumpManager.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8475314426ED83D2009FD801 /* OmniBLEPumpManager.storyboard */; };
 		8475315326EDA193009FD801 /* TimeInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475314626EDA193009FD801 /* TimeInterval.swift */; };
 		8475315426EDA193009FD801 /* IdentifiableClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475314726EDA193009FD801 /* IdentifiableClass.swift */; };
 		8475315526EDA193009FD801 /* CaseCountable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475314826EDA193009FD801 /* CaseCountable.swift */; };
@@ -246,7 +246,7 @@
 		8475312D26ED838A009FD801 /* CommandResponseViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandResponseViewController.swift; sourceTree = "<group>"; };
 		8475312E26ED838A009FD801 /* OmnipodPumpManagerSetupViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OmnipodPumpManagerSetupViewController.swift; sourceTree = "<group>"; };
 		8475312F26ED838A009FD801 /* PairPodSetupViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PairPodSetupViewController.swift; sourceTree = "<group>"; };
-		8475314426ED83D2009FD801 /* OmnipodPumpManager.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = OmnipodPumpManager.storyboard; sourceTree = "<group>"; };
+		8475314426ED83D2009FD801 /* OmniBLEPumpManager.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = OmniBLEPumpManager.storyboard; sourceTree = "<group>"; };
 		8475314626EDA193009FD801 /* TimeInterval.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimeInterval.swift; sourceTree = "<group>"; };
 		8475314726EDA193009FD801 /* IdentifiableClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IdentifiableClass.swift; sourceTree = "<group>"; };
 		8475314826EDA193009FD801 /* CaseCountable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CaseCountable.swift; sourceTree = "<group>"; };
@@ -502,7 +502,7 @@
 			children = (
 				1029AE4A27094DDC00B7F5B6 /* OmniBLEPumpManager+UI.swift */,
 				1029AE4C27094DE200B7F5B6 /* OmniBLEHUDManager.swift */,
-				8475314426ED83D2009FD801 /* OmnipodPumpManager.storyboard */,
+				8475314426ED83D2009FD801 /* OmniBLEPumpManager.storyboard */,
 				1029AE4E27094E1900B7F5B6 /* OmniBLEUI.xcassets */,
 				8475312626ED838A009FD801 /* ViewControllers */,
 				8475311E26ED838A009FD801 /* Views */,
@@ -660,7 +660,7 @@
 				1029AE4F27094E1900B7F5B6 /* OmniBLEUI.xcassets in Resources */,
 				8475313726ED838B009FD801 /* PodLifeHUDView.xib in Resources */,
 				8475313326ED838B009FD801 /* HUDAssets.xcassets in Resources */,
-				8475314526ED83D2009FD801 /* OmnipodPumpManager.storyboard in Resources */,
+				8475314526ED83D2009FD801 /* OmniBLEPumpManager.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
