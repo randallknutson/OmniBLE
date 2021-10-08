@@ -6,8 +6,6 @@
 //  Copyright © 2018 Pete Schwamb. All rights reserved.
 //
 
-import RileyLinkKit
-import RileyLinkBLEKit
 import LoopKit
 
 
@@ -24,8 +22,6 @@ public struct OmniBLEPumpManagerState: RawRepresentable, Equatable {
     
     public var basalSchedule: BasalSchedule
     
-    public var rileyLinkConnectionManagerState: RileyLinkConnectionManagerState?
-
     public var unstoredDoses: [UnfinalizedDose]
 
     public var expirationReminderDate: Date?
@@ -48,17 +44,12 @@ public struct OmniBLEPumpManagerState: RawRepresentable, Equatable {
 
     internal var lastPumpDataReportDate: Date?
     
-    public var rileyLinkBatteryAlertLevel: Int?
-    
-    public var lastRileyLinkBatteryAlertDate: Date = .distantPast
-
     // MARK: -
 
-    public init(podState: PodState?, timeZone: TimeZone, basalSchedule: BasalSchedule, rileyLinkConnectionManagerState: RileyLinkConnectionManagerState?) {
+    public init(podState: PodState?, timeZone: TimeZone, basalSchedule: BasalSchedule) {
         self.podState = podState
         self.timeZone = timeZone
         self.basalSchedule = basalSchedule
-        self.rileyLinkConnectionManagerState = rileyLinkConnectionManagerState
         self.unstoredDoses = []
         self.confirmationBeeps = false
     }
@@ -104,19 +95,11 @@ public struct OmniBLEPumpManagerState: RawRepresentable, Equatable {
         } else {
             timeZone = TimeZone.currentFixed
         }
-        
-        let rileyLinkConnectionManagerState: RileyLinkConnectionManagerState?
-        if let rileyLinkConnectionManagerStateRaw = rawValue["rileyLinkConnectionManagerState"] as? RileyLinkConnectionManagerState.RawValue {
-            rileyLinkConnectionManagerState = RileyLinkConnectionManagerState(rawValue: rileyLinkConnectionManagerStateRaw)
-        } else {
-            rileyLinkConnectionManagerState = nil
-        }
 
         self.init(
             podState: podState,
             timeZone: timeZone,
-            basalSchedule: basalSchedule,
-            rileyLinkConnectionManagerState: rileyLinkConnectionManagerState
+            basalSchedule: basalSchedule
         )
 
         if let expirationReminderDate = rawValue["expirationReminderDate"] as? Date {
@@ -137,9 +120,6 @@ public struct OmniBLEPumpManagerState: RawRepresentable, Equatable {
             self.pairingAttemptAddress = pairingAttemptAddress
         }
         
-        rileyLinkBatteryAlertLevel = rawValue["rileyLinkBatteryAlertLevel"] as? Int
-        lastRileyLinkBatteryAlertDate = rawValue["lastRileyLinkBatteryAlertDate"] as? Date ?? Date.distantPast
-
     }
     
     public var rawValue: RawValue {
@@ -153,10 +133,7 @@ public struct OmniBLEPumpManagerState: RawRepresentable, Equatable {
         
         value["podState"] = podState?.rawValue
         value["expirationReminderDate"] = expirationReminderDate
-        value["rileyLinkConnectionManagerState"] = rileyLinkConnectionManagerState?.rawValue
         value["pairingAttemptAddress"] = pairingAttemptAddress
-        value["rileyLinkBatteryAlertLevel"] = rileyLinkBatteryAlertLevel
-        value["lastRileyLinkBatteryAlertDate"] = lastRileyLinkBatteryAlertDate
 
         return value
     }
@@ -194,10 +171,7 @@ extension OmniBLEPumpManagerState: CustomDebugStringConvertible {
             "* isPumpDataStale: \(String(describing: isPumpDataStale))",
             "* confirmationBeeps: \(String(describing: confirmationBeeps))",
             "* pairingAttemptAddress: \(String(describing: pairingAttemptAddress))",
-            "* rileyLinkBatteryAlertLevel: \(String(describing: rileyLinkBatteryAlertLevel))",
-            "* lastRileyLinkBatteryAlertDate \(String(describing: lastRileyLinkBatteryAlertDate))",
             String(reflecting: podState),
-            String(reflecting: rileyLinkConnectionManagerState),
         ].joined(separator: "\n")
     }
 }

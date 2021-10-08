@@ -12,8 +12,6 @@ import UIKit
 import LoopKit
 import LoopKitUI
 import OmniKit
-import RileyLinkBLEKit
-import RileyLinkKit
 import RileyLinkKitUI
 
 // PumpManagerSetupViewController
@@ -32,10 +30,7 @@ public class OmniBLEPumpManagerSetupViewController: RileyLinkManagerSetupViewCon
             view.backgroundColor = .white
         }
         navigationBar.shadowImage = UIImage()
-        
-        if let omnipodPairingViewController = topViewController as? PairPodSetupViewController, let rileyLinkPumpManager = rileyLinkPumpManager {
-            omnipodPairingViewController.rileyLinkPumpManager = rileyLinkPumpManager
-        }
+
     }
         
     private(set) var pumpManager: OmniBLEPumpManager?
@@ -77,14 +72,12 @@ public class OmniBLEPumpManagerSetupViewController: RileyLinkManagerSetupViewCon
         // Set state values
         switch viewController {
         case let vc as PairPodSetupViewController:
-            vc.rileyLinkPumpManager = rileyLinkPumpManager
-            if let deviceProvider = rileyLinkPumpManager?.rileyLinkDeviceProvider, let basalSchedule = basalSchedule {
-                let connectionManagerState = rileyLinkPumpManager?.rileyLinkConnectionManagerState
+            if let basalSchedule = basalSchedule {
                 let schedule = BasalSchedule(repeatingScheduleValues: basalSchedule.items)
-//                let pumpManagerState = OmniBLEPumpManagerState(podState: nil, timeZone: .currentFixed, basalSchedule: schedule)
-//                let pumpManager = OmniBLEPumpManager(state: pumpManagerState)
-//                vc.pumpManager = pumpManager
-//                setupDelegate?.pumpManagerSetupViewController(self, didSetUpPumpManager: pumpManager)
+                let pumpManagerState = OmniBLEPumpManagerState(podState: nil, timeZone: .currentFixed, basalSchedule: schedule)
+                let pumpManager = OmniBLEPumpManager(state: pumpManagerState)
+                vc.pumpManager = pumpManager
+                setupDelegate?.pumpManagerSetupViewController(self, didSetUpPumpManager: pumpManager)
             }
         case let vc as InsertCannulaSetupViewController:
             vc.pumpManager = pumpManager

@@ -1,6 +1,6 @@
 //
 //  BluetoothManager.swift
-//  RileyLinkBLEKit
+//  OmniBLE
 //
 //  Copyright © 2017 Pete Schwamb. All rights reserved.
 //
@@ -44,7 +44,7 @@ public class BluetoothManager: NSObject {
                 delegate: self,
                 queue: centralQueue,
                 options: [
-                    CBCentralManagerOptionRestoreIdentifierKey: "com.rileylink.CentralManager"
+                    CBCentralManagerOptionRestoreIdentifierKey: "com.omnible.CentralManager"
                 ]
             )
         }

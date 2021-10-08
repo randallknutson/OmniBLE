@@ -15,8 +15,6 @@ import os.log
 
 class PairPodSetupViewController: SetupTableViewController {
     
-    var rileyLinkPumpManager: RileyLinkPumpManager!
-    
     var previouslyEncounteredWeakComms: Bool = false
     
     var pumpManager: OmniBLEPumpManager! {
