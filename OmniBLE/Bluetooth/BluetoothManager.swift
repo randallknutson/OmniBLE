@@ -48,6 +48,8 @@ public class BluetoothManager: NSObject {
                 ]
             )
         }
+        
+        self.setScanningEnabled(true)
     }
     
     public func firstConnectedDevice(_ completion: @escaping (_ device: OmniBLEDevice?) -> Void) {
@@ -172,10 +174,6 @@ extension BluetoothManager {
             device.manager.peripheral = peripheral
         } else {
             device = OmniBLEDevice(peripheralManager: PeripheralManager(peripheral: peripheral, centralManager: central, queue: sessionQueue), advertisementData: advertisementData)
-            if peripheral.state == .connected {
-                device.setTimerTickEnabled(timerTickEnabled)
-                device.setIdleListeningState(idleListeningState)
-            }
 
             devices.append(device)
 

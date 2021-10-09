@@ -292,7 +292,7 @@ class PodComms: CustomDebugStringConvertible {
     {
         deviceSelector { (device) in
             guard let device = device else {
-                block(.failure(PodCommsError.noRileyLinkAvailable))
+                block(.failure(PodCommsError.noPodAvailable))
                 return
             }
 
@@ -343,7 +343,7 @@ class PodComms: CustomDebugStringConvertible {
 
         deviceSelector { (device) in
             guard let device = device else {
-                block(.failure(PodCommsError.noRileyLinkAvailable))
+                block(.failure(PodCommsError.noPodAvailable))
                 return
             }
 

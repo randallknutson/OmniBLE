@@ -21,7 +21,7 @@ public enum PodCommsError: Error {
     case unexpectedResponse(response: MessageBlockType)
     case unknownResponseType(rawType: UInt8)
     case invalidAddress(address: UInt32, expectedAddress: UInt32)
-    case noRileyLinkAvailable
+    case noPodAvailable
     case unfinalizedBolus
     case unfinalizedTempBasal
     case nonceResyncFailed
@@ -58,8 +58,8 @@ extension PodCommsError: LocalizedError {
             return nil
         case .invalidAddress(address: let address, expectedAddress: let expectedAddress):
             return String(format: LocalizedString("Invalid address 0x%x. Expected 0x%x", comment: "Error message for when unexpected address is received (1: received address) (2: expected address)"), address, expectedAddress)
-        case .noRileyLinkAvailable:
-            return LocalizedString("No RileyLink available", comment: "Error message shown when no response from pod was received")
+        case .noPodAvailable:
+            return LocalizedString("No Pod available", comment: "Error message shown when no response from pod was received")
         case .unfinalizedBolus:
             return LocalizedString("Bolus in progress", comment: "Error message shown when operation could not be completed due to existing bolus in progress")
         case .unfinalizedTempBasal:
@@ -114,8 +114,8 @@ extension PodCommsError: LocalizedError {
             return nil
         case .invalidAddress:
             return LocalizedString("Crosstalk possible. Please move to a new location and try again", comment: "Recovery suggestion when unexpected address received")
-        case .noRileyLinkAvailable:
-            return LocalizedString("Make sure your RileyLink is nearby and powered on", comment: "Recovery suggestion when no RileyLink is available")
+        case .noPodAvailable:
+            return LocalizedString("Make sure your pod is filled and nearby", comment: "Recovery suggestion when no pod is available")
         case .unfinalizedBolus:
             return LocalizedString("Wait for existing bolus to finish, or cancel bolus", comment: "Recovery suggestion when operation could not be completed due to existing bolus in progress")
         case .unfinalizedTempBasal:
