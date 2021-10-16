@@ -302,7 +302,7 @@ public class PodCommsSession {
         // A FaultConfig can only be done before the prime bolus or the pod will generate an 049 fault.
         if podState.setupProgress.primingNeverAttempted {
             // This FaultConfig command will set Tab5[$16] to 0 during pairing, which disables $6x faults
-            let _: StatusResponse = try send([FaultConfigCommand(nonce: podState.currentNonce, tab5Sub16: 0, tab5Sub17: 0)])
+            // Skip on Dash for now... let _: StatusResponse = try send([FaultConfigCommand(nonce: podState.currentNonce, tab5Sub16: 0, tab5Sub17: 0)])
 
             // Set up the finish pod setup reminder alert which beeps every 5 minutes for 1 hour
             let finishSetupReminder = PodAlert.finishSetupReminder
