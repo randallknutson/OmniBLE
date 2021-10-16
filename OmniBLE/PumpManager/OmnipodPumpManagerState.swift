@@ -1,6 +1,6 @@
 //
-//  OmniBLEPumpManagerState.swift
-//  OmniBLEKit
+//  OmnipodPumpManagerState.swift
+//  OmnipodKit
 //
 //  Created by Pete Schwamb on 8/4/18.
 //  Copyright © 2018 Pete Schwamb. All rights reserved.
@@ -9,7 +9,7 @@
 import LoopKit
 
 
-public struct OmniBLEPumpManagerState: RawRepresentable, Equatable {
+public struct OmnipodPumpManagerState: RawRepresentable, Equatable {
     public typealias RawValue = PumpManager.RawStateValue
     
     public static let version = 2
@@ -124,7 +124,7 @@ public struct OmniBLEPumpManagerState: RawRepresentable, Equatable {
     
     public var rawValue: RawValue {
         var value: [String : Any] = [
-            "version": OmniBLEPumpManagerState.version,
+            "version": OmnipodPumpManagerState.version,
             "timeZone": timeZone.secondsFromGMT(),
             "basalSchedule": basalSchedule.rawValue,
             "unstoredDoses": unstoredDoses.map { $0.rawValue },
@@ -139,7 +139,7 @@ public struct OmniBLEPumpManagerState: RawRepresentable, Equatable {
     }
 }
 
-extension OmniBLEPumpManagerState {
+extension OmnipodPumpManagerState {
     var hasActivePod: Bool {
         return podState?.isActive == true
     }
@@ -156,10 +156,10 @@ extension OmniBLEPumpManagerState {
 }
 
 
-extension OmniBLEPumpManagerState: CustomDebugStringConvertible {
+extension OmnipodPumpManagerState: CustomDebugStringConvertible {
     public var debugDescription: String {
         return [
-            "## OmniBLEPumpManagerState",
+            "## OmnipodPumpManagerState",
             "* timeZone: \(timeZone)",
             "* basalSchedule: \(String(describing: basalSchedule))",
             "* expirationReminderDate: \(String(describing: expirationReminderDate))",

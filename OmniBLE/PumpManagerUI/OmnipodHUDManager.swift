@@ -1,6 +1,6 @@
 //
-//  OmniBLEHUDProvider.swift
-//  OmniBLE
+//  OmnipodHUDProvider.swift
+//  OmnipodKit
 //
 //  Created by Pete Schwamb on 11/26/18.
 //  Copyright © 2018 Pete Schwamb. All rights reserved.
@@ -11,9 +11,9 @@ import LoopKit
 import LoopKitUI
 import OmniKit
 
-internal class OmniBLEHUDProvider: NSObject, HUDProvider, PodStateObserver {
+internal class OmnipodHUDProvider: NSObject, HUDProvider, PodStateObserver {
     var managerIdentifier: String {
-        return OmniBLEPumpManager.managerIdentifier
+        return OmnipodPumpManager.managerIdentifier
     }
     
     private var podState: PodState? {
@@ -45,7 +45,7 @@ internal class OmniBLEHUDProvider: NSObject, HUDProvider, PodStateObserver {
         }
     }
     
-    private let pumpManager: OmniBLEPumpManager
+    private let pumpManager: OmnipodPumpManager
     
     private var reservoirView: OmnipodReservoirView?
     
@@ -59,7 +59,7 @@ internal class OmniBLEHUDProvider: NSObject, HUDProvider, PodStateObserver {
         }
     }
     
-    public init(pumpManager: OmniBLEPumpManager) {
+    public init(pumpManager: OmnipodPumpManager) {
         self.pumpManager = pumpManager
         self.podState = pumpManager.state.podState
         super.init()

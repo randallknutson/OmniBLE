@@ -1,6 +1,6 @@
 //
 //  Ids.swift
-//  OpenPodSDK
+//  OmnipodKit
 //
 //  Created by Randall Knutson on 8/5/21.
 //

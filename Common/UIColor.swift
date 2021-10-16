@@ -1,6 +1,6 @@
 //
 //  UIColor.swift
-//  Naterade
+//  OmnipodKit
 //
 //  Created by Nathan Racklyeft on 1/23/16.
 //  Copyright © 2016 Nathan Racklyeft. All rights reserved.

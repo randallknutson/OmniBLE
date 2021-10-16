@@ -1,6 +1,6 @@
 //
 //  UnfinalizedDose.swift
-//  OmniKit
+//  OmnipodKit
 //
 //  Created by Pete Schwamb on 9/5/18.
 //  Copyright © 2018 Pete Schwamb. All rights reserved.

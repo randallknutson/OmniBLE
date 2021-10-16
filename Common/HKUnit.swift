@@ -1,6 +1,6 @@
 //
 //  HKUnit.swift
-//  Naterade
+//  OmnipodKit
 //
 //  Created by Nathan Racklyeft on 1/17/16.
 //  Copyright © 2016 Nathan Racklyeft. All rights reserved.

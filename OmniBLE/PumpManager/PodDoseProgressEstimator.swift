@@ -1,6 +1,6 @@
 //
 //  PodDoseProgressEstimator.swift
-//  OmniKit
+//  OmnipodKit
 //
 //  Created by Pete Schwamb on 3/12/19.
 //  Copyright © 2019 Pete Schwamb. All rights reserved.

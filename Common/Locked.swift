@@ -1,6 +1,6 @@
 //
 //  Locked.swift
-//  LoopKit
+//  OmnipodKit
 //
 //  Copyright © 2018 LoopKit Authors. All rights reserved.
 //

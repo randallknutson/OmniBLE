@@ -1,6 +1,6 @@
 //
-//  OmniBLEPumpManager.swift
-//  OmniBLEKit
+//  OmnipodPumpManager.swift
+//  OmnipodKit
 //
 //  Created by Pete Schwamb on 8/4/18.
 //  Copyright © 2018 Pete Schwamb. All rights reserved.
@@ -23,13 +23,13 @@ public protocol PodStateObserver: AnyObject {
     func podStateDidUpdate(_ state: PodState?)
 }
 
-public enum OmniBLEPumpManagerError: Error {
+public enum OmnipodPumpManagerError: Error {
     case noPodPaired
     case podAlreadyPaired
     case notReadyForCannulaInsertion
 }
 
-extension OmniBLEPumpManagerError: LocalizedError {
+extension OmnipodPumpManagerError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .noPodPaired:
@@ -64,64 +64,57 @@ extension OmniBLEPumpManagerError: LocalizedError {
     }
 }
 
-public class OmniBLEPumpManager: DeviceManager {
-    public var debugDescription: String
-    
-    public init(state: OmniBLEPumpManagerState) {
-        self.lockedState = Locked(state)
-        self.lockedPodComms = Locked(PodComms(podState: state.podState))
-        self.bluetoothManager = BluetoothManager(autoConnectIDs: [])
+public class OmnipodPumpManager: DeviceManager {
 
-        self.debugDescription = ""
+    public init(state: OmnipodPumpManagerState) {
+        self.lockedState = Locked(state)
+        self.omnipod = Omnipod(state.podState)
+        
+        self.omnipod.delegate = self
+
         self.podComms.delegate = self
         self.podComms.messageLogger = self
     }
 
     public required convenience init?(rawState: PumpManager.RawStateValue) {
-        guard let state = OmniBLEPumpManagerState(rawValue: rawState) else
+        guard let state = OmnipodPumpManagerState(rawValue: rawState) else
         {
             return nil
         }
 
-//        let rileyLinkConnectionManager = RileyLinkConnectionManager(state: connectionManagerState)
-//
         self.init(state: state)
-
-//        rileyLinkConnectionManager.delegate = self
     }
 
     private var podComms: PodComms {
         get {
-            return lockedPodComms.value
+            return omnipod.podComms
         }
         set {
-            lockedPodComms.value = newValue
+            omnipod.podComms = newValue
         }
     }
     
-    private let lockedPodComms: Locked<PodComms>
-    
-    private let bluetoothManager: BluetoothManager
+    private let omnipod: Omnipod
 
     private let podStateObservers = WeakSynchronizedSet<PodStateObserver>()
 
-    public var state: OmniBLEPumpManagerState {
+    public var state: OmnipodPumpManagerState {
         return lockedState.value
     }
 
-    private func setState(_ changes: (_ state: inout OmniBLEPumpManagerState) -> Void) -> Void {
+    private func setState(_ changes: (_ state: inout OmnipodPumpManagerState) -> Void) -> Void {
         return setStateWithResult(changes)
     }
 
-    private func mutateState(_ changes: (_ state: inout OmniBLEPumpManagerState) -> Void) -> OmniBLEPumpManagerState {
-        return setStateWithResult({ (state) -> OmniBLEPumpManagerState in
+    private func mutateState(_ changes: (_ state: inout OmnipodPumpManagerState) -> Void) -> OmnipodPumpManagerState {
+        return setStateWithResult({ (state) -> OmnipodPumpManagerState in
             changes(&state)
             return state
         })
     }
 
-    private func setStateWithResult<ReturnType>(_ changes: (_ state: inout OmniBLEPumpManagerState) -> ReturnType) -> ReturnType {
-        var oldValue: OmniBLEPumpManagerState!
+    private func setStateWithResult<ReturnType>(_ changes: (_ state: inout OmnipodPumpManagerState) -> ReturnType) -> ReturnType {
+        var oldValue: OmnipodPumpManagerState!
         var returnType: ReturnType!
         let newValue = lockedState.mutate { (state) in
             oldValue = state
@@ -171,7 +164,7 @@ public class OmniBLEPumpManager: DeviceManager {
         return returnType
     }
     
-    private let lockedState: Locked<OmniBLEPumpManagerState>
+    private let lockedState: Locked<OmnipodPumpManagerState>
 
     private let statusObservers = WeakSynchronizedSet<PumpManagerStatusObserver>()
 
@@ -197,84 +190,26 @@ public class OmniBLEPumpManager: DeviceManager {
 
     private let pumpDelegate = WeakSynchronizedDelegate<PumpManagerDelegate>()
 
-    public let log = OSLog(category: "OmniBLEPumpManager")
+    public let log = OSLog(category: "OmnipodPumpManager")
 
     private var lastLoopRecommendation: Date?
-
-    // MARK: - RileyLink Updates
-
-//    override public var rileyLinkConnectionManagerState: RileyLinkConnectionManagerState? {
-//        get {
-//            return state.rileyLinkConnectionManagerState
-//        }
-//        set {
-//            setState { (state) in
-//                state.rileyLinkConnectionManagerState = newValue
-//            }
-//        }
-//    }
-
-//    override public func deviceTimerDidTick(_ device: RileyLinkDevice) {
-//        pumpDelegate.notify { (delegate) in
-//            delegate?.pumpManagerBLEHeartbeatDidFire(self)
-//        }
-//    }
     
-//    public var rileyLinkBatteryAlertLevel: Int? {
-//        get {
-//            return state.rileyLinkBatteryAlertLevel
-//        }
-//        set {
-//            setState { state in
-//                state.rileyLinkBatteryAlertLevel = newValue
-//            }
-//        }
-//    }
-    
-//    public override func device(_ device: RileyLinkDevice, didUpdateBattery level: Int) {
-//        let repeatInterval: TimeInterval = .hours(1)
-//
-//        if let alertLevel = state.rileyLinkBatteryAlertLevel,
-//           level <= alertLevel,
-//           state.lastRileyLinkBatteryAlertDate.addingTimeInterval(repeatInterval) < Date()
-//        {
-//            self.setState { state in
-//                state.lastRileyLinkBatteryAlertDate = Date()
-//            }
-//
-//            // HACK Alert. This is temporary for the 2.2.5 release. Dev and newer releases will use the new Loop Alert facility
-//            let notification = UNMutableNotificationContent()
-//            notification.body = String(format: LocalizedString("\"%1$@\" has a low battery", comment: "Format string for low battery alert body for RileyLink. (1: device name)"), device.name ?? "unnamed")
-//            notification.title = LocalizedString("Low RileyLink Battery", comment: "Title for RileyLink low battery alert")
-//            notification.sound = .default
-//            notification.categoryIdentifier = LoopNotificationCategory.loopNotRunning.rawValue
-//            notification.threadIdentifier = LoopNotificationCategory.loopNotRunning.rawValue
-//            let request = UNNotificationRequest(
-//                identifier: "batteryalert.rileylink",
-//                content: notification,
-//                trigger: nil)
-//            UNUserNotificationCenter.current().add(request)
-//        }
-//    }
-
-
     // MARK: - CustomDebugStringConvertible
 
-//    override public var debugDescription: String {
-//        let lines = [
-//            "## OmniBLEPumpManager",
-//            "podComms: \(String(reflecting: podComms))",
-//            "state: \(String(reflecting: state))",
-//            "status: \(String(describing: status))",
-//            "podStateObservers.count: \(podStateObservers.cleanupDeallocatedElements().count)",
-//            "statusObservers.count: \(statusObservers.cleanupDeallocatedElements().count)",
-//            super.debugDescription,
-//        ]
-//        return lines.joined(separator: "\n")
-//    }
+    public var debugDescription: String {
+        let lines = [
+            "## OmnipodPumpManager",
+            "podComms: \(String(reflecting: podComms))",
+            "state: \(String(reflecting: state))",
+            "status: \(String(describing: status))",
+            "podStateObservers.count: \(podStateObservers.cleanupDeallocatedElements().count)",
+            "statusObservers.count: \(statusObservers.cleanupDeallocatedElements().count)",
+        ]
+        return lines.joined(separator: "\n")
+    }
 }
 
-extension OmniBLEPumpManager {
+extension OmnipodPumpManager {
     // MARK: - PodStateObserver
     
     public func addPodStateObserver(_ observer: PodStateObserver, queue: DispatchQueue) {
@@ -285,15 +220,7 @@ extension OmniBLEPumpManager {
         podStateObservers.removeElement(observer)
     }
 
-    private func updateBLEHeartbeatPreference() {
-        dispatchPrecondition(condition: .notOnQueue(delegateQueue))
-
-//        rileyLinkDeviceProvider.timerTickEnabled = self.state.isPumpDataStale || pumpDelegate.call({ (delegate) -> Bool in
-//            return delegate?.pumpManagerMustProvideBLEHeartbeat(self) == true
-//        })
-    }
-
-    private func status(for state: OmniBLEPumpManagerState) -> PumpManagerStatus {
+    private func status(for state: OmnipodPumpManagerState) -> PumpManagerStatus {
         return PumpManagerStatus(
             timeZone: state.timeZone,
             device: device(for: state),
@@ -303,7 +230,7 @@ extension OmniBLEPumpManager {
         )
     }
 
-    private func device(for state: OmniBLEPumpManagerState) -> HKDevice {
+    private func device(for state: OmnipodPumpManagerState) -> HKDevice {
         if let podState = state.podState {
             return HKDevice(
                 name: type(of: self).managerIdentifier,
@@ -329,7 +256,7 @@ extension OmniBLEPumpManager {
         }
     }
 
-    private func basalDeliveryState(for state: OmniBLEPumpManagerState) -> PumpManagerStatus.BasalDeliveryState {
+    private func basalDeliveryState(for state: OmnipodPumpManagerState) -> PumpManagerStatus.BasalDeliveryState {
         guard let podState = state.podState else {
             return .suspended(state.lastPumpDataReportDate ?? .distantPast)
         }
@@ -361,7 +288,7 @@ extension OmniBLEPumpManager {
         }
     }
 
-    private func bolusState(for state: OmniBLEPumpManagerState) -> PumpManagerStatus.BolusState {
+    private func bolusState(for state: OmnipodPumpManagerState) -> PumpManagerStatus.BolusState {
         guard let podState = state.podState else {
             return .none
         }
@@ -417,15 +344,15 @@ extension OmniBLEPumpManager {
 
     // MARK: - Notifications
 
-    static let podExpirationNotificationIdentifier = "OmniBLE:\(LoopNotificationCategory.pumpExpired.rawValue)"
+    static let podExpirationNotificationIdentifier = "Omnipod:\(LoopNotificationCategory.pumpExpired.rawValue)"
 
-    func schedulePodExpirationNotification(for state: OmniBLEPumpManagerState) {
+    func schedulePodExpirationNotification(for state: OmnipodPumpManagerState) {
         guard let expirationReminderDate = state.expirationReminderDate,
             expirationReminderDate.timeIntervalSinceNow > 0,
             let expiresAt = state.podState?.expiresAt
         else {
             pumpDelegate.notify { (delegate) in
-                delegate?.clearNotification(for: self, identifier: OmniBLEPumpManager.podExpirationNotificationIdentifier)
+                delegate?.clearNotification(for: self, identifier: OmnipodPumpManager.podExpirationNotificationIdentifier)
             }
             return
         }
@@ -454,7 +381,7 @@ extension OmniBLEPumpManager {
         )
 
         pumpDelegate.notify { (delegate) in
-            delegate?.scheduleNotification(for: self, identifier: OmniBLEPumpManager.podExpirationNotificationIdentifier, content: content, trigger: trigger)
+            delegate?.scheduleNotification(for: self, identifier: OmnipodPumpManager.podExpirationNotificationIdentifier, content: content, trigger: trigger)
         }
     }
 
@@ -462,7 +389,7 @@ extension OmniBLEPumpManager {
 
     // Does not support concurrent callers. Not thread-safe.
     private func forgetPod(completion: @escaping () -> Void) {
-        let resetPodState = { (_ state: inout OmniBLEPumpManagerState) in
+        let resetPodState = { (_ state: inout OmnipodPumpManagerState) in
             self.podComms = PodComms(podState: nil)
             self.podComms.delegate = self
             self.podComms.messageLogger = self
@@ -543,7 +470,6 @@ extension OmniBLEPumpManager {
             }
         }
         #else
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
         let primeSession = { (result: PodComms.SessionRunResult) in
             switch result {
             case .success(let session):
@@ -590,7 +516,7 @@ extension OmniBLEPumpManager {
                 }
             }
 
-            self.podComms.assignAddressAndSetupPod(address: self.state.pairingAttemptAddress!, using: deviceSelector, timeZone: .currentFixed, messageLogger: self) { (result) in
+            self.podComms.assignAddressAndSetupPod(address: self.state.pairingAttemptAddress!, timeZone: .currentFixed, messageLogger: self) { (result) in
                 
                 if case .success = result {
                     self.lockedState.mutate { (state) in
@@ -604,7 +530,7 @@ extension OmniBLEPumpManager {
         } else {
             self.log.default("Pod already paired. Continuing.")
 
-            self.podComms.runSession(withName: "Prime pod", using: deviceSelector) { (result) in
+            self.podComms.runSession(withName: "Prime pod") { (result) in
                 // Calls completion
                 primeSession(result)
             }
@@ -631,7 +557,7 @@ extension OmniBLEPumpManager {
             completion(result)
         }
         #else
-        let preError = setStateWithResult({ (state) -> OmniBLEPumpManagerError? in
+        let preError = setStateWithResult({ (state) -> OmnipodPumpManagerError? in
             guard let podState = state.podState, let expiresAt = podState.expiresAt, podState.readyForCannulaInsertion else
             {
                 return .notReadyForCannulaInsertion
@@ -651,10 +577,9 @@ extension OmniBLEPumpManager {
             return
         }
 
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
         let timeZone = self.state.timeZone
 
-        self.podComms.runSession(withName: "Insert cannula", using: deviceSelector) { (result) in
+        self.podComms.runSession(withName: "Insert cannula") { (result) in
             switch result {
             case .success(let session):
                 do {
@@ -680,8 +605,7 @@ extension OmniBLEPumpManager {
     }
 
     public func checkCannulaInsertionFinished(completion: @escaping (Error?) -> Void) {
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
-        self.podComms.runSession(withName: "Check cannula insertion finished", using: deviceSelector) { (result) in
+        self.podComms.runSession(withName: "Check cannula insertion finished") { (result) in
             switch result {
             case .success(let session):
                 do {
@@ -700,7 +624,7 @@ extension OmniBLEPumpManager {
 
     public func refreshStatus(emitConfirmationBeep: Bool = false, completion: ((_ result: PumpManagerResult<StatusResponse>) -> Void)? = nil) {
         guard self.hasActivePod else {
-            completion?(.failure(OmniBLEPumpManagerError.noPodPaired))
+            completion?(.failure(OmnipodPumpManagerError.noPodPaired))
             return
         }
 
@@ -714,8 +638,7 @@ extension OmniBLEPumpManager {
             return
         }
         
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
-        podComms.runSession(withName: "Get pod status", using: deviceSelector) { (result) in
+        podComms.runSession(withName: "Get pod status") { (result) in
             do {
                 switch result {
                 case .success(let session):
@@ -746,8 +669,7 @@ extension OmniBLEPumpManager {
             return
         }
 
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
-        self.podComms.runSession(withName: "Acknowledge Alarms", using: deviceSelector) { (result) in
+        self.podComms.runSession(withName: "Acknowledge Alarms") { (result) in
             let session: PodCommsSession
             switch result {
             case .success(let s):
@@ -770,7 +692,7 @@ extension OmniBLEPumpManager {
     public func setTime(completion: @escaping (Error?) -> Void) {
         
         guard state.hasActivePod else {
-            completion(OmniBLEPumpManagerError.noPodPaired)
+            completion(OmnipodPumpManagerError.noPodPaired)
             return
         }
 
@@ -780,8 +702,7 @@ extension OmniBLEPumpManager {
         }
 
         let timeZone = TimeZone.currentFixed
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
-        self.podComms.runSession(withName: "Set time zone", using: deviceSelector) { (result) in
+        self.podComms.runSession(withName: "Set time zone") { (result) in
             switch result {
             case .success(let session):
                 do {
@@ -828,8 +749,7 @@ extension OmniBLEPumpManager {
 
         let timeZone = self.state.timeZone
 
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
-        self.podComms.runSession(withName: "Save Basal Profile", using: deviceSelector) { (result) in
+        self.podComms.runSession(withName: "Save Basal Profile") { (result) in
             do {
                 switch result {
                 case .success(let session):
@@ -875,16 +795,15 @@ extension OmniBLEPumpManager {
         guard self.state.podState != nil else {
             if forgetPodOnFail {
                 forgetPod(completion: {
-                    completion(OmniBLEPumpManagerError.noPodPaired)
+                    completion(OmnipodPumpManagerError.noPodPaired)
                 })
             } else {
-                completion(OmniBLEPumpManagerError.noPodPaired)
+                completion(OmnipodPumpManagerError.noPodPaired)
             }
             return
         }
 
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
-        self.podComms.runSession(withName: "Deactivate pod", using: deviceSelector) { (result) in
+        self.podComms.runSession(withName: "Deactivate pod") { (result) in
             switch result {
             case .success(let session):
                 do {
@@ -918,12 +837,11 @@ extension OmniBLEPumpManager {
     public func readPodStatus(completion: @escaping (Result<DetailedStatus, Error>) -> Void) {
         // use hasSetupPod to be able to read pod info from a faulted Pod
         guard self.hasSetupPod else {
-            completion(.failure(OmniBLEPumpManagerError.noPodPaired))
+            completion(.failure(OmnipodPumpManagerError.noPodPaired))
             return
         }
 
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
-        podComms.runSession(withName: "Read pod status", using: deviceSelector) { (result) in
+        podComms.runSession(withName: "Read pod status") { (result) in
             do {
                 switch result {
                 case .success(let session):
@@ -945,12 +863,11 @@ extension OmniBLEPumpManager {
     public func testingCommands(completion: @escaping (Error?) -> Void) {
         // use hasSetupPod so the user can see any fault info and post fault commands can be attempted
         guard self.hasSetupPod else {
-            completion(OmniBLEPumpManagerError.noPodPaired)
+            completion(OmnipodPumpManagerError.noPodPaired)
             return
         }
 
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
-        self.podComms.runSession(withName: "Testing Commands", using: deviceSelector) { (result) in
+        self.podComms.runSession(withName: "Testing Commands") { (result) in
             switch result {
             case .success(let session):
                 do {
@@ -968,7 +885,7 @@ extension OmniBLEPumpManager {
 
     public func playTestBeeps(completion: @escaping (Error?) -> Void) {
         guard self.hasActivePod else {
-            completion(OmniBLEPumpManagerError.noPodPaired)
+            completion(OmnipodPumpManagerError.noPodPaired)
             return
         }
         guard state.podState?.unfinalizedBolus?.scheduledCertainty == .uncertain || state.podState?.unfinalizedBolus?.isFinished != false else {
@@ -977,8 +894,7 @@ extension OmniBLEPumpManager {
             return
         }
 
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
-        self.podComms.runSession(withName: "Play Test Beeps", using: deviceSelector) { (result) in
+        self.podComms.runSession(withName: "Play Test Beeps") { (result) in
             switch result {
             case .success(let session):
                 let basalCompletionBeep = self.confirmationBeeps
@@ -1001,7 +917,7 @@ extension OmniBLEPumpManager {
     public func readPulseLog(completion: @escaping (Result<String, Error>) -> Void) {
         // use hasSetupPod to be able to read pulse log from a faulted Pod
         guard self.hasSetupPod else {
-            completion(.failure(OmniBLEPumpManagerError.noPodPaired))
+            completion(.failure(OmnipodPumpManagerError.noPodPaired))
             return
         }
         guard state.podState?.isFaulted == true || state.podState?.unfinalizedBolus?.scheduledCertainty == .uncertain || state.podState?.unfinalizedBolus?.isFinished != false else
@@ -1011,8 +927,7 @@ extension OmniBLEPumpManager {
             return
         }
 
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
-        self.podComms.runSession(withName: "Read Pulse Log", using: deviceSelector) { (result) in
+        self.podComms.runSession(withName: "Read Pulse Log") { (result) in
             switch result {
             case .success(let session):
                 do {
@@ -1044,9 +959,8 @@ extension OmniBLEPumpManager {
             return
         }
 
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
         let name: String = enabled ? "Enable Confirmation Beeps" : "Disable Confirmation Beeps"
-        self.podComms.runSession(withName: name, using: deviceSelector) { (result) in
+        self.podComms.runSession(withName: name) { (result) in
             switch result {
             case .success(let session):
                 let beepConfigType: BeepConfigType = enabled ? .bipBip : .noBeep
@@ -1072,7 +986,7 @@ extension OmniBLEPumpManager {
 }
 
 // MARK: - PumpManager
-extension OmniBLEPumpManager: PumpManager {
+extension OmnipodPumpManager: PumpManager {
 
     public static let managerIdentifier: String = "Omnipod Dash"
 
@@ -1157,12 +1071,11 @@ extension OmniBLEPumpManager: PumpManager {
     public func suspendDelivery(completion: @escaping (Error?) -> Void) {
         let suspendTime: TimeInterval = 0 // Place holder for untimed suspends until interface is updated
         guard self.hasActivePod else {
-            completion(OmniBLEPumpManagerError.noPodPaired)
+            completion(OmnipodPumpManagerError.noPodPaired)
             return
         }
 
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
-        self.podComms.runSession(withName: "Suspend", using: deviceSelector) { (result) in
+        self.podComms.runSession(withName: "Suspend") { (result) in
 
             let session: PodCommsSession
             switch result {
@@ -1201,12 +1114,11 @@ extension OmniBLEPumpManager: PumpManager {
 
     public func resumeDelivery(completion: @escaping (Error?) -> Void) {
         guard self.hasActivePod else {
-            completion(OmniBLEPumpManagerError.noPodPaired)
+            completion(OmnipodPumpManagerError.noPodPaired)
             return
         }
 
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
-        self.podComms.runSession(withName: "Resume", using: deviceSelector) { (result) in
+        self.podComms.runSession(withName: "Resume") { (result) in
 
             let session: PodCommsSession
             switch result {
@@ -1309,15 +1221,14 @@ extension OmniBLEPumpManager: PumpManager {
 
     public func enactBolus(units: Double, at startDate: Date, willRequest: @escaping (DoseEntry) -> Void, completion: @escaping (PumpManagerResult<DoseEntry>) -> Void) {
         guard self.hasActivePod else {
-            completion(.failure(SetBolusError.certain(OmniBLEPumpManagerError.noPodPaired)))
+            completion(.failure(SetBolusError.certain(OmnipodPumpManagerError.noPodPaired)))
             return
         }
 
         // Round to nearest supported volume
         let enactUnits = roundToSupportedBolusVolume(units: units)
 
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
-        self.podComms.runSession(withName: "Bolus", using: deviceSelector) { (result) in
+        self.podComms.runSession(withName: "Bolus") { (result) in
             let session: PodCommsSession
             switch result {
             case .success(let s):
@@ -1386,12 +1297,11 @@ extension OmniBLEPumpManager: PumpManager {
 
     public func cancelBolus(completion: @escaping (PumpManagerResult<DoseEntry?>) -> Void) {
         guard self.hasActivePod else {
-            completion(.failure(OmniBLEPumpManagerError.noPodPaired))
+            completion(.failure(OmnipodPumpManagerError.noPodPaired))
             return
         }
 
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
-        self.podComms.runSession(withName: "Cancel Bolus", using: deviceSelector) { (result) in
+        self.podComms.runSession(withName: "Cancel Bolus") { (result) in
 
             let session: PodCommsSession
             switch result {
@@ -1445,15 +1355,14 @@ extension OmniBLEPumpManager: PumpManager {
 
     public func enactTempBasal(unitsPerHour: Double, for duration: TimeInterval, completion: @escaping (PumpManagerResult<DoseEntry>) -> Void) {
         guard self.hasActivePod else {
-            completion(.failure(OmniBLEPumpManagerError.noPodPaired))
+            completion(.failure(OmnipodPumpManagerError.noPodPaired))
             return
         }
 
         // Round to nearest supported rate
         let rate = roundToSupportedBasalRate(unitsPerHour: unitsPerHour)
 
-        let deviceSelector = self.bluetoothManager.firstConnectedDevice
-        self.podComms.runSession(withName: "Enact Temp Basal", using: deviceSelector) { (result) in
+        self.podComms.runSession(withName: "Enact Temp Basal") { (result) in
             self.log.info("Enact temp basal %.03fU/hr for %ds", rate, Int(duration))
             let session: PodCommsSession
             switch result {
@@ -1598,7 +1507,7 @@ extension OmniBLEPumpManager: PumpManager {
     }
 }
 
-extension OmniBLEPumpManager: MessageLogger {
+extension OmnipodPumpManager: MessageLogger {
     func didSend(_ message: Data) {
         log.default("didSend: %{public}@", message.hexadecimalString)
         self.logDeviceCommunication(message.hexadecimalString, type: .send)
@@ -1610,7 +1519,17 @@ extension OmniBLEPumpManager: MessageLogger {
     }
 }
 
-extension OmniBLEPumpManager: PodCommsDelegate {
+extension OmnipodPumpManager: OmnipodDelegate {
+    public func omnipod(_ omnipod: Omnipod) {
+        
+    }
+    
+    public func omnipod(_ omnipod: Omnipod, didError error: Error) {
+        
+    }
+}
+
+extension OmnipodPumpManager: PodCommsDelegate {
     func podComms(_ podComms: PodComms, didChange podState: PodState) {
         setState { (state) in
             // Check for any updates to bolus certainty, and log them

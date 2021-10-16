@@ -1,6 +1,6 @@
 //
 //  BLEPacket.swift
-//  OpenPodSDK
+//  OmnipodKit
 //
 //  Created by Randall Knutson on 8/11/21.
 //
@@ -50,25 +50,25 @@ struct FirstBlePacket: BlePacket {
     
     static func parse(payload: Data) throws -> FirstBlePacket {
         guard payload.count >= HEADER_SIZE_WITH_MIDDLE_PACKETS else {
-            throw BLEErrors.MessageIOException("Wrong packet size")
+            throw BluetoothErrors.MessageIOException("Wrong packet size")
         }
 
         if (Int(payload[0]) != 0) {
             // most likely we lost the first packet.
-            throw BLEErrors.IncorrectPacketException(payload, 0)
+            throw BluetoothErrors.IncorrectPacketException(payload, 0)
         }
         let fullFragments = Int(payload[1])
-        guard (fullFragments < MAX_FRAGMENTS) else { throw BLEErrors.MessageIOException("Received more than $MAX_FRAGMENTS fragments") }
+        guard (fullFragments < MAX_FRAGMENTS) else { throw BluetoothErrors.MessageIOException("Received more than $MAX_FRAGMENTS fragments") }
 
         guard payload.count >= HEADER_SIZE_WITHOUT_MIDDLE_PACKETS else {
-            throw BLEErrors.MessageIOException("Wrong packet size")
+            throw BluetoothErrors.MessageIOException("Wrong packet size")
         }
 
         if (fullFragments == 0) {
             let rest = payload[6]
             let end = min(Int(rest) + HEADER_SIZE_WITHOUT_MIDDLE_PACKETS, payload.count)
             guard payload.count >= end else {
-                throw BLEErrors.MessageIOException("Wrong packet size")
+                throw BluetoothErrors.MessageIOException("Wrong packet size")
             }
 
             return FirstBlePacket(
@@ -80,7 +80,7 @@ struct FirstBlePacket: BlePacket {
             )
         }
         else if (payload.count < MAX_SIZE) {
-            throw BLEErrors.IncorrectPacketException(payload, 0)
+            throw BluetoothErrors.IncorrectPacketException(payload, 0)
         }
         else {
             return FirstBlePacket(
@@ -101,7 +101,7 @@ struct MiddleBlePacket: BlePacket {
     }
     
     static func parse(payload: Data) throws -> MiddleBlePacket {
-        guard payload.count >= MAX_SIZE else { throw BLEErrors.MessageIOException("Wrong packet size") }
+        guard payload.count >= MAX_SIZE else { throw BluetoothErrors.MessageIOException("Wrong packet size") }
         return MiddleBlePacket(
             index: payload[0],
             payload: payload.subdata(in: 1..<MAX_SIZE)
@@ -129,12 +129,12 @@ struct LastBlePacket: BlePacket {
     }
     
     static func parse(payload: Data) throws -> LastBlePacket {
-        guard payload.count >= LastBlePacket.HEADER_SIZE else { throw BLEErrors.MessageIOException("Wrong packet size") }
+        guard payload.count >= LastBlePacket.HEADER_SIZE else { throw BluetoothErrors.MessageIOException("Wrong packet size") }
 
         let rest = payload[1]
         let end = min(Int(rest) + LastBlePacket.HEADER_SIZE, payload.count)
 
-        guard payload.count >= end else { throw BLEErrors.MessageIOException("Wrong packet size") }
+        guard payload.count >= end else { throw BluetoothErrors.MessageIOException("Wrong packet size") }
 
         return LastBlePacket(
             index: payload[0],
@@ -157,9 +157,9 @@ struct LastOptionalPlusOneBlePacket: BlePacket {
     }
 
     static func parse(payload: Data) throws -> LastOptionalPlusOneBlePacket {
-        guard payload.count >= 2 else { throw BLEErrors.MessageIOException("Wrong packet size") }
+        guard payload.count >= 2 else { throw BluetoothErrors.MessageIOException("Wrong packet size") }
         let size = payload[1]
-        guard payload.count >= HEADER_SIZE + Int(size) else { throw BLEErrors.MessageIOException("Wrong packet size") }
+        guard payload.count >= HEADER_SIZE + Int(size) else { throw BluetoothErrors.MessageIOException("Wrong packet size") }
 
         return LastOptionalPlusOneBlePacket(
             index: payload[0],

@@ -1,6 +1,6 @@
 //
 //  MessagePacket.swift
-//  OpenPodSDK
+//  OmnipodKit
 //
 //  Created by Randall Knutson on 8/4/21.
 //
@@ -13,11 +13,11 @@ struct MessagePacket {
 
     static func parse(payload: Data) throws -> MessagePacket {
         guard payload.count >= HEADER_SIZE else {
-            throw BLEErrors.CouldNotParseMessageException("Incorrect header size")
+            throw BluetoothErrors.CouldNotParseMessageException("Incorrect header size")
         }
 
         guard (String(data: payload.subdata(in: 0..<2), encoding: .utf8) == MAGIC_PATTERN) else {
-            throw BLEErrors.CouldNotParseMessageException("Magic pattern mismatch")
+            throw BluetoothErrors.CouldNotParseMessageException("Magic pattern mismatch")
         }
         let payloadData = payload
         
@@ -34,13 +34,13 @@ struct MessagePacket {
         let gateway = f2.get(3) != 0
         let type: MessageType = MessageType(rawValue: UInt8(f1.get(7) | (f1.get(6) << 1) | (f1.get(5) << 2) | (f1.get(4) << 3))) ?? .CLEAR
         if (version != 0) {
-            throw BLEErrors.CouldNotParseMessageException("Wrong version")
+            throw BluetoothErrors.CouldNotParseMessageException("Wrong version")
         }
         let sequenceNumber = payloadData[4]
         let ackNumber = payloadData[5]
         let size = (UInt16(payloadData[6]) << 3) | (UInt16(payloadData[7]) >> 5)
         guard payload.count >= (Int(size) + MessagePacket.HEADER_SIZE) else {
-            throw BLEErrors.CouldNotParseMessageException("Wrong payload size")
+            throw BluetoothErrors.CouldNotParseMessageException("Wrong payload size")
         }
 
         let payloadEnd = Int(16 + size + (type == MessageType.ENCRYPTED ? 8 : 0))

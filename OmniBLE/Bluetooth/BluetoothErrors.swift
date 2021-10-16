@@ -1,6 +1,6 @@
 //
-//  BLEErrors.swift
-//  OpenPodSDK
+//  BluetoothErrors.swift
+//  OmnipodKit
 //
 //  Created by Randall Knutson on 8/3/21.
 //
@@ -8,7 +8,7 @@
 import Foundation
 import CoreBluetooth
 
-enum BLEErrors: Error {
+enum BluetoothErrors: Error {
     case DiscoveredInvalidPodException(_ message: String, _ data: [CBUUID])
     case InvalidLTKKey(_ message: String)
     case PairingException(_ message: String)

@@ -23,6 +23,6 @@
 	<key>com.loopkit.Loop.PumpManagerIdentifier</key>
 	<string>Omnipod Dash</string>
 	<key>NSPrincipalClass</key>
-	<string>OmniBLE.OmniBLEPlugin</string>
+	<string>OmniBLE.OmnipodPlugin</string>
 </dict>
 </plist>

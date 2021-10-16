@@ -1,10 +1,11 @@
 //
 //  LTKExchanger.swift
-//  OpenPodSDK
+//  OmnipodKit
 //
 //  Created by Randall Knutson on 8/3/21.
 //
 import Foundation
+import os.log
 
 class LTKExchanger {
     static let GET_POD_STATUS_HEX_COMMAND: Data = Data(hex: "ffc32dbd08030e0100008a")
@@ -18,14 +19,16 @@ class LTKExchanger {
     static private let P0 = "P0="
     static private let UNKNOWN_P0_PAYLOAD = Data([0xa5])
 
-    private let device: OmniBLEDevice
+    private let manager: PeripheralManager
     private let ids: Ids
     private let podAddress = Ids.notActivated()
     private let keyExchange = try! KeyExchange(X25519KeyGenerator(), RandomByteGenerator())
     private var seq: UInt8 = 1
     
-    init(device: OmniBLEDevice, ids: Ids) {
-        self.device = device
+    public let log = OSLog(category: "LTKExchanger")
+
+    init(manager: PeripheralManager, ids: Ids) {
+        self.manager = manager
         self.ids = ids
     }
 
@@ -53,9 +56,9 @@ class LTKExchanger {
         try throwOnSendError(sps1.messagePacket, LTKExchanger.SPS1)
 
         print("Reading sps1")
-        let podSps1 = try device.manager.readMessage(false)
+        let podSps1 = try manager.readMessage(false)
         guard let podSps1 = podSps1 else {
-            throw BLEErrors.PairingException("Could not read SPS1")
+            throw BluetoothErrors.PairingException("Could not read SPS1")
         }
         try processSps1FromPod(podSps1)
         // now we have all the data to generate: confPod, confPdm, ltk and noncePrefix
@@ -71,9 +74,9 @@ class LTKExchanger {
         )
         try throwOnSendError(sps2.messagePacket, LTKExchanger.SPS2)
 
-        let podSps2 = try device.manager.readMessage()
+        let podSps2 = try manager.readMessage()
         guard let podSps2 = podSps2 else {
-            throw BLEErrors.PairingException("Could not read SPS2")
+            throw BluetoothErrors.PairingException("Could not read SPS2")
         }
         try validatePodSps2(podSps2)
         // No exception throwing after this point. It is possible that the pod saved the LTK
@@ -87,19 +90,19 @@ class LTKExchanger {
             keys: [LTKExchanger.SP0GP0],
             payloads: []
         )
-        let result = device.manager.sendMessage(sp0gp0.messagePacket)
+        let result = manager.sendMessage(sp0gp0.messagePacket)
         guard ((result as? MessageSendSuccess) != nil) else {
-            throw BLEErrors.PairingException("Error sending SP0GP0: \(result)")
+            throw BluetoothErrors.PairingException("Error sending SP0GP0: \(result)")
         }
 
-        let p0 = try device.manager.readMessage()
+        let p0 = try manager.readMessage()
         guard let p0 = p0 else {
-            throw BLEErrors.PairingException("Could not read P0")
+            throw BluetoothErrors.PairingException("Could not read P0")
         }
         try validateP0(p0)
         
         guard keyExchange.ltk.count == 16 else {
-            throw BLEErrors.InvalidLTKKey("Invalid Key, got \(String(data: keyExchange.ltk, encoding: .utf8) ?? "")")
+            throw BluetoothErrors.InvalidLTKKey("Invalid Key, got \(String(data: keyExchange.ltk, encoding: .utf8) ?? "")")
         }
 
         return PairResult(
@@ -109,28 +112,28 @@ class LTKExchanger {
     }
 
     private func throwOnSendError(_ msg: MessagePacket, _ msgType: String) throws {
-        let result = device.manager.sendMessage(msg)
+        let result = manager.sendMessage(msg)
         guard ((result as? MessageSendSuccess) != nil) else {
             print(result)
-            throw BLEErrors.PairingException("Could not send or confirm $msgType: \(result)")
+            throw BluetoothErrors.PairingException("Could not send or confirm $msgType: \(result)")
         }
     }
 
     private func processSps1FromPod(_ msg: MessagePacket) throws {
-//        aapsLogger.debug(LTag.PUMPBTCOMM, "Received SPS1 from pod: ${msg.payload.toHex()}")
+        self.log.debug("Received SPS1 from pod: %{msg.payload}%")
 
         let payload = try StringLengthPrefixEncoding.parseKeys([LTKExchanger.SPS1], msg.payload)[0]
         try keyExchange.updatePodPublicData(payload)
     }
 
     private func validatePodSps2(_ msg: MessagePacket) throws {
-//        print(LTag.PUMPBTCOMM, "Received SPS2 from pod: ${msg.payload.toHex()}")
+        self.log.debug("Received SPS2 from pod: %{msg.payload}%")
 
         let payload = try StringLengthPrefixEncoding.parseKeys([LTKExchanger.SPS2], msg.payload)[0]
-//        aapsLogger.debug(LTag.PUMPBTCOMM, "SPS2 payload from pod: ${payload.toHex()}")
+        self.log.debug("SPS2 payload from pod: %{payload}%")
 
         if (payload.count != KeyExchange.CMAC_SIZE) {
-            throw BLEErrors.MessageIOException("Invalid payload size")
+            throw BluetoothErrors.MessageIOException("Invalid payload size")
         }
         try keyExchange.validatePodConf(payload)
     }
@@ -142,12 +145,12 @@ class LTKExchanger {
     }
 
     private func validateP0(_ msg: MessagePacket) throws {
-//        aapsLogger.debug(LTag.PUMPBTCOMM, "Received P0 from pod: ${msg.payload.toHex()}")
+        self.log.debug("Received P0 from pod: %{msg.payload}%")
 
         let payload = try StringLengthPrefixEncoding.parseKeys([LTKExchanger.P0], msg.payload)[0]
-//        aapsLogger.debug(LTag.PUMPBTCOMM, "P0 payload from pod: ${payload.toHex()}")
+        self.log.debug("P0 payload from pod: %{payload}%")
         if (payload != LTKExchanger.UNKNOWN_P0_PAYLOAD) {
-            throw BLEErrors.PairingException("Reveived invalid P0 payload: \(payload)")
+            throw BluetoothErrors.PairingException("Reveived invalid P0 payload: \(payload)")
         }
     }
 }

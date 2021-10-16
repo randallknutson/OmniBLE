@@ -1,6 +1,6 @@
 //
 //  PodCommands.swift
-//  OmniBLE
+//  OmnipodKit
 //
 //  Created by Randall Knutson on 8/17/21.
 //

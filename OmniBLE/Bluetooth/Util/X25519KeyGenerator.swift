@@ -1,6 +1,6 @@
 //
 //  X25519KeyGenerator.swift
-//  OpenPodSDK
+//  OmnipodKit
 //
 //  Created by Randall Knutson on 8/8/21.
 //

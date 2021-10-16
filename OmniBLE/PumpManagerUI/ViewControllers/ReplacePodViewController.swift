@@ -1,6 +1,6 @@
 //
 //  ReplacePodViewController.swift
-//  OmniKitUI
+//  OmnipodKit
 //
 //  Created by Pete Schwamb on 11/28/18.
 //  Copyright © 2018 Pete Schwamb. All rights reserved.
@@ -48,7 +48,7 @@ class ReplacePodViewController: SetupTableViewController {
         }
     }
     
-    var pumpManager: OmniBLEPumpManager! {
+    var pumpManager: OmnipodPumpManager! {
         didSet {
             let podState = pumpManager.state.podState
 

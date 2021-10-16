@@ -1,6 +1,6 @@
 //
 //  NumberFormatter.swift
-//  RileyLink
+//  OmnipodKit
 //
 //  Copyright © 2017 Pete Schwamb. All rights reserved.
 //

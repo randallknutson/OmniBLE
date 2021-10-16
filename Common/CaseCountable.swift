@@ -1,6 +1,6 @@
 //
 //  CaseCountable.swift
-//  RileyLink
+//  OmnipodKit
 //
 //  Created by Pete Schwamb on 12/30/16.
 //  Copyright © 2016 Pete Schwamb. All rights reserved.

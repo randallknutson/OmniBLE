@@ -1,6 +1,6 @@
 //
 //  CommandResponseViewController.swift
-//  OmniKitUI
+//  OmnipodKit
 //
 //  Created by Pete Schwamb on 8/28/18.
 //  Copyright © 2018 Pete Schwamb. All rights reserved.
@@ -34,7 +34,7 @@ extension CommandResponseViewController {
         return errorText + "."
     }
 
-    static func changeTime(pumpManager: OmniBLEPumpManager) -> T {
+    static func changeTime(pumpManager: OmnipodPumpManager) -> T {
         return T { (completionHandler) -> String in
             pumpManager.setTime() { (error) in
                 DispatchQueue.main.async {
@@ -103,7 +103,7 @@ extension CommandResponseViewController {
         return result
     }
 
-    static func readPodStatus(pumpManager: OmniBLEPumpManager) -> T {
+    static func readPodStatus(pumpManager: OmnipodPumpManager) -> T {
         return T { (completionHandler) -> String in
             pumpManager.readPodStatus() { (result) in
                 DispatchQueue.main.async {
@@ -120,7 +120,7 @@ extension CommandResponseViewController {
         }
     }
 
-    static func testingCommands(pumpManager: OmniBLEPumpManager) -> T {
+    static func testingCommands(pumpManager: OmnipodPumpManager) -> T {
         return T { (completionHandler) -> String in
             pumpManager.testingCommands() { (error) in
                 DispatchQueue.main.async {
@@ -131,7 +131,7 @@ extension CommandResponseViewController {
         }
     }
 
-    static func playTestBeeps(pumpManager: OmniBLEPumpManager) -> T {
+    static func playTestBeeps(pumpManager: OmnipodPumpManager) -> T {
         return T { (completionHandler) -> String in
             pumpManager.playTestBeeps() { (error) in
                 let response: String
@@ -148,7 +148,7 @@ extension CommandResponseViewController {
         }
     }
 
-    static func readPulseLog(pumpManager: OmniBLEPumpManager) -> T {
+    static func readPulseLog(pumpManager: OmnipodPumpManager) -> T {
         return T { (completionHandler) -> String in
             pumpManager.readPulseLog() { (result) in
                 DispatchQueue.main.async {

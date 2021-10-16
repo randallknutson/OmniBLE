@@ -1,6 +1,6 @@
 //
 //  InsertCannulaSetupViewController.swift
-//  OmniKitUI
+//  OmnipodKit
 //
 //  Created by Pete Schwamb on 9/18/18.
 //  Copyright © 2018 Pete Schwamb. All rights reserved.
@@ -14,7 +14,7 @@ import OmniKit
 
 class InsertCannulaSetupViewController: SetupTableViewController {
     
-    var pumpManager: OmniBLEPumpManager!
+    var pumpManager: OmnipodPumpManager!
     
     // MARK: -
     

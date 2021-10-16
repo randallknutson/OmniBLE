@@ -1,6 +1,6 @@
 //
 //  PairPodSetupViewController.swift
-//  OmniKitUI
+//  OmnipodKit
 //
 //  Created by Pete Schwamb on 9/18/18.
 //  Copyright © 2018 Pete Schwamb. All rights reserved.
@@ -17,7 +17,7 @@ class PairPodSetupViewController: SetupTableViewController {
     
     var previouslyEncounteredWeakComms: Bool = false
     
-    var pumpManager: OmniBLEPumpManager! {
+    var pumpManager: OmnipodPumpManager! {
         didSet {
             if oldValue == nil && pumpManager != nil {
                 pumpManagerWasSet()

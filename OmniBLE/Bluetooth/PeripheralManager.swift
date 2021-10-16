@@ -1,13 +1,14 @@
 //
 //  PeripheralManager.swift
-//  xDripG5
+//  OmnipodKit
 //
-//  Copyright © 2017 LoopKit Authors. All rights reserved.
+//  Created by Randall Knutson on 10/10/21.
 //
 
 import CoreBluetooth
 import Foundation
 import os.log
+import RileyLinkBLEKit
 
 protocol MessageResult {
     
@@ -89,6 +90,23 @@ class PeripheralManager: NSObject {
         peripheral.delegate = self
 
         assertConfiguration()
+    }
+    
+    // TODO: Factor this out. We can communicate directly.
+    public func runSession(withName name: String, _ block: @escaping (_ session: CommandSession) -> Void) {
+        self.log.default("Scheduling session %{public}@", name)
+//        queue.addOperation(self.configureAndRun({ [weak self] (manager) in
+//            self?.log.default("======================== %{public}@ ===========================", name)
+//            let bleFirmwareVersion = self?.bleFirmwareVersion
+//            let radioFirmwareVersion = self?.radioFirmwareVersion
+//
+//            if bleFirmwareVersion == nil || radioFirmwareVersion == nil {
+//                self?.log.error("Running session with incomplete configuration: bleFirmwareVersion %{public}@, radioFirmwareVersion: %{public}@", String(describing: bleFirmwareVersion), String(describing: radioFirmwareVersion))
+//            }
+//
+//            block(CommandSession(manager: manager, responseType: bleFirmwareVersion?.responseType ?? .buffered, firmwareVersion: radioFirmwareVersion ?? .unknown))
+//            self?.log.default("------------------------ %{public}@ ---------------------------", name)
+//        }))
     }
 }
 
@@ -183,45 +201,6 @@ extension PeripheralManager {
         try setNotifyValue(true, for: characteristic, timeout: discoveryTimeout)
     }
 }
-
-//extension PeripheralManager {
-//    var timerTickEnabled: Bool {
-//        return peripheral.getCharacteristicWithUUID(.timerTick)?.isNotifying ?? false
-//    }
-//
-//    func setTimerTickEnabled(_ enabled: Bool, timeout: TimeInterval = expectedMaxBLELatency, completion: ((_ error: RileyLinkDeviceError?) -> Void)? = nil) {
-//        perform { (manager) in
-//            do {
-//                guard let characteristic = manager.peripheral.getCharacteristicWithUUID(.timerTick) else {
-//                    throw PeripheralManagerError.unknownCharacteristic
-//                }
-//
-//                try manager.setNotifyValue(enabled, for: characteristic, timeout: timeout)
-//                completion?(nil)
-//            } catch let error as PeripheralManagerError {
-//                completion?(.peripheralManagerError(error))
-//            } catch {
-//                assertionFailure()
-//            }
-//        }
-//    }
-//
-//    func startIdleListening(idleTimeout: TimeInterval, channel: UInt8, timeout: TimeInterval = expectedMaxBLELatency, completion: @escaping (_ error: RileyLinkDeviceError?) -> Void) {
-//        perform { (manager) in
-//            let command = GetPacket(listenChannel: channel, timeoutMS: UInt32(clamping: Int(idleTimeout.milliseconds)))
-//
-//            do {
-//                try manager.writeCommandWithoutResponse(command, timeout: timeout)
-//                completion(nil)
-//            } catch let error as RileyLinkDeviceError {
-//                completion(error)
-//            } catch {
-//                assertionFailure()
-//            }
-//        }
-//    }
-//
-//}
 
 extension PeripheralManager {
 

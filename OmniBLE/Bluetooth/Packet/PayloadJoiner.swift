@@ -1,6 +1,6 @@
 //
 //  PayloadJoiner.swift
-//  OpenPodSDK
+//  OmnipodKit
 //
 //  Created by Randall Knutson on 8/11/21.
 //
@@ -24,11 +24,11 @@ class PayloadJoiner {
 
     func accumulate(packet: Data) throws {
         if (packet.count < 3) { // idx, size, at least 1 byte of payload
-            throw BLEErrors.IncorrectPacketException(packet, (expectedIndex + 1))
+            throw BluetoothErrors.IncorrectPacketException(packet, (expectedIndex + 1))
         }
         let idx = Int(packet[0])
         if (idx != expectedIndex + 1) {
-            throw BLEErrors.IncorrectPacketException(packet, (expectedIndex + 1))
+            throw BluetoothErrors.IncorrectPacketException(packet, (expectedIndex + 1))
         }
         expectedIndex += 1
         switch idx{
@@ -42,9 +42,9 @@ class PayloadJoiner {
         case let index where index == fullFragments + 1 && oneExtraPacket:
             fragments.append(try LastOptionalPlusOneBlePacket.parse(payload: packet))
         case let index where index > fullFragments:
-            throw BLEErrors.IncorrectPacketException(packet, idx)
+            throw BluetoothErrors.IncorrectPacketException(packet, idx)
         default:
-            throw BLEErrors.IncorrectPacketException(packet, idx)
+            throw BluetoothErrors.IncorrectPacketException(packet, idx)
         }
     }
 

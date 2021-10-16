@@ -1,6 +1,6 @@
 //
 //  Comparable.swift
-//  RileyLink
+//  OmnipodKit
 //
 //  Created by Pete Schwamb on 2/17/19.
 //  Copyright © 2019 Pete Schwamb. All rights reserved.

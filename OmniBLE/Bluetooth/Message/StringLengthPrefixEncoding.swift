@@ -1,6 +1,6 @@
 //
 //  StringLengthPrefixEncoding.swift
-//  OpenPodSDK
+//  OmnipodKit
 //
 //  Created by Randall Knutson on 8/5/21.
 //
@@ -16,17 +16,17 @@ final class StringLengthPrefixEncoding {
         var remaining = payload
         for (index, key) in keys.enumerated() {
             guard remaining.count >= key.count else {
-                throw BLEErrors.MessageIOException("Payload too short: \(payload)")
+                throw BluetoothErrors.MessageIOException("Payload too short: \(payload)")
             }
             if (String(decoding: remaining.subdata(in: 0..<key.count), as: UTF8.self) != key) {
-                throw BLEErrors.MessageIOException("Key not found: $key in \(payload)")
+                throw BluetoothErrors.MessageIOException("Key not found: $key in \(payload)")
             }
             // last key can be empty, no length
             else if index == keys.count - 1 && remaining.count == key.count {
                 return ret
             }
             guard remaining.count >= (key.count + LENGTH_BYTES) else {
-                throw BLEErrors.MessageIOException("Payload too short: \(payload)")
+                throw BluetoothErrors.MessageIOException("Payload too short: \(payload)")
             }
             remaining = remaining.subdata(in: key.count..<remaining.count)
 
@@ -36,7 +36,7 @@ final class StringLengthPrefixEncoding {
             let ulength = UInt16(remaining[0] << 8) | UInt16(remaining[1])
             let length = (ulength <= UInt(Int.max)) ? Int(ulength) : Int(ulength - UInt16(Int.max) - 1) + Int.min
             guard remaining.count >= length else {
-                throw BLEErrors.MessageIOException("Payload too short: \(payload)")
+                throw BluetoothErrors.MessageIOException("Payload too short: \(payload)")
             }
             ret[index] = remaining.subdata(in: LENGTH_BYTES..<LENGTH_BYTES + length)
             remaining = remaining.subdata(in: LENGTH_BYTES + length..<remaining.count)

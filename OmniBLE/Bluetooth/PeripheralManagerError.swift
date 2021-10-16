@@ -1,6 +1,6 @@
 //
 //  PeripheralManagerErrors.swift
-//  OpenPodSDK
+//  OmnipodKit
 //
 //  Created by Randall Knutson on 8/18/21.
 //

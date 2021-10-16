@@ -1,6 +1,6 @@
 //
 //  Pod.swift
-//  OmniKit
+//  OmnipodKit
 //
 //  Created by Pete Schwamb on 4/4/18.
 //  Copyright © 2018 Pete Schwamb. All rights reserved.

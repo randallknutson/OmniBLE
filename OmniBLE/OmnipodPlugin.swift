@@ -11,11 +11,11 @@ import OmniKit
 import OmniKitUI
 import os.log
 
-class OmniBLEPlugin: NSObject, LoopUIPlugin {
-    private let log = OSLog(category: "OmniBLEPlugin")
+class OmnipodPlugin: NSObject, LoopUIPlugin {
+    private let log = OSLog(category: "OmnipodPlugin")
     
     public var pumpManagerType: PumpManagerUI.Type? {
-        return OmniBLEPumpManager.self
+        return OmnipodPumpManager.self
     }
     
     public var cgmManagerType: CGMManagerUI.Type? {
@@ -24,6 +24,6 @@ class OmniBLEPlugin: NSObject, LoopUIPlugin {
     
     override init() {
         super.init()
-        log.default("OmniBLEPlugin Instantiated")
+        log.default("OmnipodPlugin Instantiated")
     }
 }

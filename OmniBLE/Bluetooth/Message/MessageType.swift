@@ -1,6 +1,6 @@
 //
 //  MessageType.swift
-//  OpenPodSDK
+//  OmnipodKit
 //
 //  Created by Randall Knutson on 8/4/21.
 //

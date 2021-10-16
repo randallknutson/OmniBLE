@@ -1,6 +1,6 @@
 //
-//  OmniBLESettingsViewController.swift
-//  OmniKitUI
+//  OmnipodSettingsViewController.swift
+//  OmnipodKit
 //
 //  Created by Pete Schwamb on 8/5/18.
 //  Copyright © 2018 Pete Schwamb. All rights reserved.
@@ -28,9 +28,9 @@ public class ConfirmationBeepsTableViewCell: TextButtonTableViewCell {
     }
 }
 
-class OmniBLESettingsViewController: RileyLinkSettingsViewController {
+class OmnipodSettingsViewController: RileyLinkSettingsViewController {
 
-    let pumpManager: OmniBLEPumpManager
+    let pumpManager: OmnipodPumpManager
     
     var statusError: Error?
     
@@ -48,12 +48,12 @@ class OmniBLESettingsViewController: RileyLinkSettingsViewController {
     
     private var bolusProgressTimer: Timer?
     
-    init(pumpManager: OmniBLEPumpManager) {
+    init(pumpManager: OmnipodPumpManager) {
         self.pumpManager = pumpManager
         podState = pumpManager.state.podState
         pumpManagerStatus = pumpManager.status
         
-        let devicesSectionIndex = OmniBLESettingsViewController.sectionList(podState).firstIndex(of: .rileyLinks)!
+        let devicesSectionIndex = OmnipodSettingsViewController.sectionList(podState).firstIndex(of: .rileyLinks)!
 
         // TODO: Fix type
         super.init(rileyLinkPumpManager: pumpManager as! RileyLinkPumpManager, devicesSectionIndex: devicesSectionIndex, style: .grouped)
@@ -98,7 +98,7 @@ class OmniBLESettingsViewController: RileyLinkSettingsViewController {
 //        tableView.register(AlarmsTableViewCell.self, forCellReuseIdentifier: AlarmsTableViewCell.className)
         tableView.register(ExpirationReminderDateTableViewCell.nib(), forCellReuseIdentifier: ExpirationReminderDateTableViewCell.className)
         
-        let podImage = UIImage(named: "PodLarge", in: Bundle(for: OmniBLESettingsViewController.self), compatibleWith: nil)!
+        let podImage = UIImage(named: "PodLarge", in: Bundle(for: OmnipodSettingsViewController.self), compatibleWith: nil)!
         let imageView = UIImageView(image: podImage)
         imageView.contentMode = .center
         imageView.frame.size.height += 18  // feels right
@@ -178,7 +178,7 @@ class OmniBLESettingsViewController: RileyLinkSettingsViewController {
         if let nav = navigationController as? SettingsNavigationViewController {
             nav.notifyComplete()
         }
-        if let nav = navigationController as? OmniBLEPumpManagerSetupViewController {
+        if let nav = navigationController as? OmnipodPumpManagerSetupViewController {
             nav.finishedSettingsDisplay()
         }
     }
@@ -236,7 +236,7 @@ class OmniBLESettingsViewController: RileyLinkSettingsViewController {
     }
     
     private var sections: [Section] {
-        return OmniBLESettingsViewController.sectionList(podState)
+        return OmnipodSettingsViewController.sectionList(podState)
     }
     
     private enum PodDetailsRow: Int, CaseIterable {
@@ -724,7 +724,7 @@ class OmniBLESettingsViewController: RileyLinkSettingsViewController {
     }
 }
 
-extension OmniBLESettingsViewController: CompletionDelegate {
+extension OmnipodSettingsViewController: CompletionDelegate {
     func completionNotifyingDidComplete(_ object: CompletionNotifying) {
         if let vc = object as? UIViewController, vc === presentedViewController {
             dismiss(animated: true, completion: nil)
@@ -732,7 +732,7 @@ extension OmniBLESettingsViewController: CompletionDelegate {
     }
 }
 
-extension OmniBLESettingsViewController: RadioSelectionTableViewControllerDelegate {
+extension OmnipodSettingsViewController: RadioSelectionTableViewControllerDelegate {
     func radioSelectionTableViewControllerDidChangeSelectedIndex(_ controller: RadioSelectionTableViewController) {
         guard let indexPath = self.tableView.indexPathForSelectedRow else {
             return
@@ -752,10 +752,10 @@ extension OmniBLESettingsViewController: RadioSelectionTableViewControllerDelega
     }
 }
 
-extension OmniBLESettingsViewController: PodStateObserver {
+extension OmnipodSettingsViewController: PodStateObserver {
     func podStateDidUpdate(_ state: PodState?) {
-        let newSections = OmniBLESettingsViewController.sectionList(state)
-        let sectionsChanged = OmniBLESettingsViewController.sectionList(self.podState) != newSections
+        let newSections = OmnipodSettingsViewController.sectionList(state)
+        let sectionsChanged = OmnipodSettingsViewController.sectionList(self.podState) != newSections
 
         let oldConfigurationRowsCount = self.configurationRows.count
         let oldState = self.podState
@@ -786,7 +786,7 @@ extension OmniBLESettingsViewController: PodStateObserver {
     }
 }
 
-extension OmniBLESettingsViewController: PumpManagerStatusObserver {
+extension OmnipodSettingsViewController: PumpManagerStatusObserver {
     func pumpManager(_ pumpManager: PumpManager, didUpdate status: PumpManagerStatus, oldStatus: PumpManagerStatus) {
         self.pumpManagerStatus = status
         self.suspendResumeTableViewCell.basalDeliveryState = status.basalDeliveryState
@@ -796,7 +796,7 @@ extension OmniBLESettingsViewController: PumpManagerStatusObserver {
     }
 }
 
-extension OmniBLESettingsViewController: DatePickerTableViewCellDelegate {
+extension OmnipodSettingsViewController: DatePickerTableViewCellDelegate {
     func datePickerTableViewCellDidUpdateDate(_ cell: DatePickerTableViewCell) {
         pumpManager.expirationReminderDate = cell.date
     }

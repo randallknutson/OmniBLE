@@ -1,6 +1,6 @@
 //
 //  KeyExchange.swift
-//  OpenPodSDK
+//  OmnipodKit
 //
 //  Created by Randall Knutson on 8/3/21.
 //
@@ -49,7 +49,7 @@ class KeyExchange {
 
     func updatePodPublicData(_ payload: Data) throws {
         if (payload.count != KeyExchange.PUBLIC_KEY_SIZE + KeyExchange.NONCE_SIZE) {
-            throw BLEErrors.MessageIOException("Invalid payload size")
+            throw BluetoothErrors.MessageIOException("Invalid payload size")
         }
         podPublic = payload.subdata(in: 0..<KeyExchange.PUBLIC_KEY_SIZE)
         podNonce = payload.subdata(in: KeyExchange.PUBLIC_KEY_SIZE..<KeyExchange.PUBLIC_KEY_SIZE + KeyExchange.NONCE_SIZE)
@@ -58,7 +58,7 @@ class KeyExchange {
 
     func validatePodConf(_ payload: Data) throws {
         if (podConf != payload) {
-            throw BLEErrors.MessageIOException("Invalid podConf value received")
+            throw BluetoothErrors.MessageIOException("Invalid podConf value received")
         }
     }
 

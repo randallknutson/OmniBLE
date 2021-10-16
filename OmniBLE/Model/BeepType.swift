@@ -1,6 +1,6 @@
 //
 //  BeepType.swift
-//  OmniKit
+//  OmnipodKit
 //
 //  Created by Joseph Moran on 5/12/19.
 //  Copyright © 2019 Pete Schwamb. All rights reserved.

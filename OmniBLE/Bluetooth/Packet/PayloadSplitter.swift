@@ -1,6 +1,6 @@
 //
 //  PayloadSplitter.swift
-//  OpenPodSDK
+//  OmnipodKit
 //
 //  Created by Randall Knutson on 8/11/21.
 //

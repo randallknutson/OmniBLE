@@ -1,6 +1,6 @@
 //
 //  TimeZone.swift
-//  RileyLink
+//  OmnipodKit
 //
 //  Created by Nate Racklyeft on 10/2/16.
 //  Copyright © 2016 Pete Schwamb. All rights reserved.

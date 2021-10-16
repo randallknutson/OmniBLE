@@ -1,6 +1,6 @@
 //
-//  OmniBLEPumpManagerSetupViewController.swift
-//  OmniKitUI
+//  OmnipodPumpManagerSetupViewController.swift
+//  OmnipodKit
 //
 //  Created by Pete Schwamb on 8/4/18.
 //  Copyright © 2018 Pete Schwamb. All rights reserved.
@@ -15,10 +15,10 @@ import OmniKit
 import RileyLinkKitUI
 
 // PumpManagerSetupViewController
-public class OmniBLEPumpManagerSetupViewController: RileyLinkManagerSetupViewController {
+public class OmnipodPumpManagerSetupViewController: RileyLinkManagerSetupViewController {
     
-    class func instantiateFromStoryboard() -> OmniBLEPumpManagerSetupViewController {
-        return UIStoryboard(name: "OmniBLEPumpManager", bundle: Bundle(for: OmniBLEPumpManagerSetupViewController.self)).instantiateInitialViewController() as! OmniBLEPumpManagerSetupViewController
+    class func instantiateFromStoryboard() -> OmnipodPumpManagerSetupViewController {
+        return UIStoryboard(name: "OmnipodPumpManager", bundle: Bundle(for: OmnipodPumpManagerSetupViewController.self)).instantiateInitialViewController() as! OmnipodPumpManagerSetupViewController
     }
 
     override public func viewDidLoad() {
@@ -33,7 +33,7 @@ public class OmniBLEPumpManagerSetupViewController: RileyLinkManagerSetupViewCon
 
     }
         
-    private(set) var pumpManager: OmniBLEPumpManager?
+    private(set) var pumpManager: OmnipodPumpManager?
     
     /*
      1. RileyLink
@@ -74,8 +74,8 @@ public class OmniBLEPumpManagerSetupViewController: RileyLinkManagerSetupViewCon
         case let vc as PairPodSetupViewController:
             if let basalSchedule = basalSchedule {
                 let schedule = BasalSchedule(repeatingScheduleValues: basalSchedule.items)
-                let pumpManagerState = OmniBLEPumpManagerState(podState: nil, timeZone: .currentFixed, basalSchedule: schedule)
-                let pumpManager = OmniBLEPumpManager(state: pumpManagerState)
+                let pumpManagerState = OmnipodPumpManagerState(podState: nil, timeZone: .currentFixed, basalSchedule: schedule)
+                let pumpManager = OmnipodPumpManager(state: pumpManagerState)
                 vc.pumpManager = pumpManager
                 setupDelegate?.pumpManagerSetupViewController(self, didSetUpPumpManager: pumpManager)
             }
@@ -90,7 +90,7 @@ public class OmniBLEPumpManagerSetupViewController: RileyLinkManagerSetupViewCon
 
     override open func finishedSetup() {
         if let pumpManager = pumpManager {
-            let settings = OmniBLESettingsViewController(pumpManager: pumpManager)
+            let settings = OmnipodSettingsViewController(pumpManager: pumpManager)
             setViewControllers([settings], animated: true)
         }
     }
@@ -100,7 +100,7 @@ public class OmniBLEPumpManagerSetupViewController: RileyLinkManagerSetupViewCon
     }
 }
 
-extension OmniBLEPumpManagerSetupViewController: SetupTableViewControllerDelegate {
+extension OmnipodPumpManagerSetupViewController: SetupTableViewControllerDelegate {
     public func setupTableViewControllerCancelButtonPressed(_ viewController: SetupTableViewController) {
         completionDelegate?.completionNotifyingDidComplete(self)
     }

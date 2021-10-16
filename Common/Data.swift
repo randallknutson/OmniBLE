@@ -1,6 +1,6 @@
 //
 //  NSData.swift
-//  Naterade
+//  OmnipodKit
 //
 //  Created by Nathan Racklyeft on 9/2/15.
 //  Copyright © 2015 Nathan Racklyeft. All rights reserved.
