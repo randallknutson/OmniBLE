@@ -16,7 +16,7 @@ extension TimeZone {
     var fixed: TimeZone {
         return TimeZone(secondsFromGMT: secondsFromGMT())!
     }
-    
+
     /// This only works for fixed utc offset timezones
     func scheduleOffset(forDate date: Date) -> TimeInterval {
         var calendar = Calendar.current

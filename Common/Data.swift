@@ -42,7 +42,7 @@ extension Data {
         var value = value.littleEndian
         self.init(bytes: &value, count: value.bitWidth / 8)
     }
-    
+
     init<T: FixedWidthInteger>(bigEndian value: T) {
         var value = value.bigEndian
         self.init(bytes: &value, count: value.bitWidth / 8)

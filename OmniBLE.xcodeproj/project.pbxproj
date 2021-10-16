@@ -23,6 +23,8 @@
 		1021114A2709462300784F13 /* PodDoseProgressEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102111432709462300784F13 /* PodDoseProgressEstimator.swift */; };
 		1021114B2709462300784F13 /* PodCommsSession+LoopKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102111442709462300784F13 /* PodCommsSession+LoopKit.swift */; };
 		1021114D2709467400784F13 /* PodComms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1021114C2709467400784F13 /* PodComms.swift */; };
+		10289E68271B2A08000339E6 /* NumberFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10289E67271B2A08000339E6 /* NumberFormatter.swift */; };
+		10289E6A271B2A3E000339E6 /* IdentifiableClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10289E69271B2A3E000339E6 /* IdentifiableClass.swift */; };
 		1029AE4827094D0E00B7F5B6 /* OmnipodPumpManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1029AE4627094D0E00B7F5B6 /* OmnipodPumpManager.swift */; };
 		1029AE4927094D0E00B7F5B6 /* OmnipodPumpManagerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1029AE4727094D0E00B7F5B6 /* OmnipodPumpManagerState.swift */; };
 		1029AE4B27094DDC00B7F5B6 /* OmnipodPumpManager+UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1029AE4A27094DDC00B7F5B6 /* OmnipodPumpManager+UI.swift */; };
@@ -106,9 +108,6 @@
 		8475314126ED838B009FD801 /* PairPodSetupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475312F26ED838A009FD801 /* PairPodSetupViewController.swift */; };
 		8475314526ED83D2009FD801 /* OmnipodPumpManager.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8475314426ED83D2009FD801 /* OmnipodPumpManager.storyboard */; };
 		8475315326EDA193009FD801 /* TimeInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475314626EDA193009FD801 /* TimeInterval.swift */; };
-		8475315426EDA193009FD801 /* IdentifiableClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475314726EDA193009FD801 /* IdentifiableClass.swift */; };
-		8475315526EDA193009FD801 /* CaseCountable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475314826EDA193009FD801 /* CaseCountable.swift */; };
-		8475315626EDA193009FD801 /* Comparable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475314926EDA193009FD801 /* Comparable.swift */; };
 		8475315726EDA193009FD801 /* LocalizedString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475314A26EDA193009FD801 /* LocalizedString.swift */; };
 		8475315826EDA193009FD801 /* OSLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475314B26EDA193009FD801 /* OSLog.swift */; };
 		8475315926EDA193009FD801 /* UIColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475314C26EDA193009FD801 /* UIColor.swift */; };
@@ -116,7 +115,6 @@
 		8475315B26EDA193009FD801 /* NibLoadable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475314E26EDA193009FD801 /* NibLoadable.swift */; };
 		8475315C26EDA193009FD801 /* TimeZone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475314F26EDA193009FD801 /* TimeZone.swift */; };
 		8475315D26EDA193009FD801 /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475315026EDA193009FD801 /* Data.swift */; };
-		8475315E26EDA193009FD801 /* NumberFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475315126EDA193009FD801 /* NumberFormatter.swift */; };
 		8475315F26EDA193009FD801 /* Locked.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475315226EDA193009FD801 /* Locked.swift */; };
 /* End PBXBuildFile section */
 
@@ -162,6 +160,8 @@
 		102111432709462300784F13 /* PodDoseProgressEstimator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PodDoseProgressEstimator.swift; sourceTree = "<group>"; };
 		102111442709462300784F13 /* PodCommsSession+LoopKit.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "PodCommsSession+LoopKit.swift"; sourceTree = "<group>"; };
 		1021114C2709467400784F13 /* PodComms.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PodComms.swift; sourceTree = "<group>"; };
+		10289E67271B2A08000339E6 /* NumberFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NumberFormatter.swift; sourceTree = "<group>"; };
+		10289E69271B2A3E000339E6 /* IdentifiableClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IdentifiableClass.swift; sourceTree = "<group>"; };
 		1029AE4627094D0E00B7F5B6 /* OmnipodPumpManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OmnipodPumpManager.swift; sourceTree = "<group>"; };
 		1029AE4727094D0E00B7F5B6 /* OmnipodPumpManagerState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OmnipodPumpManagerState.swift; sourceTree = "<group>"; };
 		1029AE4A27094DDC00B7F5B6 /* OmnipodPumpManager+UI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "OmnipodPumpManager+UI.swift"; sourceTree = "<group>"; };
@@ -246,9 +246,6 @@
 		8475312F26ED838A009FD801 /* PairPodSetupViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PairPodSetupViewController.swift; sourceTree = "<group>"; };
 		8475314426ED83D2009FD801 /* OmnipodPumpManager.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = OmnipodPumpManager.storyboard; sourceTree = "<group>"; };
 		8475314626EDA193009FD801 /* TimeInterval.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimeInterval.swift; sourceTree = "<group>"; };
-		8475314726EDA193009FD801 /* IdentifiableClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IdentifiableClass.swift; sourceTree = "<group>"; };
-		8475314826EDA193009FD801 /* CaseCountable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CaseCountable.swift; sourceTree = "<group>"; };
-		8475314926EDA193009FD801 /* Comparable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Comparable.swift; sourceTree = "<group>"; };
 		8475314A26EDA193009FD801 /* LocalizedString.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalizedString.swift; sourceTree = "<group>"; };
 		8475314B26EDA193009FD801 /* OSLog.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OSLog.swift; sourceTree = "<group>"; };
 		8475314C26EDA193009FD801 /* UIColor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIColor.swift; sourceTree = "<group>"; };
@@ -256,7 +253,6 @@
 		8475314E26EDA193009FD801 /* NibLoadable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NibLoadable.swift; sourceTree = "<group>"; };
 		8475314F26EDA193009FD801 /* TimeZone.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimeZone.swift; sourceTree = "<group>"; };
 		8475315026EDA193009FD801 /* Data.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Data.swift; sourceTree = "<group>"; };
-		8475315126EDA193009FD801 /* NumberFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NumberFormatter.swift; sourceTree = "<group>"; };
 		8475315226EDA193009FD801 /* Locked.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Locked.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -474,15 +470,13 @@
 		84752EE926ED1402009FD801 /* Common */ = {
 			isa = PBXGroup;
 			children = (
-				8475314826EDA193009FD801 /* CaseCountable.swift */,
-				8475314926EDA193009FD801 /* Comparable.swift */,
 				8475315026EDA193009FD801 /* Data.swift */,
 				8475314D26EDA193009FD801 /* HKUnit.swift */,
-				8475314726EDA193009FD801 /* IdentifiableClass.swift */,
+				10289E69271B2A3E000339E6 /* IdentifiableClass.swift */,
 				8475314A26EDA193009FD801 /* LocalizedString.swift */,
 				8475315226EDA193009FD801 /* Locked.swift */,
 				8475314E26EDA193009FD801 /* NibLoadable.swift */,
-				8475315126EDA193009FD801 /* NumberFormatter.swift */,
+				10289E67271B2A08000339E6 /* NumberFormatter.swift */,
 				8475314B26EDA193009FD801 /* OSLog.swift */,
 				8475314626EDA193009FD801 /* TimeInterval.swift */,
 				8475314F26EDA193009FD801 /* TimeZone.swift */,
@@ -686,6 +680,7 @@
 				10389A3226FF7841002115E9 /* BasalScheduleExtraCommand.swift in Sources */,
 				8475314026ED838B009FD801 /* OmnipodPumpManagerSetupViewController.swift in Sources */,
 				1016325A27185EE5007A3BC2 /* FaultEventCode.swift in Sources */,
+				10289E6A271B2A3E000339E6 /* IdentifiableClass.swift in Sources */,
 				1016324F2715354C007A3BC2 /* Omnipod.swift in Sources */,
 				8475313E26ED838B009FD801 /* PodReplacementNavigationController.swift in Sources */,
 				84752EE526ED13F5009FD801 /* KeyExchange.swift in Sources */,
@@ -702,7 +697,6 @@
 				8475315A26EDA193009FD801 /* HKUnit.swift in Sources */,
 				10389A2626FF7841002115E9 /* TempBasalExtraCommand.swift in Sources */,
 				8475315C26EDA193009FD801 /* TimeZone.swift in Sources */,
-				8475315626EDA193009FD801 /* Comparable.swift in Sources */,
 				8475315726EDA193009FD801 /* LocalizedString.swift in Sources */,
 				84752EED26ED1402009FD801 /* Locked.swift in Sources */,
 				84752EDB26ED13F5009FD801 /* MessageType.swift in Sources */,
@@ -716,13 +710,12 @@
 				10389A3126FF7841002115E9 /* GetStatusCommand.swift in Sources */,
 				8475313226ED838B009FD801 /* PodLifeHUDView.swift in Sources */,
 				10389A3F26FF7841002115E9 /* CRC16.swift in Sources */,
+				10289E68271B2A08000339E6 /* NumberFormatter.swift in Sources */,
 				1016325927185EE4007A3BC2 /* BeepType.swift in Sources */,
 				84752EDA26ED13F5009FD801 /* MessagePacket.swift in Sources */,
 				8475315326EDA193009FD801 /* TimeInterval.swift in Sources */,
 				8475315F26EDA193009FD801 /* Locked.swift in Sources */,
-				8475315526EDA193009FD801 /* CaseCountable.swift in Sources */,
 				10389A2326FF7841002115E9 /* PodInfoPulseLog.swift in Sources */,
-				8475315426EDA193009FD801 /* IdentifiableClass.swift in Sources */,
 				10389A2726FF7841002115E9 /* DeactivatePodCommand.swift in Sources */,
 				10389A3626FF7841002115E9 /* ErrorResponse.swift in Sources */,
 				10389A2C26FF7841002115E9 /* PodInfo.swift in Sources */,
@@ -754,7 +747,6 @@
 				8475314126ED838B009FD801 /* PairPodSetupViewController.swift in Sources */,
 				10389A3326FF7841002115E9 /* CancelDeliveryCommand.swift in Sources */,
 				10389A2426FF7841002115E9 /* VersionResponse.swift in Sources */,
-				8475315E26EDA193009FD801 /* NumberFormatter.swift in Sources */,
 				10389A3B26FF7841002115E9 /* ConfigureAlertsCommand.swift in Sources */,
 				10389A3926FF7841002115E9 /* PodInfoResponse.swift in Sources */,
 				84752EE226ED13F5009FD801 /* PayloadJoiner.swift in Sources */,
