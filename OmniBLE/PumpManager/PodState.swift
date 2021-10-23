@@ -51,6 +51,8 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
     public typealias RawValue = [String: Any]
     
     public let address: UInt32
+    public let ltk: Data
+    public let messageSequence: UInt8
     fileprivate var nonceState: NonceState
 
     public var activatedAt: Date?
@@ -58,10 +60,8 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
 
     public var setupUnitsDelivered: Double?
 
-    public let piVersion: String
-    public let pmVersion: String
-    public let lot: UInt32
-    public let tid: UInt32
+    public let lotNo: UInt64
+    public let lotSeq: UInt32
     var activeAlertSlots: AlertSet
     public var lastInsulinMeasurements: PodInsulinMeasurements?
 
@@ -86,7 +86,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
     }
 
     public var fault: DetailedStatus?
-    public var messageTransportState: MessageTransportState
+//    public var messageTransportState: MessageTransportState
     public var primeFinishTime: Date?
     public var setupProgress: SetupProgress
     public var configuredAlerts: [AlertSlot: PodAlert]
@@ -101,19 +101,18 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         return active
     }
     
-    public init(address: UInt32, piVersion: String, pmVersion: String, lot: UInt32, tid: UInt32, packetNumber: Int = 0, messageNumber: Int = 0) {
+    public init(address: UInt32, ltk: Data, messageSequence: UInt8 = 0, lotNo: UInt64, lotSeq: UInt32) {
         self.address = address
-        self.nonceState = NonceState(lot: lot, tid: tid)
-        self.piVersion = piVersion
-        self.pmVersion = pmVersion
-        self.lot = lot
-        self.tid = tid
+        self.ltk = ltk
+        self.messageSequence = messageSequence
+        self.nonceState = NonceState(lot: 0, tid: 0)
+        self.lotNo = lotNo
+        self.lotSeq = lotSeq
         self.lastInsulinMeasurements = nil
         self.finalizedDoses = []
         self.suspendState = .resumed(Date())
         self.fault = nil
         self.activeAlertSlots = .none
-        self.messageTransportState = MessageTransportState(packetNumber: packetNumber, messageNumber: messageNumber)
         self.primeFinishTime = nil
         self.setupProgress = .addressAssigned
         self.configuredAlerts = [.slot7: .waitingForPairingReminder]
@@ -152,9 +151,9 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
     }
     
     public mutating func resyncNonce(syncWord: UInt16, sentNonce: UInt32, messageSequenceNum: Int) {
-        let sum = (sentNonce & 0xffff) + UInt32(crc16Table[messageSequenceNum]) + (lot & 0xffff) + (tid & 0xffff)
+        let sum = (sentNonce & 0xffff) + UInt32(crc16Table[messageSequenceNum]) + (0 & 0xffff) + (0 & 0xffff)
         let seed = UInt16(sum & 0xffff) ^ syncWord
-        nonceState = NonceState(lot: lot, tid: tid, seed: seed)
+        nonceState = NonceState(lot: 0, tid: 0, seed: seed)
     }
     
     private mutating func updatePodTimes(timeActive: TimeInterval) -> Date {
@@ -263,22 +262,22 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
 
         guard
             let address = rawValue["address"] as? UInt32,
+            let ltk = rawValue["ltk"] as? Data,
+            let messageSequence = rawValue["messageSequence"] as? UInt8,
             let nonceStateRaw = rawValue["nonceState"] as? NonceState.RawValue,
             let nonceState = NonceState(rawValue: nonceStateRaw),
-            let piVersion = rawValue["piVersion"] as? String,
-            let pmVersion = rawValue["pmVersion"] as? String,
-            let lot = rawValue["lot"] as? UInt32,
-            let tid = rawValue["tid"] as? UInt32
+            let lotNo = rawValue["lotNo"] as? UInt64,
+            let lotSeq = rawValue["lotSeq"] as? UInt32
             else {
                 return nil
             }
         
         self.address = address
+        self.ltk = ltk
+        self.messageSequence = messageSequence
         self.nonceState = nonceState
-        self.piVersion = piVersion
-        self.pmVersion = pmVersion
-        self.lot = lot
-        self.tid = tid
+        self.lotNo = lotNo
+        self.lotSeq = lotSeq
 
 
         if let activatedAt = rawValue["activatedAt"] as? Date {
@@ -363,13 +362,13 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             self.setupProgress = .completed
         }
         
-        if let messageTransportStateRaw = rawValue["messageTransportState"] as? MessageTransportState.RawValue,
-            let messageTransportState = MessageTransportState(rawValue: messageTransportStateRaw)
-        {
-            self.messageTransportState = messageTransportState
-        } else {
-            self.messageTransportState = MessageTransportState(packetNumber: 0, messageNumber: 0)
-        }
+//        if let messageTransportStateRaw = rawValue["messageTransportState"] as? MessageTransportState.RawValue,
+//            let messageTransportState = MessageTransportState(rawValue: messageTransportStateRaw)
+//        {
+//            self.messageTransportState = messageTransportState
+//        } else {
+//            self.messageTransportState = MessageTransportState(packetNumber: 0, messageNumber: 0)
+//        }
 
         if let rawConfiguredAlerts = rawValue["configuredAlerts"] as? [String: PodAlert.RawValue] {
             var configuredAlerts = [AlertSlot: PodAlert]()
@@ -398,14 +397,12 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         var rawValue: RawValue = [
             "address": address,
             "nonceState": nonceState.rawValue,
-            "piVersion": piVersion,
-            "pmVersion": pmVersion,
-            "lot": lot,
-            "tid": tid,
+            "lotNo": lotNo,
+            "lotSeq": lotSeq,
             "suspendState": suspendState.rawValue,
             "finalizedDoses": finalizedDoses.map( { $0.rawValue }),
             "alerts": activeAlertSlots.rawValue,
-            "messageTransportState": messageTransportState.rawValue,
+//            "messageTransportState": messageTransportState.rawValue,
             "setupProgress": setupProgress.rawValue
             ]
         
@@ -467,10 +464,8 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             "* activatedAt: \(String(reflecting: activatedAt))",
             "* expiresAt: \(String(reflecting: expiresAt))",
             "* setupUnitsDelivered: \(String(reflecting: setupUnitsDelivered))",
-            "* piVersion: \(piVersion)",
-            "* pmVersion: \(pmVersion)",
-            "* lot: \(lot)",
-            "* tid: \(tid)",
+            "* lotNo: \(lotNo)",
+            "* lotSeq: \(lotSeq)",
             "* suspendState: \(suspendState)",
             "* unfinalizedBolus: \(String(describing: unfinalizedBolus))",
             "* unfinalizedTempBasal: \(String(describing: unfinalizedTempBasal))",
@@ -478,7 +473,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             "* unfinalizedResume: \(String(describing: unfinalizedResume))",
             "* finalizedDoses: \(String(describing: finalizedDoses))",
             "* activeAlerts: \(String(describing: activeAlerts))",
-            "* messageTransportState: \(String(describing: messageTransportState))",
+//            "* messageTransportState: \(String(describing: messageTransportState))",
             "* setupProgress: \(setupProgress)",
             "* primeFinishTime: \(String(describing: primeFinishTime))",
             "* configuredAlerts: \(String(describing: configuredAlerts))",
@@ -491,24 +486,24 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
 
 fileprivate struct NonceState: RawRepresentable, Equatable {
     public typealias RawValue = [String: Any]
-    
+
     var table: [UInt32]
     var idx: UInt8
-    
+
     public init(lot: UInt32 = 0, tid: UInt32 = 0, seed: UInt16 = 0) {
         table = Array(repeating: UInt32(0), count: 2 + 16)
         table[0] = (lot & 0xFFFF) &+ (lot >> 16) &+ 0x55543DC3
         table[1] = (tid & 0xFFFF) &+ (tid >> 16) &+ 0xAAAAE44E
-        
+
         idx = 0
-        
+
         table[0] += UInt32((seed & 0x00ff))
         table[1] += UInt32((seed & 0xff00) >> 8)
-        
+
         for i in 0..<16 {
             table[2 + i] = generateEntry()
         }
-        
+
         idx = UInt8((table[0] + table[1]) & 0x0F)
     }
 
@@ -517,17 +512,17 @@ fileprivate struct NonceState: RawRepresentable, Equatable {
         table[1] = (table[1] >> 16) &+ ((table[1] & 0xFFFF) &* 0x8CA0)
         return table[1] &+ ((table[0] & 0xFFFF) << 16)
     }
-    
+
     public mutating func advanceToNextNonce() {
         let nonce = currentNonce
         table[Int(2 + idx)] = generateEntry()
         idx = UInt8(nonce & 0x0F)
     }
-    
+
     public var currentNonce: UInt32 {
         return table[Int(2 + idx)]
     }
-    
+
     // RawRepresentable
     public init?(rawValue: RawValue) {
         guard
@@ -539,13 +534,13 @@ fileprivate struct NonceState: RawRepresentable, Equatable {
         self.table = table
         self.idx = idx
     }
-    
+
     public var rawValue: RawValue {
         let rawValue: RawValue = [
             "table": table,
             "idx": idx,
         ]
-        
+
         return rawValue
     }
 }

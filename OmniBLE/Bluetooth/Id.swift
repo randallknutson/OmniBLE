@@ -15,7 +15,7 @@ class Id {
         return Id(Data(bytes: &value, count: 4))
     }
 
-    static func fromLong(_ v: Int64) -> Id {
+    static func fromLong(_ v: UInt32) -> Id {
         var value = v
         return Id(Data(bytes: &value, count: 8))
     }
@@ -56,7 +56,14 @@ class Id {
             return pointer.load(as: Int64.self)
         }
     }
-//
+
+    
+    func toUInt32() -> UInt32 {
+        return address.withUnsafeBytes { pointer in
+            return pointer.load(as: UInt32.self)
+        }
+    }
+    //
     // TODO:
 //    override func equals(other: Any?): Boolean {
 //        if (this === other) return true

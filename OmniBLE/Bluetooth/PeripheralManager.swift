@@ -485,6 +485,7 @@ extension PeripheralManager {
 
     /// - Throws: PeripheralManagerError
     func writeValue(_ value: Data, characteristic: CBCharacteristic, type: CBCharacteristicWriteType, timeout: TimeInterval) throws {
+        log.debug("writeValue")
         try runCommand(timeout: timeout) {
             if case .withResponse = type {
                 addCondition(.write(characteristic: characteristic))
@@ -564,6 +565,8 @@ extension PeripheralManager: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
         commandLock.lock()
         
+        log.debug("peripheral didWriteValueFor")
+        
         if let index = commandConditions.firstIndex(where: { (condition) -> Bool in
             if case .write(characteristic: characteristic) = condition {
                 return true
@@ -584,6 +587,8 @@ extension PeripheralManager: CBPeripheralDelegate {
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         commandLock.lock()
+        
+        log.debug("peripheral didUpdateValueFor")
         
         var notifyDelegate = false
 

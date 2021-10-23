@@ -178,7 +178,7 @@ public class PodCommsSession {
         self.podState = podState
         self.transport = transport
         self.delegate = delegate
-        self.transport.delegate = self
+//        self.transport.delegate = self
     }
 
     // Handles updating PodState on first pod fault seen
@@ -227,9 +227,9 @@ public class PodCommsSession {
             blocksToSend += [confirmationBeepBlock]
         }
 
-        if blocksToSend.contains(where: { $0 as? NonceResyncableMessageBlock != nil }) {
-            podState.advanceToNextNonce()
-        }
+//        if blocksToSend.contains(where: { $0 as? NonceResyncableMessageBlock != nil }) {
+//            podState.advanceToNextNonce()
+//        }
         
         let messageNumber = transport.messageNumber
 
@@ -811,9 +811,9 @@ public class PodCommsSession {
     }
 }
 
-extension PodCommsSession: MessageTransportDelegate {
-    func messageTransport(_ messageTransport: MessageTransport, didUpdate state: MessageTransportState) {
-        messageTransport.assertOnSessionQueue()
-        podState.messageTransportState = state
-    }
-}
+//extension PodCommsSession: MessageTransportDelegate {
+//    func messageTransport(_ messageTransport: MessageTransport, didUpdate state: MessageTransportState) {
+//        messageTransport.assertOnSessionQueue()
+//        podState.messageTransportState = state
+//    }
+//}

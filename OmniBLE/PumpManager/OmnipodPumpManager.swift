@@ -237,7 +237,7 @@ extension OmnipodPumpManager {
                 manufacturer: "Insulet",
                 model: "Dash",
                 hardwareVersion: nil,
-                firmwareVersion: podState.piVersion,
+                firmwareVersion: "1",
                 softwareVersion: String(OmniBLEVersionNumber),
                 localIdentifier: String(format:"%04X", podState.address),
                 udiDeviceIdentifier: nil
