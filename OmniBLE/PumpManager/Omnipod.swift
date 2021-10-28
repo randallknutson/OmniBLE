@@ -28,6 +28,8 @@ public class Omnipod {
 
     private let log = OSLog(category: "Omnipod")
 
+//    private let manager: PeripheralManager
+
     private let bluetoothManager = BluetoothManager()
     
     private let delegateQueue = DispatchQueue(label: "com.randallknutson.OmnipodKit.delegateQueue", qos: .unspecified)
@@ -36,6 +38,15 @@ public class Omnipod {
 
     /// Serializes access to device state
     private var lock = os_unfair_lock()
+    
+    /// The queue used to serialize sessions and observe when they've drained
+    private let sessionQueue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.name = "com.rileylink.RileyLinkBLEKit.RileyLinkDevice.sessionQueue"
+        queue.maxConcurrentOperationCount = 1
+
+        return queue
+    }()
 
     init(_ state: PodState?) {
         self.state = state
@@ -152,11 +163,27 @@ extension Omnipod {
 
 }
 
+// MARK: - Command session management
+// CommandSessions are a way to serialize access to the Omnipod command/response facility.
+// All commands that send data out on the data characteristic need to be in a command session.
+extension Omnipod {
+    public func runSession(withName name: String, _ block: @escaping () -> Void) {
+        guard let manager = manager else { return }
+        self.log.default("Scheduling session %{public}@", name)
+        sessionQueue.addOperation(manager.configureAndRun({ [weak self] (manager) in
+            self?.log.default("======================== %{public}@ ===========================", name)
+            block()
+            self?.log.default("------------------------ %{public}@ ---------------------------", name)
+        }))
+    }
+}
+
+
 // MARK: - BluetoothManagerDelegate
 
 extension Omnipod: BluetoothManagerDelegate {
     func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, isReadyWithError error: Error?) {
-        podComms.manager = peripheralManager
+//        podComms.device?.manager = peripheralManager
     }
     
     func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral) -> Bool {

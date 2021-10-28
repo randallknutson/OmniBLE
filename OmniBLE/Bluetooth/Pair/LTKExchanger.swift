@@ -39,7 +39,8 @@ class LTKExchanger {
             source: ids.myId,
             destination: podAddress,
             keys: [LTKExchanger.SP1, LTKExchanger.SP2],
-            payloads: [ids.podId.address, sp2()]
+            payloads: ["4241".data(using: .utf8)!, sp2()]
+            //            payloads: [ids.podId.address, sp2()]
         )
         try throwOnSendError(sp1sp2.messagePacket, LTKExchanger.SP1 + LTKExchanger.SP2)
 

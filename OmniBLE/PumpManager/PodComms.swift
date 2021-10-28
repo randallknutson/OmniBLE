@@ -46,14 +46,29 @@ public class PodComms: CustomDebugStringConvertible {
         self.messageLogger = nil
     }
     
-    private func pairPod(address: UInt32) throws {
-        guard let manager = manager else {throw PodCommsError.noPodAvailable}
+    private let opsQueue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.name = "com.randallknutson.OmniBLE.PodComms.OpsQueue"
+        queue.maxConcurrentOperationCount = 1
 
-        let ids = Ids(podState: podState)
+        return queue
+    }()
+    
+    private let delegateQueue = DispatchQueue(label: "com.randallknutson.OmnipodKit.delegateQueue", qos: .unspecified)
+    
+    private func sendHello(_ ids: Ids) throws {
+        guard let manager = manager else { throw PodCommsError.noPodAvailable }
+
         try manager.sendHello(ids.myId.address)
-        
+    }
+    
+    private func pairPod(_ ids: Ids) throws {
+        guard let manager = manager else { throw PodCommsError.noPodAvailable }
+
         let ltkExchanger = LTKExchanger(manager: manager, ids: ids)
         let response = try ltkExchanger.negotiateLTK()
+        
+        log.debug("Done")
 
 //        if self.podState == nil {
 //            log.default("Creating PodState for address %{public}@ [lot %u tid %u]", String(format: "%04X", response.address))
@@ -117,41 +132,72 @@ public class PodComms: CustomDebugStringConvertible {
     
     func assignAddressAndSetupPod(
         address: UInt32,
+        device: Omnipod,
         timeZone: TimeZone,
         messageLogger: MessageLogger?,
         _ block: @escaping (_ result: SessionRunResult) -> Void
     ) {
-        do {
-            if self.podState == nil {
-                try self.pairPod(address: address)
-            }
+        device.runSession(withName: "Pair Pod") { [weak self] in
+            guard let self = self else { fatalError() }
+            self.log.debug("assignAddressAndSetupPod")
             
-            guard self.podState != nil else {
-                block(.failure(PodCommsError.noPodPaired))
-                return
+            do {
+                if self.podState == nil {
+                    let ids = Ids(podState: self.podState)
+                    try self.sendHello(ids)
+                    try self.pairPod(ids)
+//                    self.opsQueue.addOperation {
+//                        do {
+//                            self.log.debug("SendHello")
+//                            try self.sendHello(ids)
+//                        } catch let error as PodCommsError {
+//                            block(.failure(error))
+//                        } catch {
+//                            block(.failure(PodCommsError.commsError(error: error)))
+//                        }
+//                    }
+//                    self.opsQueue.addOperation {
+//                        do {
+//                            self.log.debug("PairPod")
+//                            try self.pairPod(ids)
+//                        } catch let error as PodCommsError {
+//                            block(.failure(error))
+//                        } catch {
+//                            block(.failure(PodCommsError.commsError(error: error)))
+//                        }
+//                    }
+                }
+                
+//                self.opsQueue.waitUntilAllOperationsAreFinished()
+                
+                guard self.podState != nil else {
+                    block(.failure(PodCommsError.noPodPaired))
+                    return
+                }
+
+    //            if self.podState!.setupProgress.isPaired == false {
+    //                try self.setupPod(podState: self.podState!, timeZone: timeZone, commandSession: commandSession)
+    //            }
+
+                guard self.podState!.setupProgress.isPaired else {
+                    self.log.error("Unexpected podStatus setupProgress value of %{public}@", String(describing: self.podState!.setupProgress))
+                    throw PodCommsError.invalidData
+                }
+
+                // Run a session now for any post-pairing commands
+                // ZZZ rework for BLE transport
+    //            let transport = PodMessageTransport(session: commandSession, address: self.podState!.address, state: self.podState!.messageTransportState)
+    //            transport.messageLogger = self.messageLogger
+    //            let podSession = PodCommsSession(podState: self.podState!, transport: transport, delegate: self)
+    //
+    //            block(.success(session: podSession))
+            } catch let error as PodCommsError {
+                block(.failure(error))
+            } catch {
+                block(.failure(PodCommsError.commsError(error: error)))
             }
-
-//            if self.podState!.setupProgress.isPaired == false {
-//                try self.setupPod(podState: self.podState!, timeZone: timeZone, commandSession: commandSession)
-//            }
-
-            guard self.podState!.setupProgress.isPaired else {
-                self.log.error("Unexpected podStatus setupProgress value of %{public}@", String(describing: self.podState!.setupProgress))
-                throw PodCommsError.invalidData
-            }
-
-            // Run a session now for any post-pairing commands
-            // ZZZ rework for BLE transport
-//            let transport = PodMessageTransport(session: commandSession, address: self.podState!.address, state: self.podState!.messageTransportState)
-//            transport.messageLogger = self.messageLogger
-//            let podSession = PodCommsSession(podState: self.podState!, transport: transport, delegate: self)
-//
-//            block(.success(session: podSession))
-        } catch let error as PodCommsError {
-            block(.failure(error))
-        } catch {
-            block(.failure(PodCommsError.commsError(error: error)))
         }
+
     }
     
     enum SessionRunResult {

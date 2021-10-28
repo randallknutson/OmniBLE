@@ -516,7 +516,7 @@ extension OmnipodPumpManager {
                 }
             }
 
-            self.podComms.assignAddressAndSetupPod(address: self.state.pairingAttemptAddress!, timeZone: .currentFixed, messageLogger: self) { (result) in
+            self.podComms.assignAddressAndSetupPod(address: self.state.pairingAttemptAddress!, device: self.omnipod, timeZone: .currentFixed, messageLogger: self) { (result) in
                 
                 if case .success = result {
                     self.lockedState.mutate { (state) in
@@ -1210,14 +1210,6 @@ extension OmnipodPumpManager: PumpManager {
             }
         }
     }
-//
-//    private func checkRileyLinkBattery() {
-//        rileyLinkDeviceProvider.getDevices { devices in
-//            for device in devices {
-//                device.updateBatteryLevel()
-//            }
-//        }
-//    }
 
     public func enactBolus(units: Double, at startDate: Date, willRequest: @escaping (DoseEntry) -> Void, completion: @escaping (PumpManagerResult<DoseEntry>) -> Void) {
         guard self.hasActivePod else {

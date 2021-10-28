@@ -209,9 +209,7 @@ extension PeripheralManager {
         guard let characteristic = cmdCharacteristic else {
             throw PeripheralManagerError.notReady
         }
-        perform { [weak self] _ in
-            try? self?.writeValue(Data([PodCommand.HELLO.rawValue, 0x01, 0x04]) + controllerId, characteristic: characteristic, type: .withResponse, timeout: 5)
-        }
+        try writeValue(Data([PodCommand.HELLO.rawValue, 0x01, 0x04]) + controllerId, characteristic: characteristic, type: .withResponse, timeout: 5)
     }
 
     /// - Throws: PeripheralManagerError
@@ -219,7 +217,7 @@ extension PeripheralManager {
         guard let characteristic = cmdCharacteristic else {
             throw PeripheralManagerError.notReady
         }
-        try? writeValue(Data([command.rawValue]), characteristic: characteristic, type: .withResponse, timeout: timeout)
+        try writeValue(Data([command.rawValue]), characteristic: characteristic, type: .withResponse, timeout: timeout)
     }
     
     /// - Throws: PeripheralManagerError
@@ -380,7 +378,7 @@ extension PeripheralManager {
     /// - Throws: PeripheralManagerError
     func runCommand(timeout: TimeInterval, command: () -> Void) throws {
         // Prelude
-        dispatchPrecondition(condition: .onQueue(queue))
+//        dispatchPrecondition(condition: .onQueue(queue))
         guard central?.state == .poweredOn && peripheral.state == .connected else {
             throw PeripheralManagerError.notReady
         }
@@ -424,7 +422,7 @@ extension PeripheralManager {
     ///
     /// - Parameter condition: The condition to add
     func addCondition(_ condition: CommandCondition) {
-        dispatchPrecondition(condition: .onQueue(queue))
+//        dispatchPrecondition(condition: .onQueue(queue))
         commandConditions.append(condition)
     }
     
