@@ -132,43 +132,39 @@ public class PodComms: CustomDebugStringConvertible {
     
     func assignAddressAndSetupPod(
         address: UInt32,
-        device: Omnipod,
         timeZone: TimeZone,
         messageLogger: MessageLogger?,
         _ block: @escaping (_ result: SessionRunResult) -> Void
     ) {
-        device.runSession(withName: "Pair Pod") { [weak self] in
+        delegateQueue.async { [weak self] in
             guard let self = self else { fatalError() }
             self.log.debug("assignAddressAndSetupPod")
             
             do {
                 if self.podState == nil {
                     let ids = Ids(podState: self.podState)
-                    try self.sendHello(ids)
-                    try self.pairPod(ids)
-//                    self.opsQueue.addOperation {
-//                        do {
-//                            self.log.debug("SendHello")
-//                            try self.sendHello(ids)
-//                        } catch let error as PodCommsError {
-//                            block(.failure(error))
-//                        } catch {
-//                            block(.failure(PodCommsError.commsError(error: error)))
-//                        }
-//                    }
-//                    self.opsQueue.addOperation {
-//                        do {
-//                            self.log.debug("PairPod")
-//                            try self.pairPod(ids)
-//                        } catch let error as PodCommsError {
-//                            block(.failure(error))
-//                        } catch {
-//                            block(.failure(PodCommsError.commsError(error: error)))
-//                        }
-//                    }
+                    self.opsQueue.addOperation {
+                        do {
+                            self.log.debug("")
+                            try self.sendHello(ids)
+                        } catch let error as PodCommsError {
+                            block(.failure(error))
+                        } catch {
+                            block(.failure(PodCommsError.commsError(error: error)))
+                        }
+                    }
+                    self.opsQueue.addOperation {
+                        do {
+                            try self.pairPod(ids)
+                        } catch let error as PodCommsError {
+                            block(.failure(error))
+                        } catch {
+                            block(.failure(PodCommsError.commsError(error: error)))
+                        }
+                    }
                 }
                 
-//                self.opsQueue.waitUntilAllOperationsAreFinished()
+                self.opsQueue.waitUntilAllOperationsAreFinished()
                 
                 guard self.podState != nil else {
                     block(.failure(PodCommsError.noPodPaired))

@@ -516,7 +516,7 @@ extension OmnipodPumpManager {
                 }
             }
 
-            self.podComms.assignAddressAndSetupPod(address: self.state.pairingAttemptAddress!, device: self.omnipod, timeZone: .currentFixed, messageLogger: self) { (result) in
+            self.podComms.assignAddressAndSetupPod(address: self.state.pairingAttemptAddress!, timeZone: .currentFixed, messageLogger: self) { (result) in
                 
                 if case .success = result {
                     self.lockedState.mutate { (state) in
