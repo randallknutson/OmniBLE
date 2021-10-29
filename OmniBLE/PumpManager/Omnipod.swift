@@ -183,7 +183,7 @@ extension Omnipod {
 
 extension Omnipod: BluetoothManagerDelegate {
     func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, isReadyWithError error: Error?) {
-//        podComms.device?.manager = peripheralManager
+        podComms.manager = peripheralManager
     }
     
     func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral) -> Bool {
