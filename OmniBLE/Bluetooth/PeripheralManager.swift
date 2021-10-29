@@ -250,7 +250,7 @@ extension PeripheralManager {
         guard let characteristic = dataCharacteristic else {
             throw PeripheralManagerError.notReady
         }
-        try? writeValue(value, characteristic: characteristic, type: .withResponse, timeout: timeout)
+        try writeValue(value, characteristic: characteristic, type: .withResponse, timeout: timeout)
     }
 
     /// - Throws: PeripheralManagerError

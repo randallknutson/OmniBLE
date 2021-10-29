@@ -34,7 +34,7 @@ struct FirstBlePacket: BlePacket {
 
     func toData() -> Data {
         var bb = Data(capacity: MAX_SIZE)
-        bb.append(0) // index
+        bb.append(UInt8(0)) // index
         bb.append(UInt8(fullFragments)) // # of fragments except FirstBlePacket and LastOptionalPlusOneBlePacket
         
         if let crc32 = crc32 {

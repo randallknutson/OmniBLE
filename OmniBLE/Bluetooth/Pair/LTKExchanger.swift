@@ -88,7 +88,7 @@ class LTKExchanger {
             source: ids.myId,
             destination: podAddress,
             keys: [LTKExchanger.SP0GP0],
-            payloads: []
+            payloads: [Data()]
         )
         let result = manager.sendMessage(sp0gp0.messagePacket)
         guard ((result as? MessageSendSuccess) != nil) else {
