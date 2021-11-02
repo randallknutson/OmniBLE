@@ -9,12 +9,12 @@ import CoreBluetooth
 import Foundation
 import os.log
 
-let advertisedServiceUUID = CBUUID(string: "00004024-0000-1000-8000-00805f9b34fb")
 
 protocol BluetoothManagerDelegate: AnyObject {
 
     /**
      Tells the delegate that the bluetooth manager has finished connecting to and discovering all required services of its peripheral, or that it failed to do so
+
      - parameter manager: The bluetooth manager
      - parameter peripheralManager: The peripheral manager
      - parameter error:   An error describing why bluetooth setup failed
@@ -23,8 +23,10 @@ protocol BluetoothManagerDelegate: AnyObject {
 
     /**
      Asks the delegate whether the discovered or restored peripheral should be connected
+
      - parameter manager:    The bluetooth manager
      - parameter peripheral: The found peripheral
+
      - returns: True if the peripheral should connect
      */
     func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral) -> Bool
@@ -64,7 +66,6 @@ class BluetoothManager: NSObject {
             lockedStayConnected.value = newValue
         }
     }
-    
     private let lockedStayConnected: Locked<Bool> = Locked(true)
 
     weak var delegate: BluetoothManagerDelegate?
@@ -73,8 +74,6 @@ class BluetoothManager: NSObject {
 
     /// Isolated to `managerQueue`
     private var manager: CBCentralManager! = nil
-
-    internal let sessionQueue = DispatchQueue(label: "com.randallknutson.OmniBLE.BluetoothManager.sessionQueue", qos: .unspecified)
 
     /// Isolated to `managerQueue`
     private var peripheral: CBPeripheral? {
@@ -92,8 +91,8 @@ class BluetoothManager: NSObject {
             } else {
                 peripheralManager = PeripheralManager(
                     peripheral: peripheral,
-                    centralManager: manager,
-                    queue: sessionQueue
+                    configuration: .omnipod,
+                    centralManager: manager
                 )
             }
         }
@@ -131,6 +130,7 @@ class BluetoothManager: NSObject {
     }
 
     // MARK: - Actions
+
     func scanForPeripheral() {
         dispatchPrecondition(condition: .notOnQueue(managerQueue))
 
@@ -169,15 +169,18 @@ class BluetoothManager: NSObject {
             log.debug("Re-connecting to known peripheral %{public}@", peripheral.identifier.uuidString)
             self.peripheral = peripheral
             self.manager.connect(peripheral)
-        } else if let peripheral = manager.retrieveConnectedPeripherals(withServices: [advertisedServiceUUID]).first,
-            delegate == nil || delegate!.bluetoothManager(self, shouldConnectPeripheral: peripheral)
+        } else if let peripheral = manager.retrieveConnectedPeripherals(withServices: [
+            OmnipodServiceUUID.advertisement.cbUUID,
+            OmnipodServiceUUID.service.cbUUID
+        ]).first,
+        delegate == nil || delegate!.bluetoothManager(self, shouldConnectPeripheral: peripheral)
         {
             log.debug("Found system-connected peripheral: %{public}@", peripheral.identifier.uuidString)
             self.peripheral = peripheral
             self.manager.connect(peripheral)
         } else {
             log.debug("Scanning for peripherals")
-            manager.scanForPeripherals(withServices: [advertisedServiceUUID],
+            manager.scanForPeripherals(withServices: [OmnipodServiceUUID.advertisement.cbUUID],
                 options: nil
             )
         }
@@ -189,6 +192,7 @@ class BluetoothManager: NSObject {
      app unless it's scanning.
      
      The sleep gives the transmitter time to shut down, but keeps the app running.
+
      */
     fileprivate func scanAfterDelay() {
         DispatchQueue.global(qos: .utility).async {
@@ -199,6 +203,7 @@ class BluetoothManager: NSObject {
     }
 
     // MARK: - Accessors
+
     var isScanning: Bool {
         dispatchPrecondition(condition: .notOnQueue(managerQueue))
 
@@ -327,19 +332,6 @@ extension BluetoothManager: PeripheralManagerDelegate {
     }
     
     func peripheralManager(_ manager: PeripheralManager, didUpdateValueFor characteristic: CBCharacteristic) {
-//        guard let value = characteristic.value else {
-//            return
-//        }
-//
-//        switch CGMServiceCharacteristicUUID(rawValue: characteristic.uuid.uuidString.uppercased()) {
-//        case .none, .communication?:
-//            return
-//        case .control?:
-//            self.delegate?.bluetoothManager(self, peripheralManager: manager, didReceiveControlResponse: value)
-//        case .backfill?:
-//            self.delegate?.bluetoothManager(self, didReceiveBackfillResponse: value)
-//        case .authentication?:
-//            self.delegate?.bluetoothManager(self, peripheralManager: manager, didReceiveAuthenticationResponse: value)
-//        }
+
     }
 }

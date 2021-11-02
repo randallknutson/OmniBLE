@@ -25,6 +25,9 @@
 		1021114D2709467400784F13 /* PodComms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1021114C2709467400784F13 /* PodComms.swift */; };
 		10289E68271B2A08000339E6 /* NumberFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10289E67271B2A08000339E6 /* NumberFormatter.swift */; };
 		10289E6A271B2A3E000339E6 /* IdentifiableClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10289E69271B2A3E000339E6 /* IdentifiableClass.swift */; };
+		10289E6C27308746000339E6 /* BluetoothServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10289E6B27308746000339E6 /* BluetoothServices.swift */; };
+		10289E6E27309327000339E6 /* CBPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10289E6D27309327000339E6 /* CBPeripheral.swift */; };
+		10289E70273180A2000339E6 /* PeripheralManager+Omnipod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10289E6F273180A2000339E6 /* PeripheralManager+Omnipod.swift */; };
 		1029AE4827094D0E00B7F5B6 /* OmnipodPumpManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1029AE4627094D0E00B7F5B6 /* OmnipodPumpManager.swift */; };
 		1029AE4927094D0E00B7F5B6 /* OmnipodPumpManagerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1029AE4727094D0E00B7F5B6 /* OmnipodPumpManagerState.swift */; };
 		1029AE4B27094DDC00B7F5B6 /* OmnipodPumpManager+UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1029AE4A27094DDC00B7F5B6 /* OmnipodPumpManager+UI.swift */; };
@@ -88,7 +91,6 @@
 		847530F726ED65DD009FD801 /* LoopKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 847530F426ED65DD009FD801 /* LoopKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		847530F826ED65DD009FD801 /* LoopKitUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 847530F526ED65DD009FD801 /* LoopKitUI.framework */; };
 		847530F926ED65DD009FD801 /* LoopKitUI.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 847530F526ED65DD009FD801 /* LoopKitUI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		847530FE26ED672D009FD801 /* PodCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847530FC26ED672D009FD801 /* PodCommands.swift */; };
 		8475311526ED7422009FD801 /* OmnipodPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475311226ED7422009FD801 /* OmnipodPlugin.swift */; };
 		8475313226ED838B009FD801 /* PodLifeHUDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475311F26ED838A009FD801 /* PodLifeHUDView.swift */; };
 		8475313326ED838B009FD801 /* HUDAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8475312026ED838A009FD801 /* HUDAssets.xcassets */; };
@@ -162,6 +164,9 @@
 		1021114C2709467400784F13 /* PodComms.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PodComms.swift; sourceTree = "<group>"; };
 		10289E67271B2A08000339E6 /* NumberFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NumberFormatter.swift; sourceTree = "<group>"; };
 		10289E69271B2A3E000339E6 /* IdentifiableClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IdentifiableClass.swift; sourceTree = "<group>"; };
+		10289E6B27308746000339E6 /* BluetoothServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothServices.swift; sourceTree = "<group>"; };
+		10289E6D27309327000339E6 /* CBPeripheral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CBPeripheral.swift; sourceTree = "<group>"; };
+		10289E6F273180A2000339E6 /* PeripheralManager+Omnipod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PeripheralManager+Omnipod.swift"; sourceTree = "<group>"; };
 		1029AE4627094D0E00B7F5B6 /* OmnipodPumpManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OmnipodPumpManager.swift; sourceTree = "<group>"; };
 		1029AE4727094D0E00B7F5B6 /* OmnipodPumpManagerState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OmnipodPumpManagerState.swift; sourceTree = "<group>"; };
 		1029AE4A27094DDC00B7F5B6 /* OmnipodPumpManager+UI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "OmnipodPumpManager+UI.swift"; sourceTree = "<group>"; };
@@ -226,7 +231,6 @@
 		84752EEB26ED1402009FD801 /* Locked.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Locked.swift; sourceTree = "<group>"; };
 		847530F426ED65DD009FD801 /* LoopKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = LoopKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		847530F526ED65DD009FD801 /* LoopKitUI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = LoopKitUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		847530FC26ED672D009FD801 /* PodCommands.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PodCommands.swift; sourceTree = "<group>"; };
 		8475311226ED7422009FD801 /* OmnipodPlugin.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OmnipodPlugin.swift; sourceTree = "<group>"; };
 		8475311F26ED838A009FD801 /* PodLifeHUDView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PodLifeHUDView.swift; sourceTree = "<group>"; };
 		8475312026ED838A009FD801 /* HUDAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = HUDAssets.xcassets; sourceTree = "<group>"; };
@@ -399,7 +403,6 @@
 				1016324E2715354C007A3BC2 /* Omnipod.swift */,
 				1029AE4627094D0E00B7F5B6 /* OmnipodPumpManager.swift */,
 				1029AE4727094D0E00B7F5B6 /* OmnipodPumpManagerState.swift */,
-				847530FC26ED672D009FD801 /* PodCommands.swift */,
 				102111422709462300784F13 /* PodCommsSession.swift */,
 				102111442709462300784F13 /* PodCommsSession+LoopKit.swift */,
 				1021114C2709467400784F13 /* PodComms.swift */,
@@ -414,7 +417,10 @@
 			isa = PBXGroup;
 			children = (
 				1016324C27137B1E007A3BC2 /* BluetoothManager.swift */,
+				10289E6B27308746000339E6 /* BluetoothServices.swift */,
+				10289E6D27309327000339E6 /* CBPeripheral.swift */,
 				84752ECA26ED13F5009FD801 /* PeripheralManager.swift */,
+				10289E6F273180A2000339E6 /* PeripheralManager+Omnipod.swift */,
 				84752EC926ED13F5009FD801 /* PeripheralManagerError.swift */,
 				84752ECB26ED13F5009FD801 /* BluetoothErrors.swift */,
 				84752EBF26ED13F5009FD801 /* Id.swift */,
@@ -677,6 +683,7 @@
 				1016324D27137B1E007A3BC2 /* BluetoothManager.swift in Sources */,
 				84752EE026ED13F5009FD801 /* BluetoothErrors.swift in Sources */,
 				1016325B27185EE5007A3BC2 /* Pod.swift in Sources */,
+				10289E6C27308746000339E6 /* BluetoothServices.swift in Sources */,
 				10389A3226FF7841002115E9 /* BasalScheduleExtraCommand.swift in Sources */,
 				8475314026ED838B009FD801 /* OmnipodPumpManagerSetupViewController.swift in Sources */,
 				1016325A27185EE5007A3BC2 /* FaultEventCode.swift in Sources */,
@@ -729,6 +736,7 @@
 				10389A2526FF7841002115E9 /* PodInfoActivationTime.swift in Sources */,
 				10389A4026FF7841002115E9 /* Packet.swift in Sources */,
 				1021114D2709467400784F13 /* PodComms.swift in Sources */,
+				10289E6E27309327000339E6 /* CBPeripheral.swift in Sources */,
 				1016325F27185EE5007A3BC2 /* BasalSchedule.swift in Sources */,
 				10389A2F26FF7841002115E9 /* PodInfoPulseLogPlus.swift in Sources */,
 				10389A2826FF7841002115E9 /* AcknowledgeAlertCommand.swift in Sources */,
@@ -740,9 +748,9 @@
 				102111472709462300784F13 /* PodState.swift in Sources */,
 				1021114B2709462300784F13 /* PodCommsSession+LoopKit.swift in Sources */,
 				84752EE626ED13F5009FD801 /* LTKExchanger.swift in Sources */,
-				847530FE26ED672D009FD801 /* PodCommands.swift in Sources */,
 				10389A2A26FF7841002115E9 /* MessageBlock.swift in Sources */,
 				8475313C26ED838B009FD801 /* ReplacePodViewController.swift in Sources */,
+				10289E70273180A2000339E6 /* PeripheralManager+Omnipod.swift in Sources */,
 				84752EEC26ED1402009FD801 /* OSLog.swift in Sources */,
 				8475314126ED838B009FD801 /* PairPodSetupViewController.swift in Sources */,
 				10389A3326FF7841002115E9 /* CancelDeliveryCommand.swift in Sources */,

@@ -29,14 +29,16 @@ class PayloadSplitter {
                 payload: payload.subdata(in: 0..<FirstBlePacket.CAPACITY_WITH_MIDDLE_PACKETS)
             )
         )
-        for i in 1...middleFragments {
-            let p = payload.subdata(in: (FirstBlePacket.CAPACITY_WITH_MIDDLE_PACKETS + (i - 1) * MiddleBlePacket.CAPACITY)..<(FirstBlePacket.CAPACITY_WITH_MIDDLE_PACKETS + i * MiddleBlePacket.CAPACITY))
-            ret.append(
-                MiddleBlePacket(
-                    index: UInt8(i),
-                    payload: p
+        if (middleFragments > 0) {
+            for i in 1...middleFragments {
+                let p = payload.subdata(in: (FirstBlePacket.CAPACITY_WITH_MIDDLE_PACKETS + (i - 1) * MiddleBlePacket.CAPACITY)..<(FirstBlePacket.CAPACITY_WITH_MIDDLE_PACKETS + i * MiddleBlePacket.CAPACITY))
+                ret.append(
+                    MiddleBlePacket(
+                        index: UInt8(i),
+                        payload: p
+                    )
                 )
-            )
+            }
         }
         let end = min(LastBlePacket.CAPACITY, Int(rest))
         ret.append(

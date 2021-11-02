@@ -56,20 +56,14 @@ public class PodComms: CustomDebugStringConvertible {
     
     private let delegateQueue = DispatchQueue(label: "com.randallknutson.OmnipodKit.delegateQueue", qos: .unspecified)
     
-    private func sendHello(_ ids: Ids) throws {
-        guard let manager = manager else { throw PodCommsError.noPodAvailable }
-
-        try manager.sendHello(ids.myId.address)
-    }
-    
     private func pairPod(_ ids: Ids) throws {
         guard let manager = manager else { throw PodCommsError.noPodAvailable }
 
         let ltkExchanger = LTKExchanger(manager: manager, ids: ids)
         let response = try ltkExchanger.negotiateLTK()
         
-        log.debug("Done")
-
+        // TODO: Should have the LTK Here!
+        
 //        if self.podState == nil {
 //            log.default("Creating PodState for address %{public}@ [lot %u tid %u]", String(format: "%04X", response.address))
 //            self.podState = PodState(
@@ -136,35 +130,22 @@ public class PodComms: CustomDebugStringConvertible {
         messageLogger: MessageLogger?,
         _ block: @escaping (_ result: SessionRunResult) -> Void
     ) {
-        delegateQueue.async { [weak self] in
-            guard let self = self else { fatalError() }
-            self.log.debug("assignAddressAndSetupPod")
-            
+        guard let manager = manager else {
+            block(.failure(PodCommsError.noPodPaired))
+            return
+        }
+
+        manager.perform { [weak self] _ in
             do {
+                guard let self = self else { fatalError() }
+
                 if self.podState == nil {
+
                     let ids = Ids(podState: self.podState)
-                    self.opsQueue.addOperation {
-                        do {
-                            self.log.debug("")
-                            try self.sendHello(ids)
-                        } catch let error as PodCommsError {
-                            block(.failure(error))
-                        } catch {
-                            block(.failure(PodCommsError.commsError(error: error)))
-                        }
-                    }
-                    self.opsQueue.addOperation {
-                        do {
-                            try self.pairPod(ids)
-                        } catch let error as PodCommsError {
-                            block(.failure(error))
-                        } catch {
-                            block(.failure(PodCommsError.commsError(error: error)))
-                        }
-                    }
+                    try manager.sendHello(ids.myId.address)
+                    try self.pairPod(ids)
+
                 }
-                
-                self.opsQueue.waitUntilAllOperationsAreFinished()
                 
                 guard self.podState != nil else {
                     block(.failure(PodCommsError.noPodPaired))
@@ -203,17 +184,17 @@ public class PodComms: CustomDebugStringConvertible {
     
     func runSession(withName name: String, _ block: @escaping (_ result: SessionRunResult) -> Void) {
 
-        manager?.runSession(withName: name) { (commandSession) in
-            guard self.podState != nil else {
-                block(.failure(PodCommsError.noPodPaired))
-                return
-            }
-
-            let transport = PodMessageTransport(session: commandSession, address: self.podState!.address, state: MessageTransportState(rawValue: NSObject() as! MessageTransportState.RawValue)!)
-            transport.messageLogger = self.messageLogger
-            let podSession = PodCommsSession(podState: self.podState!, transport: transport, delegate: self)
-            block(.success(session: podSession))
-        }
+//        manager?.runSession(withName: name) { (commandSession) in
+//            guard self.podState != nil else {
+//                block(.failure(PodCommsError.noPodPaired))
+//                return
+//            }
+//
+//            let transport = PodMessageTransport(session: commandSession, address: self.podState!.address, state: MessageTransportState(rawValue: NSObject() as! MessageTransportState.RawValue)!)
+//            transport.messageLogger = self.messageLogger
+//            let podSession = PodCommsSession(podState: self.podState!, transport: transport, delegate: self)
+//            block(.success(session: podSession))
+//        }
     }
 
     // MARK: - CustomDebugStringConvertible
