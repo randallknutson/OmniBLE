@@ -67,6 +67,21 @@ public class PodComms: CustomDebugStringConvertible {
         let messageTransportState = MessageTransportState(ltk: ltk, packetNumber: packetNumber, messageNumber: messageNumber)
         let transport = PodMessageTransport(manager: manager, address: 0xffffffff, ackAddress: address, state: messageTransportState)
         transport.messageLogger = messageLogger
+        
+        if self.podState == nil {
+            log.default("Creating PodState for address %{public}@ [lot %u tid %u], packet #%d, message #%d", String(format: "%04X", response.address), 1, 1, transport.packetNumber, transport.messageNumber)
+            self.podState = PodState(
+                address: response.address,
+                ltk: response.ltk,
+                packetNumber: transport.packetNumber,
+                messageNumber: transport.messageNumber,
+                lotNo: 1, // TODO: Fixme
+                lotSeq: 1 // TODO: Fixme
+            )
+        }
+
+        log.info("Pairing is now complete")
+        self.podState?.setupProgress = .podPaired
     }
     
 //    private func setupPod(podState: PodState, timeZone: TimeZone) throws {
