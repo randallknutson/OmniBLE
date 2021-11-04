@@ -15,7 +15,16 @@ import OmniKit
 import RileyLinkKitUI
 
 // PumpManagerSetupViewController
-public class OmnipodPumpManagerSetupViewController: RileyLinkManagerSetupViewController {
+public class OmnipodPumpManagerSetupViewController: UINavigationController, PumpManagerSetupViewController, UINavigationControllerDelegate, CompletionNotifying {
+    public var setupDelegate: PumpManagerSetupViewControllerDelegate?
+    
+    public var maxBasalRateUnitsPerHour: Double?
+    
+    public var maxBolusUnits: Double?
+    
+    public var basalSchedule: BasalRateSchedule?
+    
+    public var completionDelegate: CompletionDelegate?
     
     class func instantiateFromStoryboard() -> OmnipodPumpManagerSetupViewController {
         return UIStoryboard(name: "OmnipodPumpManager", bundle: Bundle(for: OmnipodPumpManagerSetupViewController.self)).instantiateInitialViewController() as! OmnipodPumpManagerSetupViewController
@@ -25,32 +34,30 @@ public class OmnipodPumpManagerSetupViewController: RileyLinkManagerSetupViewCon
         super.viewDidLoad()
         
         if #available(iOSApplicationExtension 13.0, *) {
+            // Prevent interactive dismissal
+            isModalInPresentation = true
             view.backgroundColor = .systemBackground
         } else {
             view.backgroundColor = .white
         }
         navigationBar.shadowImage = UIImage()
 
+        delegate = self
     }
         
     private(set) var pumpManager: OmnipodPumpManager?
     
     /*
-     1. RileyLink
-     - RileyLinkPumpManagerState
+     1. Basal Rates & Delivery Limits
      
-     2. Basal Rates & Delivery Limits
+     2. Pod Pairing/Priming
      
-     3. Pod Pairing/Priming
+     3. Cannula Insertion
      
-     4. Cannula Insertion
-     
-     5. Pod Setup Complete
+     4. Pod Setup Complete
      */
     
-    override public func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
-        super.navigationController(navigationController, willShow: viewController, animated: animated)
-
+    public func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
         // Read state values
         let viewControllers = navigationController.viewControllers
         let count = navigationController.viewControllers.count
@@ -85,10 +92,10 @@ public class OmnipodPumpManagerSetupViewController: RileyLinkManagerSetupViewCon
             vc.pumpManager = pumpManager
         default:
             break
-        }        
+        }
     }
 
-    override open func finishedSetup() {
+    open func finishedSetup() {
         if let pumpManager = pumpManager {
             let settings = OmnipodSettingsViewController(pumpManager: pumpManager)
             setViewControllers([settings], animated: true)

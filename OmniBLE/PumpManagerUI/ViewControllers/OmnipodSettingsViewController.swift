@@ -7,8 +7,6 @@
 //
 
 import UIKit
-import RileyLinkKitUI
-import RileyLinkKit
 import LoopKit
 import OmniKit
 import LoopKitUI
@@ -28,7 +26,7 @@ public class ConfirmationBeepsTableViewCell: TextButtonTableViewCell {
     }
 }
 
-class OmnipodSettingsViewController: RileyLinkSettingsViewController {
+class OmnipodSettingsViewController: UITableViewController {
 
     let pumpManager: OmnipodPumpManager
     
@@ -52,11 +50,8 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
         self.pumpManager = pumpManager
         podState = pumpManager.state.podState
         pumpManagerStatus = pumpManager.status
-        
-        let devicesSectionIndex = OmnipodSettingsViewController.sectionList(podState).firstIndex(of: .rileyLinks)!
 
-        // TODO: Fix type
-        super.init(rileyLinkPumpManager: pumpManager as! RileyLinkPumpManager, devicesSectionIndex: devicesSectionIndex, style: .grouped)
+        super.init(style: .grouped)
         
         pumpManager.addStatusObserver(self, queue: .main)
         pumpManager.addPodStateObserver(self, queue: .main)
@@ -217,7 +212,6 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
     private enum Section: Int, CaseIterable {
         case status = 0
         case configuration
-        case rileyLinks
         case diagnostics
         case podDetails
         case deletePumpManager
@@ -226,12 +220,12 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
     private class func sectionList(_ podState: PodState?) -> [Section] {
         if let podState = podState {
             if podState.unfinishedSetup {
-                return [.configuration, .rileyLinks]
+                return [.configuration]
             } else {
-                return [.status, .configuration, .rileyLinks, .diagnostics, .podDetails]
+                return [.status, .configuration, .diagnostics, .podDetails]
             }
         } else {
-            return [.configuration, .rileyLinks, .deletePumpManager]
+            return [.configuration, .deletePumpManager]
         }
     }
     
@@ -296,8 +290,6 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
             return configurationRows.count
         case .status:
             return StatusRow.allCases.count
-        case .rileyLinks:
-            return super.tableView(tableView, numberOfRowsInSection: section)
         case .deletePumpManager:
             return 1
         }
@@ -309,8 +301,6 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
             return nil  // No title, appears below a pod picture
         case .configuration:
             return LocalizedString("Configuration", comment: "The title of the configuration section in settings")
-        case .rileyLinks:
-            return super.tableView(tableView, titleForHeaderInSection: section)
         case .diagnostics:
             return LocalizedString("Diagnostics", comment: "The title of the diagnostics section in settings")
         case .podDetails:
@@ -322,8 +312,6 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
     
     override func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         switch sections[section] {
-        case .rileyLinks:
-            return super.tableView(tableView, viewForHeaderInSection: section)
         case .podDetails, .diagnostics, .configuration, .status, .deletePumpManager:
             return nil
         }
@@ -447,9 +435,6 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
 //                return cell
 //            }
 //
-//        case .rileyLinks:
-//            return super.tableView(tableView, cellForRowAt: indexPath)
-//
 //        case .diagnostics:
 //            switch Diagnostics(rawValue: indexPath.row)! {
 //            case .readPodStatus:
@@ -524,7 +509,7 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
             default:
                 return false
             }
-        case .configuration, .rileyLinks, .diagnostics, .deletePumpManager:
+        case .configuration, .diagnostics, .deletePumpManager:
             return true
         case .podDetails:
             return false
@@ -596,24 +581,6 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
                 }
                 self.navigationController?.present(vc, animated: true, completion: nil)
             }
-        case .rileyLinks:
-            return
-//            let device = devicesDataSource.devices[indexPath.row]
-//            
-//            guard device.hardwareType != nil else {
-//                tableView.deselectRow(at: indexPath, animated: true)
-//                return
-//            }
-//
-//            let vc = RileyLinkDeviceTableViewController(
-//                device: device,
-//                batteryAlertLevel: pumpManager.rileyLinkBatteryAlertLevel,
-//                batteryAlertLevelChanged: { [weak self] value in
-//                    self?.pumpManager.rileyLinkBatteryAlertLevel = value
-//                }
-//            )
-//            
-//            self.show(vc, sender: sender)
         case .diagnostics:
             switch Diagnostics(rawValue: indexPath.row)! {
             case .readPodStatus:
@@ -661,8 +628,6 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
             case .enableDisableConfirmationBeeps, .timeZoneOffset, .replacePod:
                 tableView.reloadRows(at: [indexPath], with: .fade)
             }
-        case .rileyLinks:
-            break
         case .diagnostics:
             tableView.reloadRows(at: [indexPath], with: .fade)
         case .podDetails, .deletePumpManager:
@@ -762,7 +727,7 @@ extension OmnipodSettingsViewController: PodStateObserver {
         self.podState = state
 
         if sectionsChanged {
-            self.devicesDataSource.devicesSectionIndex = self.sections.firstIndex(of: .rileyLinks)!
+//            self.devicesDataSource.devicesSectionIndex = self.sections.firstIndex(of: .rileyLinks)!
             self.tableView.reloadData()
         } else {
             if oldConfigurationRowsCount != self.configurationRows.count, let idx = newSections.firstIndex(of: .configuration) {

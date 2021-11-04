@@ -51,8 +51,6 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
     public typealias RawValue = [String: Any]
     
     public let address: UInt32
-    public let ltk: Data
-    public let messageSequence: UInt8
     fileprivate var nonceState: NonceState
 
     public var activatedAt: Date?
@@ -86,7 +84,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
     }
 
     public var fault: DetailedStatus?
-//    public var messageTransportState: MessageTransportState
+    public var messageTransportState: MessageTransportState
     public var primeFinishTime: Date?
     public var setupProgress: SetupProgress
     public var configuredAlerts: [AlertSlot: PodAlert]
@@ -101,10 +99,8 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         return active
     }
     
-    public init(address: UInt32, ltk: Data, messageSequence: UInt8 = 0, lotNo: UInt64, lotSeq: UInt32) {
+    public init(address: UInt32, ltk: Data, packetNumber: Int, messageNumber: Int = 0, lotNo: UInt64, lotSeq: UInt32) {
         self.address = address
-        self.ltk = ltk
-        self.messageSequence = messageSequence
         self.nonceState = NonceState(lot: 0, tid: 0)
         self.lotNo = lotNo
         self.lotSeq = lotSeq
@@ -113,6 +109,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         self.suspendState = .resumed(Date())
         self.fault = nil
         self.activeAlertSlots = .none
+        self.messageTransportState = MessageTransportState(ltk: ltk, packetNumber: packetNumber, messageNumber: messageNumber)
         self.primeFinishTime = nil
         self.setupProgress = .addressAssigned
         self.configuredAlerts = [.slot7: .waitingForPairingReminder]
@@ -262,8 +259,6 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
 
         guard
             let address = rawValue["address"] as? UInt32,
-            let ltk = rawValue["ltk"] as? Data,
-            let messageSequence = rawValue["messageSequence"] as? UInt8,
             let nonceStateRaw = rawValue["nonceState"] as? NonceState.RawValue,
             let nonceState = NonceState(rawValue: nonceStateRaw),
             let lotNo = rawValue["lotNo"] as? UInt64,
@@ -273,8 +268,6 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             }
         
         self.address = address
-        self.ltk = ltk
-        self.messageSequence = messageSequence
         self.nonceState = nonceState
         self.lotNo = lotNo
         self.lotSeq = lotSeq
@@ -362,13 +355,13 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             self.setupProgress = .completed
         }
         
-//        if let messageTransportStateRaw = rawValue["messageTransportState"] as? MessageTransportState.RawValue,
-//            let messageTransportState = MessageTransportState(rawValue: messageTransportStateRaw)
-//        {
-//            self.messageTransportState = messageTransportState
-//        } else {
-//            self.messageTransportState = MessageTransportState(packetNumber: 0, messageNumber: 0)
-//        }
+        if let messageTransportStateRaw = rawValue["messageTransportState"] as? MessageTransportState.RawValue,
+            let messageTransportState = MessageTransportState(rawValue: messageTransportStateRaw)
+        {
+            self.messageTransportState = messageTransportState
+        } else {
+            self.messageTransportState = MessageTransportState(ltk: Data(), packetNumber: 0, messageNumber: 0)
+        }
 
         if let rawConfiguredAlerts = rawValue["configuredAlerts"] as? [String: PodAlert.RawValue] {
             var configuredAlerts = [AlertSlot: PodAlert]()
@@ -402,7 +395,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             "suspendState": suspendState.rawValue,
             "finalizedDoses": finalizedDoses.map( { $0.rawValue }),
             "alerts": activeAlertSlots.rawValue,
-//            "messageTransportState": messageTransportState.rawValue,
+            "messageTransportState": messageTransportState.rawValue,
             "setupProgress": setupProgress.rawValue
             ]
         
@@ -473,7 +466,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             "* unfinalizedResume: \(String(describing: unfinalizedResume))",
             "* finalizedDoses: \(String(describing: finalizedDoses))",
             "* activeAlerts: \(String(describing: activeAlerts))",
-//            "* messageTransportState: \(String(describing: messageTransportState))",
+            "* messageTransportState: \(String(describing: messageTransportState))",
             "* setupProgress: \(setupProgress)",
             "* primeFinishTime: \(String(describing: primeFinishTime))",
             "* configuredAlerts: \(String(describing: configuredAlerts))",

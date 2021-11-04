@@ -42,7 +42,7 @@ public class Omnipod {
     /// The queue used to serialize sessions and observe when they've drained
     private let sessionQueue: OperationQueue = {
         let queue = OperationQueue()
-        queue.name = "com.rileylink.RileyLinkBLEKit.RileyLinkDevice.sessionQueue"
+        queue.name = "com.randallknutson.OmniBLE.OmnipodDevice.sessionQueue"
         queue.maxConcurrentOperationCount = 1
 
         return queue

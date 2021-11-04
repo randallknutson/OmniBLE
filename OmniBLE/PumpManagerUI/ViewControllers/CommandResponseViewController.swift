@@ -9,7 +9,6 @@
 import Foundation
 import LoopKitUI
 import OmniKit
-import RileyLinkBLEKit
 
 extension CommandResponseViewController {
     typealias T = CommandResponseViewController

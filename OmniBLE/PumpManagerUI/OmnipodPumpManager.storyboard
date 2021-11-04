@@ -42,9 +42,9 @@
         <!--Pair Pod-->
         <scene sceneID="okF-JR-4y4">
             <objects>
-                <tableViewController title="Pump Setup" id="91O-Un-vKc" userLabel="Pair Pod" customClass="PairPodSetupViewController" customModule="OmniBLE" sceneMemberID="viewController">
+                <tableViewController title="Pump Setup" id="91O-Un-vKc" userLabel="Pair Pod" customClass="PairPodSetupViewController" customModule="OmniBLE" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" keyboardDismissMode="onDrag" dataMode="static" style="grouped" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="18" id="1wC-au-0ju">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="758"/>
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="672"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <sections>
@@ -163,7 +163,7 @@
             <objects>
                 <tableViewController title="Pump Setup" id="k1Y-x4-m0a" userLabel="Insert Cannula" customClass="InsertCannulaSetupViewController" customModule="OmniBLE" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" keyboardDismissMode="onDrag" dataMode="static" style="grouped" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="18" id="YEa-Yl-3uG">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="758"/>
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="672"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <sections>
@@ -281,7 +281,7 @@
             <objects>
                 <tableViewController title="Pump Setup" id="aNg-mm-Uuy" userLabel="Setup Complete" customClass="PodSetupCompleteViewController" customModule="OmniBLE" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" keyboardDismissMode="onDrag" dataMode="static" style="grouped" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="18" id="Mtx-27-ViY">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="758"/>
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="672"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <sections>
@@ -523,7 +523,7 @@
             <objects>
                 <tableViewController title="Pump Setup" id="ack-ra-XH6" userLabel="Replace Pod" customClass="ReplacePodViewController" customModule="OmniBLE" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" keyboardDismissMode="onDrag" dataMode="static" style="grouped" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="18" id="D1s-eE-9wz">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="758"/>
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="672"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <sections>
@@ -649,9 +649,9 @@
         </designable>
     </designables>
     <inferredMetricsTieBreakers>
-        <segue reference="rEL-w2-Eiw"/>
+        <segue reference="IS8-xY-rnN"/>
         <segue reference="3Py-Xn-kuv"/>
-        <segue reference="Hnx-w3-aQg"/>
+        <segue reference="Qdq-yA-Ml0"/>
     </inferredMetricsTieBreakers>
     <resources>
         <image name="PodBottom" width="131.66667175292969" height="110"/>
