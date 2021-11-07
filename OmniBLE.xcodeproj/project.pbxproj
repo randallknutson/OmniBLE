@@ -28,6 +28,8 @@
 		10289E6C27308746000339E6 /* BluetoothServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10289E6B27308746000339E6 /* BluetoothServices.swift */; };
 		10289E6E27309327000339E6 /* CBPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10289E6D27309327000339E6 /* CBPeripheral.swift */; };
 		10289E70273180A2000339E6 /* PeripheralManager+Omnipod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10289E6F273180A2000339E6 /* PeripheralManager+Omnipod.swift */; };
+		10289E7627347C69000339E6 /* Nonce.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10289E7527347C69000339E6 /* Nonce.swift */; };
+		10289E782734D10D000339E6 /* EnDecrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10289E772734D10C000339E6 /* EnDecrypt.swift */; };
 		1029AE4827094D0E00B7F5B6 /* OmnipodPumpManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1029AE4627094D0E00B7F5B6 /* OmnipodPumpManager.swift */; };
 		1029AE4927094D0E00B7F5B6 /* OmnipodPumpManagerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1029AE4727094D0E00B7F5B6 /* OmnipodPumpManagerState.swift */; };
 		1029AE4B27094DDC00B7F5B6 /* OmnipodPumpManager+UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1029AE4A27094DDC00B7F5B6 /* OmnipodPumpManager+UI.swift */; };
@@ -167,6 +169,8 @@
 		10289E6B27308746000339E6 /* BluetoothServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothServices.swift; sourceTree = "<group>"; };
 		10289E6D27309327000339E6 /* CBPeripheral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CBPeripheral.swift; sourceTree = "<group>"; };
 		10289E6F273180A2000339E6 /* PeripheralManager+Omnipod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PeripheralManager+Omnipod.swift"; sourceTree = "<group>"; };
+		10289E7527347C69000339E6 /* Nonce.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Nonce.swift; sourceTree = "<group>"; };
+		10289E772734D10C000339E6 /* EnDecrypt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnDecrypt.swift; sourceTree = "<group>"; };
 		1029AE4627094D0E00B7F5B6 /* OmnipodPumpManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OmnipodPumpManager.swift; sourceTree = "<group>"; };
 		1029AE4727094D0E00B7F5B6 /* OmnipodPumpManagerState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OmnipodPumpManagerState.swift; sourceTree = "<group>"; };
 		1029AE4A27094DDC00B7F5B6 /* OmnipodPumpManager+UI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "OmnipodPumpManager+UI.swift"; sourceTree = "<group>"; };
@@ -295,6 +299,15 @@
 				1016325827185EE4007A3BC2 /* UnfinalizedDose.swift */,
 			);
 			path = Model;
+			sourceTree = "<group>";
+		};
+		10289E7427347C5B000339E6 /* EnDecrypt */ = {
+			isa = PBXGroup;
+			children = (
+				10289E7527347C69000339E6 /* Nonce.swift */,
+				10289E772734D10C000339E6 /* EnDecrypt.swift */,
+			);
+			path = EnDecrypt;
 			sourceTree = "<group>";
 		};
 		10389A0226FF7841002115E9 /* MessageTransport */ = {
@@ -426,6 +439,7 @@
 				84752EBF26ED13F5009FD801 /* Id.swift */,
 				84752EC826ED13F5009FD801 /* Ids.swift */,
 				84752EC026ED13F5009FD801 /* Util */,
+				10289E7427347C5B000339E6 /* EnDecrypt */,
 				84752EC426ED13F5009FD801 /* Message */,
 				84752ECC26ED13F5009FD801 /* Packet */,
 				84752ED126ED13F5009FD801 /* Pair */,
@@ -693,6 +707,7 @@
 				84752EE526ED13F5009FD801 /* KeyExchange.swift in Sources */,
 				8475313926ED838B009FD801 /* OmnipodSettingsViewController.swift in Sources */,
 				84752EDC26ED13F5009FD801 /* StringLengthPrefixEncoding.swift in Sources */,
+				10289E7627347C69000339E6 /* Nonce.swift in Sources */,
 				1029AE4927094D0E00B7F5B6 /* OmnipodPumpManagerState.swift in Sources */,
 				1029AE4D27094DE200B7F5B6 /* OmnipodHUDManager.swift in Sources */,
 				10389A3A26FF7841002115E9 /* SetInsulinScheduleCommand.swift in Sources */,
@@ -705,6 +720,7 @@
 				10389A2626FF7841002115E9 /* TempBasalExtraCommand.swift in Sources */,
 				8475315C26EDA193009FD801 /* TimeZone.swift in Sources */,
 				8475315726EDA193009FD801 /* LocalizedString.swift in Sources */,
+				10289E782734D10D000339E6 /* EnDecrypt.swift in Sources */,
 				84752EED26ED1402009FD801 /* Locked.swift in Sources */,
 				84752EDB26ED13F5009FD801 /* MessageType.swift in Sources */,
 				10389A2D26FF7841002115E9 /* BolusExtraCommand.swift in Sources */,

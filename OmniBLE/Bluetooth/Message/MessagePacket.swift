@@ -66,7 +66,7 @@ struct MessagePacket {
     let type: MessageType
     let source: Id
     let destination: Id
-    let payload: Data
+    var payload: Data
     let sequenceNumber: UInt8
     let ack: Bool
     let ackNumber: UInt8
