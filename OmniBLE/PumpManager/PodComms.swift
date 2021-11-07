@@ -26,8 +26,6 @@ public class PodComms: CustomDebugStringConvertible {
 
     public let log = OSLog(category: "PodComms")
 
-    private var startingPacketNumber = 0
-
     // Only valid to access on the session serial queue
     private var podState: PodState? {
         didSet {
@@ -43,7 +41,29 @@ public class PodComms: CustomDebugStringConvertible {
         self.messageLogger = nil
     }
 
-    private func pairPod(_ ids: Ids) throws {
+    // Handles all the common work to send and verify the version response for the two pairing pod commands, AssignAddress and SetupPod.
+    private func sendPairMessage(transport: PodMessageTransport, message: Message) throws -> VersionResponse {
+
+        let podMessageResponse = try transport.sendMessage(message)
+
+        if let fault = podMessageResponse.fault {
+            log.error("sendPairMessage pod fault: %{public}@", String(describing: fault))
+            if let podState = self.podState, podState.fault == nil {
+                self.podState!.fault = fault
+            }
+            throw PodCommsError.podFault(fault: fault)
+        }
+
+        guard let versionResponse = podMessageResponse.messageBlocks[0] as? VersionResponse else {
+            log.error("sendPairMessage unexpected response: %{public}@", String(describing: podMessageResponse))
+            let responseType = podMessageResponse.messageBlocks[0].blockType
+            throw PodCommsError.unexpectedResponse(response: responseType)
+        }
+
+        return versionResponse
+    }
+
+    private func pairPod(ids: Ids) throws {
         guard let manager = manager else { throw PodCommsError.noPodAvailable }
         try manager.sendHello(ids.myId.address)
         let address = ids.podId.toUInt32()
@@ -51,70 +71,103 @@ public class PodComms: CustomDebugStringConvertible {
         let ltkExchanger = LTKExchanger(manager: manager, ids: ids)
         let response = try ltkExchanger.negotiateLTK()
 
-        let packetNumber, messageNumber: Int
+        log.info("LTK and encrypted transport now ready")
+
+        // If we get here, we have the LTK all set up and we should be able use encrypted pod messages
+        let messageNumber: Int
         let ltk: Data
         if let podState = self.podState {
             ltk = podState.messageTransportState.ltk
-            packetNumber = podState.messageTransportState.packetNumber
             messageNumber = podState.messageTransportState.messageNumber
         } else {
             ltk = response.ltk
-            packetNumber =  self.startingPacketNumber
             messageNumber = Int(response.msgSeq)
         }
 
-        log.debug("Attempting pairing with address %{public}@ using packet #%d", String(format: "%04X", address), packetNumber)
-        let messageTransportState = MessageTransportState(ltk: ltk, packetNumber: packetNumber, messageNumber: messageNumber)
-        let transport = PodMessageTransport(manager: manager, address: 0xffffffff, ackAddress: address, state: messageTransportState)
+        log.debug("Attempting encrypted pod assign address command using address %{public}@", String(format: "%04X", address))
+        let messageTransportState = MessageTransportState(ltk: ltk, messageNumber: messageNumber)
+        let transport = PodMessageTransport(manager: manager, address: 0xffffffff, state: messageTransportState)
         transport.messageLogger = messageLogger
-        
+
+        // Create the Assign Address command message
+        // XXX - use the ids.podId here or use the generated 0x1F0xxxxx address?
+        let assignAddress = AssignAddressCommand(address: address)
+        let message = Message(address: 0xffffffff, messageBlocks: [assignAddress], sequenceNum: transport.messageNumber)
+
+        let versionResponse = try sendPairMessage(transport: transport, message: message)
+
         if self.podState == nil {
-            log.default("Creating PodState for address %{public}@ [lot %u tid %u], packet #%d, message #%d", String(format: "%04X", response.address), 1, 1, transport.packetNumber, transport.messageNumber)
+            log.default("Creating PodState for versionResponse %{public}@", String(describing: versionResponse))
             self.podState = PodState(
-                address: response.address,
+                address: response.address, // YYY is this correct or use config.address?
                 ltk: response.ltk,
-                packetNumber: transport.packetNumber,
                 messageNumber: transport.messageNumber,
-                lotNo: 1, // TODO: Fixme
-                lotSeq: 1 // TODO: Fixme
+                lotNo: UInt64(versionResponse.lot),
+                lotSeq: versionResponse.tid
             )
+            // podState setupProgress state should be addressAssigned
         }
 
-        log.info("Pairing is now complete")
-        self.podState?.setupProgress = .podPaired
+        // Now that we have podState, check for an activation timeout condition that can be noted in setupProgress
+        guard versionResponse.podProgressStatus != .activationTimeExceeded else {
+            // The 2 hour window for the initial pairing has expired
+            self.podState?.setupProgress = .activationTimeout
+            throw PodCommsError.activationTimeExceeded
+        }
+
     }
     
-//    private func setupPod(podState: PodState, timeZone: TimeZone) throws {
-//        guard let manager = manager else { throw PodCommsError.noPodAvailable }
-//        let transport = PodMessageTransport(manager: manager, address: 0xffffffff, ackAddress: podState.address, state: podState.messageTransportState)
-//        transport.messageLogger = messageLogger
-//
-//        let dateComponents = SetupPodCommand.dateComponents(date: Date(), timeZone: timeZone)
-//        let setupPod = SetupPodCommand(address: podState.address, dateComponents: dateComponents, lot: podState.lot, tid: podState.tid)
-//
-//        let message = Message(address: 0xffffffff, messageBlocks: [setupPod], sequenceNum: transport.messageNumber)
-//
-//        let versionResponse: VersionResponse
-//        do {
-//            versionResponse = try sendPairMessage(address: podState.address, transport: transport, message: message)
-//        } catch let error {
-//            if case PodCommsError.podAckedInsteadOfReturningResponse = error {
-//                log.default("SetupPod acked instead of returning response.")
-//                if self.podState?.setupProgress.isPaired == false {
-//                    log.default("Moving pod to paired state.")
-//                    self.podState?.setupProgress = .podPaired
-//                }
-//                return
-//            }
-//            log.error("SetupPod returns error %{public}@", String(describing: error))
-//            throw error
-//        }
-//
-//        guard versionResponse.isSetupPodVersionResponse else {
-//            log.error("SetupPod unexpected VersionResponse type: %{public}@", String(describing: versionResponse))
-//            throw PodCommsError.invalidData
-//        }
-//    }
+    private func setupPod(podState: PodState, timeZone: TimeZone) throws {
+        guard let manager = manager else { throw PodCommsError.noPodAvailable }
+        let transport = PodMessageTransport(manager: manager, address: 0xffffffff, state: podState.messageTransportState)
+        transport.messageLogger = messageLogger
+
+        let dateComponents = SetupPodCommand.dateComponents(date: Date(), timeZone: timeZone)
+        let setupPod = SetupPodCommand(address: podState.address, dateComponents: dateComponents, lot: UInt32(podState.lotNo), tid: podState.lotSeq)
+
+        let message = Message(address: 0xffffffff, messageBlocks: [setupPod], sequenceNum: transport.messageNumber)
+
+        let versionResponse = try sendPairMessage(transport: transport, message: message)
+
+        // Verify that the fundemental pod constants returned match the expected constant values in the Pod struct.
+        // To actually be able to handle different fundemental values in Loop things would need to be reworked to save
+        // these values in some persistent PodState and then make sure that everything properly works using these values.
+        var errorStrings: [String] = []
+        if let pulseSize = versionResponse.pulseSize, pulseSize != Pod.pulseSize  {
+            errorStrings.append(String(format: "Pod reported pulse size of %.3fU different than expected %.3fU", pulseSize, Pod.pulseSize))
+        }
+        if let secondsPerBolusPulse = versionResponse.secondsPerBolusPulse, secondsPerBolusPulse != Pod.secondsPerBolusPulse  {
+            errorStrings.append(String(format: "Pod reported seconds per pulse rate of %.1f different than expected %.1f", secondsPerBolusPulse, Pod.secondsPerBolusPulse))
+        }
+        if let secondsPerPrimePulse = versionResponse.secondsPerPrimePulse, secondsPerPrimePulse != Pod.secondsPerPrimePulse  {
+            errorStrings.append(String(format: "Pod reported seconds per prime pulse rate of %.1f different than expected %.1f", secondsPerPrimePulse, Pod.secondsPerPrimePulse))
+        }
+        if let primeUnits = versionResponse.primeUnits, primeUnits != Pod.primeUnits {
+            errorStrings.append(String(format: "Pod reported prime bolus of %.2fU different than expected %.2fU", primeUnits, Pod.primeUnits))
+        }
+        if let cannulaInsertionUnits = versionResponse.cannulaInsertionUnits, Pod.cannulaInsertionUnits != cannulaInsertionUnits {
+            errorStrings.append(String(format: "Pod reported cannula insertion bolus of %.2fU different than expected %.2fU", cannulaInsertionUnits, Pod.cannulaInsertionUnits))
+        }
+        if let serviceDuration = versionResponse.serviceDuration {
+            if serviceDuration < Pod.serviceDuration {
+                errorStrings.append(String(format: "Pod reported service duration of %.0f hours shorter than expected %.0f", serviceDuration.hours, Pod.serviceDuration.hours))
+            } else if serviceDuration > Pod.serviceDuration {
+                log.info("Pod reported service duration of %.0f hours limited to expected %.0f", serviceDuration.hours, Pod.serviceDuration.hours)
+            }
+        }
+
+        let errMess = errorStrings.joined(separator: ".\n")
+        if errMess.isEmpty == false {
+            log.error("%@", errMess)
+            self.podState?.setupProgress = .podIncompatible
+            throw PodCommsError.podIncompatible(str: errMess)
+        }
+
+        if versionResponse.podProgressStatus == .pairingCompleted && self.podState?.setupProgress.isPaired == false {
+            log.info("Version Response %{public}@ indicates pod pairing is now complete", String(describing: versionResponse))
+            self.podState?.setupProgress = .podPaired
+        }
+    }
     
     func pairAndSetupPod(
         address: UInt32,
@@ -123,7 +176,8 @@ public class PodComms: CustomDebugStringConvertible {
         _ block: @escaping (_ result: SessionRunResult) -> Void
     ) {
         guard let manager = manager else {
-            block(.failure(PodCommsError.noPodPaired))
+            // no available Dash pump to communicate with
+            block(.failure(PodCommsError.noResponse))
             return
         }
 
@@ -133,7 +187,7 @@ public class PodComms: CustomDebugStringConvertible {
 
                 if self.podState == nil {
                     let ids = Ids(podState: self.podState)
-                    try self.pairPod(ids)
+                    try self.pairPod(ids: ids)
                 }
                 
                 guard self.podState != nil else {
@@ -141,15 +195,14 @@ public class PodComms: CustomDebugStringConvertible {
                     return
                 }
 
-//                if self.podState!.setupProgress.isPaired == false {
-//                    try self.setupPod(podState: self.podState!, timeZone: timeZone)
-//                }
+                if self.podState!.setupProgress.isPaired == false {
+                    try self.setupPod(podState: self.podState!, timeZone: timeZone)
+                }
 
                 guard self.podState!.setupProgress.isPaired else {
                     self.log.error("Unexpected podStatus setupProgress value of %{public}@", String(describing: self.podState!.setupProgress))
                     throw PodCommsError.invalidData
                 }
-                self.startingPacketNumber = 0
 
                 // Run a session now for any post-pairing commands
                 let transport = PodMessageTransport(manager: manager, address: self.podState!.address, state: self.podState!.messageTransportState)
@@ -170,6 +223,8 @@ public class PodComms: CustomDebugStringConvertible {
         case failure(PodCommsError)
     }
     
+    // Use to serialize a set of Pod Commands for a given session
+    // XXX need to figure out how much of this is actually really needed
     func runSession(withName name: String, _ block: @escaping (_ result: SessionRunResult) -> Void) {
 
         guard let manager = manager else {
@@ -177,18 +232,20 @@ public class PodComms: CustomDebugStringConvertible {
             return
         }
 
-//        manager.runSession(withName: name) { () in
-//            guard self.podState != nil else {
-//                block(.failure(PodCommsError.noPodPaired))
-//                return
-//            }
-//
-//            self.configureDevice(device, with: commandSession)
-//            let transport = PodMessageTransport(manager: manager, address: self.podState!.address, state: self.podState!.messageTransportState)
-//            transport.messageLogger = self.messageLogger
-//            let podSession = PodCommsSession(podState: self.podState!, transport: transport, delegate: self)
-//            block(.success(session: podSession))
-//        }
+        /*
+        manager.runSession(withName: name) { () in
+            guard self.podState != nil else {
+                block(.failure(PodCommsError.noPodPaired))
+                return
+            }
+
+            // self.configureDevice(device, with: commandSession) no RL to configure
+            let transport = PodMessageTransport(manager: manager, address: self.podState!.address, state: self.podState!.messageTransportState)
+            transport.messageLogger = self.messageLogger
+            let podSession = PodCommsSession(podState: self.podState!, transport: transport, delegate: self)
+            block(.success(session: podSession))
+        }
+         */
     }
 
     // MARK: - CustomDebugStringConvertible

@@ -19,12 +19,10 @@ public struct MessageTransportState: Equatable, RawRepresentable {
     public typealias RawValue = [String: Any]
 
     public var ltk: Data
-    public var packetNumber: Int
     public var messageNumber: Int
     
-    init(ltk: Data, packetNumber: Int, messageNumber: Int) {
+    init(ltk: Data, messageNumber: Int) {
         self.ltk = ltk
-        self.packetNumber = packetNumber
         self.messageNumber = messageNumber
     }
     
@@ -32,20 +30,17 @@ public struct MessageTransportState: Equatable, RawRepresentable {
     public init?(rawValue: RawValue) {
         guard
             let ltkString = rawValue["ltk"] as? String,
-            let packetNumber = rawValue["packetNumber"] as? Int,
             let messageNumber = rawValue["messageNumber"] as? Int
             else {
                 return nil
         }
         self.ltk = Data(hex: ltkString)
-        self.packetNumber = packetNumber
         self.messageNumber = messageNumber
     }
     
     public var rawValue: RawValue {
         return [
             "ltk": ltk.hexadecimalString,
-            "packetNumber": packetNumber,
             "messageNumber": messageNumber
         ]
     }
@@ -88,15 +83,6 @@ class PodMessageTransport: MessageTransport {
         }
     }
     
-    private(set) var packetNumber: Int {
-        get {
-            return state.packetNumber
-        }
-        set {
-            state.packetNumber = newValue
-        }
-    }
-    
     private(set) var messageNumber: Int {
         get {
             return state.messageNumber
@@ -107,208 +93,49 @@ class PodMessageTransport: MessageTransport {
     }
     
     private let address: UInt32
-    private var ackAddress: UInt32 // During pairing, PDM acks with address it is assigning to channel
     
     weak var messageLogger: MessageLogger?
     weak var delegate: MessageTransportDelegate?
 
-    init(manager: PeripheralManager, address: UInt32 = 0xffffffff, ackAddress: UInt32? = nil, state: MessageTransportState) {
+    init(manager: PeripheralManager, address: UInt32 = 0xffffffff,  state: MessageTransportState) {
         self.manager = manager
         self.address = address
-        self.ackAddress = ackAddress ?? address
         self.state = state
-    }
-    
-    private func incrementPacketNumber(_ count: Int = 1) {
-        packetNumber = (packetNumber + count) & 0b11111
     }
     
     private func incrementMessageNumber(_ count: Int = 1) {
         messageNumber = (messageNumber + count) & 0b1111
     }
-    
-    func makeAckPacket() -> Packet {
-        return Packet(address: address, packetType: .ack, sequenceNum: packetNumber, data: Data(bigEndian: ackAddress))
-    }
-    
-//    func ackUntilQuiet() {
-//
-//        let packetData = makeAckPacket().encoded()
-//
-//        var lastHeardAt = Date()
-//        let quietWindow = TimeInterval(milliseconds: 300)
-//        while lastHeardAt.timeIntervalSinceNow > -quietWindow {
-//            do {
-//                let rfPacket = try session.sendAndListen(packetData, repeatCount: 1, timeout: quietWindow, retryCount: 0, preambleExtension: TimeInterval(milliseconds: 40))
-//                let packet = try Packet(rfPacket: rfPacket)
-//                if packet.address == address {
-//                    lastHeardAt = Date() // Pod still sending
-//                }
-//            } catch RileyLinkDeviceError.responseTimeout {
-//                // Haven't heard anything in 300ms.  POD heard our ack.
-//                break
-//            } catch {
-//                continue
-//            }
-//        }
-//        incrementPacketNumber()
-//    }
-    
 
-    /// Encodes and sends a packet to the pod, and receives and decodes its response
-    ///
-    /// - Parameters:
-    ///   - packet: The packet to send
-    ///   - repeatCount: Number of times to repeat packet before listening for a response. 0 = send once and do not repeat.
-    ///   - packetResponseTimeout: The amount of time to wait before retrying
-    ///   - exchangeTimeout: The amount of time to continue retrying before giving up
-    ///   - preambleExtension: Duration of preamble. Default is 127ms
-    /// - Returns: The received response packet
-    /// - Throws:
-    ///     - PodCommsError.noResponse
-    ///     - RileyLinkDeviceError
-//    func exchangePackets(packet: Packet, repeatCount: Int = 0, packetResponseTimeout: TimeInterval = .milliseconds(333), exchangeTimeout:TimeInterval = .seconds(9), preambleExtension: TimeInterval = .milliseconds(127)) throws -> Packet {
-//        let packetData = packet.encoded()
-//        let radioRetryCount = 9
-//
-//        let start = Date()
-//
-//        incrementPacketNumber()
-//
-//        while (-start.timeIntervalSinceNow < exchangeTimeout)  {
-//            do {
-//                let rfPacket = try session.sendAndListen(packetData, repeatCount: repeatCount, timeout: packetResponseTimeout, retryCount: radioRetryCount, preambleExtension: preambleExtension)
-//
-//                let candidatePacket: Packet
-//
-//                do {
-//                    candidatePacket = try Packet(rfPacket: rfPacket)
-//                    log.default("Received packet (%d): %@", rfPacket.rssi, rfPacket.data.hexadecimalString)
-//                } catch PacketError.insufficientData {
-//                    log.default("Insufficient packet data: %@", rfPacket.data.hexadecimalString)
-//                    continue
-//                } catch let error {
-//                    log.default("Packet error: %@", String(describing: error))
-//                    continue
-//                }
-//
-//                guard candidatePacket.address == packet.address || candidatePacket.address == 0xFFFFFFFF else {
-//                    log.default("Packet address 0x%x does not match 0x%x", candidatePacket.address, packet.address)
-//                    continue
-//                }
-//
-//                guard candidatePacket.sequenceNum == ((packet.sequenceNum + 1) & 0b11111) else {
-//                    log.default("Packet sequence %@ does not match %@", String(describing: candidatePacket.sequenceNum), String(describing: ((packet.sequenceNum + 1) & 0b11111)))
-//                    continue
-//                }
-//
-//                // Once we have verification that the POD heard us, we can increment our counters
-//                incrementPacketNumber()
-//
-//                return candidatePacket
-//            } catch RileyLinkDeviceError.responseTimeout {
-//                continue
-//            }
-//        }
-//
-//        throw PodCommsError.noResponse
-//    }
-
-    /// Packetizes a message, and performs a set of packet exchanges to send a message and receive the response
-    ///
-    /// - Parameters:
-    ///   - message: The message to send
-    /// - Returns: The received message response
-    /// - Throws:
-    ///     - PodCommsError.noResponse
-    ///     - PodCommsError.podAckedInsteadOfReturningResponse
-    ///     - PodCommsError.unexpectedPacketType
-    ///     - PodCommsError.emptyResponse
-    ///     - MessageError.invalidCrc
-    ///     - MessageError.invalidSequence
-    ///     - MessageError.invalidAddress
-    ///     - RileyLinkDeviceError
+    /// Sends the given pod message over the encrypted Dash transport and returns the pod's response
+    /// XXX - need to figure out if Dash sends Messages or MessageBlocks over the encrypted connection,
+    /// possibly it might make sense to have a differnt definition for a Message for Dash without
+    /// the 32 bit address, the B9 byte (with its 4-bit mesage sequence #), the BLen byte, and the CRC16
     func sendMessage(_ message: Message) throws -> Message {
-        return message
-        
-//        messageNumber = message.sequenceNum
-//        incrementMessageNumber()
-//
-//        do {
-//            let responsePacket = try { () throws -> Packet in
-//                var firstPacket = true
-//                log.debug("Send: %@", String(describing: message))
-//                var dataRemaining = message.encoded()
-//                log.default("Send(Hex): %@", dataRemaining.hexadecimalString)
-//                messageLogger?.didSend(dataRemaining)
-//                while true {
-//                    let packetType: PacketType = firstPacket ? .pdm : .con
-//                    let sendPacket = Packet(address: address, packetType: packetType, sequenceNum: self.packetNumber, data: dataRemaining)
-//                    dataRemaining = dataRemaining.subdata(in: sendPacket.data.count..<dataRemaining.count)
-//                    firstPacket = false
-//                    let response = try self.exchangePackets(packet: sendPacket)
-//                    if dataRemaining.count == 0 {
-//                        return response
-//                    }
-//                }
-//            }()
-//
-//            guard responsePacket.packetType != .ack else {
-//                messageLogger?.didReceive(responsePacket.encoded())
-//                log.default("Pod responded with ack instead of response: %@", String(describing: responsePacket))
-//                throw PodCommsError.podAckedInsteadOfReturningResponse
-//            }
-//
-//            // Assemble fragmented message from multiple packets
-//            let response = try { () throws -> Message in
-//                var responseData = responsePacket.data
-//                while true {
-//                    do {
-//                        let msg = try Message(encodedData: responseData)
-//                        log.default("Recv(Hex): %@", responseData.hexadecimalString)
-//                        guard msg.address == address else {
-//                            throw MessageError.invalidAddress(address: msg.address)
-//                        }
-//                        guard msg.sequenceNum == messageNumber else {
-//                            throw MessageError.invalidSequence
-//                        }
-//                        messageLogger?.didReceive(responseData)
-//                        return msg
-//                    } catch MessageError.notEnoughData {
-//                        log.debug("Sending ACK for CON")
-//                        let conPacket = try self.exchangePackets(packet: makeAckPacket(), repeatCount: 3, preambleExtension:TimeInterval(milliseconds: 40))
-//
-//                        guard conPacket.packetType == .con else {
-//                            log.default("Expected CON packet, received; %@", String(describing: conPacket))
-//                            throw PodCommsError.unexpectedPacketType(packetType: conPacket.packetType)
-//                        }
-//                        responseData += conPacket.data
-//                    } catch MessageError.invalidCrc {
-//                        // throw the error without any logging for a garbage message
-//                        throw MessageError.invalidCrc
-//                    } catch let error {
-//                        // log any other non-garbage messages that generate errors
-//                        log.error("Error (%{public}@) Recv(Hex): %@", String(describing: error), responseData.hexadecimalString)
-//                        messageLogger?.didReceive(responseData)
-//                        throw error
-//                    }
-//                }
-//            }()
-//
-//            ackUntilQuiet()
-//
-//            guard response.messageBlocks.count > 0 else {
-//                log.default("Empty response")
-//                throw PodCommsError.emptyResponse
-//            }
-//
-//            incrementMessageNumber()
-//
-//            return response
-//        } catch let error {
-//            log.error("Error during communication with POD: %@", String(describing: error))
-//            throw error
-//        }
+        let messageBlockType: MessageBlockType = message.messageBlocks[0].blockType
+        let response: Message
+
+        // XXX placeholder code returning the fixed responses from the pi pod simulator
+        switch messageBlockType {
+        case .assignAddress:
+            response = try Message(encodedData: Data(hexadecimalString: "FFFFFFFF00000115040A00010300040208146CC1000954D400FFFFFFFF0000")!)
+            break
+        case .setupPod:
+            response = try Message(encodedData: Data(hexadecimalString: "FFFFFFFF0000011B13881008340A50040A00010300040308146CC1000954D4024200010000")!)
+            break
+        case .versionResponse, .podInfoResponse, .errorResponse, .statusResponse:
+            log.error("Trying to send a response type message!: %@", String(describing: message))
+            throw PodCommsError.invalidData
+        case .basalScheduleExtra, .tempBasalExtra, .bolusExtra:
+            log.error("Trying to send an insulin extra sub-message type!: %@", String(describing: message))
+            throw PodCommsError.invalidData
+        default:
+            // A random general status response (assumes type 0 for a getStatus command)
+            response = try Message(encodedData: Data(hexadecimalString: "FFFFFFFF00001D1800A02800000463FF0000")!)
+            break
+        }
+
+        return response
     }
 
     func assertOnSessionQueue() {

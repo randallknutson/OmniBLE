@@ -87,7 +87,6 @@
 		84752EE726ED13F5009FD801 /* PairResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752ED426ED13F5009FD801 /* PairResult.swift */; };
 		84752EE826ED13F5009FD801 /* PairMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752ED526ED13F5009FD801 /* PairMessage.swift */; };
 		84752EEC26ED1402009FD801 /* OSLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752EEA26ED1402009FD801 /* OSLog.swift */; };
-		84752EED26ED1402009FD801 /* Locked.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752EEB26ED1402009FD801 /* Locked.swift */; };
 		8475306E26ED15DE009FD801 /* CryptoSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 8475306D26ED15DE009FD801 /* CryptoSwift */; };
 		847530F626ED65DD009FD801 /* LoopKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 847530F426ED65DD009FD801 /* LoopKit.framework */; };
 		847530F726ED65DD009FD801 /* LoopKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 847530F426ED65DD009FD801 /* LoopKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -119,7 +118,6 @@
 		8475315B26EDA193009FD801 /* NibLoadable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475314E26EDA193009FD801 /* NibLoadable.swift */; };
 		8475315C26EDA193009FD801 /* TimeZone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475314F26EDA193009FD801 /* TimeZone.swift */; };
 		8475315D26EDA193009FD801 /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475315026EDA193009FD801 /* Data.swift */; };
-		8475315F26EDA193009FD801 /* Locked.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475315226EDA193009FD801 /* Locked.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -232,7 +230,6 @@
 		84752ED426ED13F5009FD801 /* PairResult.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PairResult.swift; sourceTree = "<group>"; };
 		84752ED526ED13F5009FD801 /* PairMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PairMessage.swift; sourceTree = "<group>"; };
 		84752EEA26ED1402009FD801 /* OSLog.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OSLog.swift; sourceTree = "<group>"; };
-		84752EEB26ED1402009FD801 /* Locked.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Locked.swift; sourceTree = "<group>"; };
 		847530F426ED65DD009FD801 /* LoopKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = LoopKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		847530F526ED65DD009FD801 /* LoopKitUI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = LoopKitUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8475311226ED7422009FD801 /* OmnipodPlugin.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OmnipodPlugin.swift; sourceTree = "<group>"; };
@@ -261,7 +258,6 @@
 		8475314E26EDA193009FD801 /* NibLoadable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NibLoadable.swift; sourceTree = "<group>"; };
 		8475314F26EDA193009FD801 /* TimeZone.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimeZone.swift; sourceTree = "<group>"; };
 		8475315026EDA193009FD801 /* Data.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Data.swift; sourceTree = "<group>"; };
-		8475315226EDA193009FD801 /* Locked.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Locked.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -494,7 +490,6 @@
 				8475314D26EDA193009FD801 /* HKUnit.swift */,
 				10289E69271B2A3E000339E6 /* IdentifiableClass.swift */,
 				8475314A26EDA193009FD801 /* LocalizedString.swift */,
-				8475315226EDA193009FD801 /* Locked.swift */,
 				8475314E26EDA193009FD801 /* NibLoadable.swift */,
 				10289E67271B2A08000339E6 /* NumberFormatter.swift */,
 				8475314B26EDA193009FD801 /* OSLog.swift */,
@@ -502,7 +497,6 @@
 				8475314F26EDA193009FD801 /* TimeZone.swift */,
 				8475314C26EDA193009FD801 /* UIColor.swift */,
 				84752EEA26ED1402009FD801 /* OSLog.swift */,
-				84752EEB26ED1402009FD801 /* Locked.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -737,7 +731,6 @@
 				1016325927185EE4007A3BC2 /* BeepType.swift in Sources */,
 				84752EDA26ED13F5009FD801 /* MessagePacket.swift in Sources */,
 				8475315326EDA193009FD801 /* TimeInterval.swift in Sources */,
-				8475315F26EDA193009FD801 /* Locked.swift in Sources */,
 				10389A2326FF7841002115E9 /* PodInfoPulseLog.swift in Sources */,
 				10389A2726FF7841002115E9 /* DeactivatePodCommand.swift in Sources */,
 				10389A3626FF7841002115E9 /* ErrorResponse.swift in Sources */,
