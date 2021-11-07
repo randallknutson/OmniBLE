@@ -493,3 +493,17 @@ extension CBPeripheral {
         return service.characteristics?.itemWithUUID(OmnipodCharacteristicUUID.data.cbUUID)
     }
 }
+
+// MARK: - Command session management
+// XXX need to figure out how much of this is actually really needed
+extension PeripheralManager {
+    public func runSession(withName name: String /* XXX , _ block: @escaping (_ session: CommandSession) -> Void XXX */) {
+        self.log.default("Scheduling session %{public}@", name)
+//        sessionQueue.addOperation(self.configureAndRun({ [weak self] (manager) in
+//            self?.log.default("======================== %{public}@ ===========================", name)
+
+//            block(CommandSession(manager: manager, responseType: bleFirmwareVersion?.responseType ?? .buffered, firmwareVersion: radioFirmwareVersion ?? .unknown))
+//            self?.log.default("------------------------ %{public}@ ---------------------------", name)
+//        }))
+    }
+}

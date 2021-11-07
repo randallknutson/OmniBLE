@@ -7,6 +7,7 @@
 
 import CoreBluetooth
 import Foundation
+import LoopKit
 import os.log
 
 

@@ -99,7 +99,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         return active
     }
     
-    public init(address: UInt32, ltk: Data, packetNumber: Int, messageNumber: Int = 0, lotNo: UInt64, lotSeq: UInt32) {
+    public init(address: UInt32, ltk: Data, messageNumber: Int = 0, lotNo: UInt64, lotSeq: UInt32) {
         self.address = address
         self.nonceState = NonceState(lot: 0, tid: 0)
         self.lotNo = lotNo
@@ -109,7 +109,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         self.suspendState = .resumed(Date())
         self.fault = nil
         self.activeAlertSlots = .none
-        self.messageTransportState = MessageTransportState(ltk: ltk, packetNumber: packetNumber, messageNumber: messageNumber)
+        self.messageTransportState = MessageTransportState(ltk: ltk, messageNumber: messageNumber)
         self.primeFinishTime = nil
         self.setupProgress = .addressAssigned
         self.configuredAlerts = [.slot7: .waitingForPairingReminder]
@@ -360,7 +360,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         {
             self.messageTransportState = messageTransportState
         } else {
-            self.messageTransportState = MessageTransportState(ltk: Data(), packetNumber: 0, messageNumber: 0)
+            self.messageTransportState = MessageTransportState(ltk: Data(), messageNumber: 0)
         }
 
         if let rawConfiguredAlerts = rawValue["configuredAlerts"] as? [String: PodAlert.RawValue] {
