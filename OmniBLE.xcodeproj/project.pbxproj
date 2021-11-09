@@ -305,6 +305,7 @@
 				10389A1D26FF7841002115E9 /* Message.swift */,
 				10389A2026FF7841002115E9 /* CRC16.swift */,
 				10389A2126FF7841002115E9 /* Packet.swift */,
+				84752EC726ED13F5009FD801 /* StringLengthPrefixEncoding.swift */,
 				10389A2226FF7841002115E9 /* MessageTransport.swift */,
 			);
 			path = MessageTransport;
@@ -426,7 +427,6 @@
 				84752EC826ED13F5009FD801 /* Ids.swift */,
 				84752EC026ED13F5009FD801 /* Util */,
 				10289E7427347C5B000339E6 /* EnDecrypt */,
-				84752EC426ED13F5009FD801 /* Message */,
 				84752ECC26ED13F5009FD801 /* Packet */,
 				84752ED126ED13F5009FD801 /* Pair */,
 			);
@@ -440,14 +440,6 @@
 				84752EC226ED13F5009FD801 /* RandomByteGenerator.swift */,
 			);
 			path = Util;
-			sourceTree = "<group>";
-		};
-		84752EC426ED13F5009FD801 /* Message */ = {
-			isa = PBXGroup;
-			children = (
-				84752EC726ED13F5009FD801 /* StringLengthPrefixEncoding.swift */,
-			);
-			path = Message;
 			sourceTree = "<group>";
 		};
 		84752ECC26ED13F5009FD801 /* Packet */ = {
