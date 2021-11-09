@@ -9,9 +9,9 @@ import Foundation
 
 class Nonce {
     let prefix: Data
-    var sqn: Int
+    var sqn: UInt32
     
-    init (_ prefix: Data, _ sqn: Int) {
+    init (_ prefix: Data, _ sqn: UInt32) {
         guard prefix.count == 8 else { fatalError("Nonce prefix should be 8 bytes long") }
         self.prefix = prefix
         self.sqn = sqn
@@ -19,7 +19,7 @@ class Nonce {
 
     func increment(podReceiving: Bool) -> Data {
         sqn += 1
-        var ret = Data(sqn)
+        var ret = Data(bigEndian: sqn)
             .subdata(in: 3..<8)
         if (podReceiving) {
             ret[0] = UInt8(ret[0] & 127)

@@ -8,6 +8,10 @@
 
 import Foundation
 
+enum MessageType: UInt8 {
+    case CLEAR = 0, ENCRYPTED, SESSION_ESTABLISHMENT, PAIRING
+}
+
 public enum MessageError: Error {
     case notEnoughData
     case invalidCrc
@@ -19,38 +23,99 @@ public enum MessageError: Error {
 }
 
 struct Message {
-    let address: UInt32
-    let messageBlocks: [MessageBlock]
-    let sequenceNum: Int
-    let expectFollowOnMessage: Bool
-    
-    init(address: UInt32, messageBlocks: [MessageBlock], sequenceNum: Int, expectFollowOnMessage: Bool = false) {
-        self.address = address
-        self.messageBlocks = messageBlocks
-        self.sequenceNum = sequenceNum
-        self.expectFollowOnMessage = expectFollowOnMessage
+    let MAGIC_PATTERN = "TW" // all messages start with this string
+    let HEADER_SIZE = 16
+
+    let type: MessageType
+    var source: Id = Id.fromInt(CONTROLLER_ID)
+    let destination: Id
+    var messageBlocks: [MessageBlock] = []
+    var payload: Data = Data()
+    let sequenceNumber: UInt8
+    let ack: Bool
+    let ackNumber: UInt8
+    let eqos: Int16
+    let priority: Bool
+    let lastMessage: Bool
+    let gateway: Bool
+    let sas: Bool // TODO: understand, seems to always be true
+    let tfs: Bool // TODO: understand, seems to be false
+    let version: Int16
+
+    init(type: MessageType, address: UInt32, messageBlocks: [MessageBlock]? = nil, payload: Data? = nil, sequenceNumber: UInt8, ack: Bool = false, ackNumber: UInt8 = 0, eqos: Int16 = 0, priority: Bool = false, lastMessage: Bool = false, gateway: Bool = false, sas: Bool = true, tfs: Bool = false, version: Int16 = 0) {
+        self.type = type
+        self.destination = Id.fromLong(address)
+        self.sequenceNumber = sequenceNumber
+        self.ack = ack
+        self.ackNumber = ackNumber
+        self.eqos = eqos
+        self.priority = priority
+        self.lastMessage = lastMessage
+        self.gateway = gateway
+        self.sas = sas
+        self.tfs = tfs
+        self.version = version
+        if let messageBlocks = messageBlocks {
+            self.messageBlocks = messageBlocks
+            self.payload = Data()
+            for cmd in messageBlocks {
+                self.payload.append(cmd.data)
+            }
+        }
+
+        if let payload = payload  {
+            self.payload = payload
+            do {
+                self.messageBlocks = try Message.decodeBlocks(data: payload)
+            }
+            catch {
+                self.messageBlocks = []
+            }
+        }
     }
     
     init(encodedData: Data) throws {
-        guard encodedData.count >= 10 else {
-            throw MessageError.notEnoughData
+        guard encodedData.count >= HEADER_SIZE else {
+            throw BluetoothErrors.CouldNotParseMessageException("Incorrect header size")
         }
-        self.address = encodedData[0...].toBigEndian(UInt32.self)
-        let b9 = encodedData[4]
-        let bodyLen = encodedData[5]
-        
-        if bodyLen > encodedData.count - 8 {
-            throw MessageError.notEnoughData
+
+        guard (String(data: encodedData.subdata(in: 0..<2), encoding: .utf8) == MAGIC_PATTERN) else {
+            throw BluetoothErrors.CouldNotParseMessageException("Magic pattern mismatch")
         }
+        let payloadData = encodedData
         
-        self.expectFollowOnMessage = (b9 & 0b10000000) != 0
-        self.sequenceNum = Int((b9 >> 2) & 0b11111)
- //       let crc = (UInt16(encodedData[encodedData.count-2]) << 8) + UInt16(encodedData[encodedData.count-1])
-        let msgWithoutCrc = encodedData.prefix(encodedData.count - 2)
-//        guard msgWithoutCrc.crc16() == crc else {
-//            throw MessageError.invalidCrc
-//        }
-        self.messageBlocks = try Message.decodeBlocks(data: Data(msgWithoutCrc.suffix(from: 6)))
+        let f1 = Flag(payloadData[2])
+        self.sas = f1.get(3) != 0
+        self.tfs = f1.get(4) != 0
+        self.version = Int16(((f1.get(0) << 2) | (f1.get(1) << 1) | (f1.get(2) << 0)))
+        self.eqos = Int16((f1.get(7) | (f1.get(6) << 1) | (f1.get(5) << 2)))
+
+        let f2 = Flag(payloadData[3])
+        self.ack = f2.get(0) != 0
+        self.priority = f2.get(1) != 0
+        self.lastMessage = f2.get(2) != 0
+        self.gateway = f2.get(3) != 0
+        self.type = MessageType(rawValue: UInt8(f1.get(7) | (f1.get(6) << 1) | (f1.get(5) << 2) | (f1.get(4) << 3))) ?? .CLEAR
+        if (version != 0) {
+            throw BluetoothErrors.CouldNotParseMessageException("Wrong version")
+        }
+        self.sequenceNumber = payloadData[4]
+        self.ackNumber = payloadData[5]
+        let size = (UInt16(payloadData[6]) << 3) | (UInt16(payloadData[7]) >> 5)
+        guard encodedData.count >= (Int(size) + HEADER_SIZE) else {
+            throw BluetoothErrors.CouldNotParseMessageException("Wrong payload size")
+        }
+        self.source = Id(encodedData.subdata(in: 8..<12))
+        self.destination = Id(encodedData.subdata(in: 12..<16))
+
+        let payloadEnd = Int(16 + size + (type == MessageType.ENCRYPTED ? 8 : 0))
+        self.payload = encodedData.subdata(in: 16..<payloadEnd)
+        do {
+            self.messageBlocks = try Message.decodeBlocks(data: payload)
+        }
+        catch {
+            self.messageBlocks = []
+        }
     }
     
     static private func decodeBlocks(data: Data) throws -> [MessageBlock]  {
@@ -71,22 +136,43 @@ struct Message {
         return blocks
     }
     
-    func encoded() -> Data {
-        var bytes = Data(bigEndian: address)
-        
-        var cmdData = Data()
-        for cmd in messageBlocks {
-            cmdData.append(cmd.data)
-        }
-        
-        let b9: UInt8 = ((expectFollowOnMessage ? 1 : 0) << 7) + (UInt8(sequenceNum & 0b11111) << 2) + UInt8((cmdData.count >> 8) & 0b11)
-        bytes.append(b9)
-        bytes.append(UInt8(cmdData.count & 0xff))
-        
-        var data = Data(bytes) + cmdData
-//        let crc = data.crc16()
-//          data.appendBigEndian(crc)
-        return data
+    func asData(forEncryption: Bool = false) -> Data {
+        var bb = Data(capacity: 16 + payload.count)
+        bb.append(MAGIC_PATTERN.data(using: .utf8)!)
+
+        let f1 = Flag()
+        f1.set(0, self.version & 4 != 0)
+        f1.set(1, self.version & 2 != 0)
+        f1.set(2, self.version & 1 != 0)
+        f1.set(3, self.sas)
+        f1.set(4, self.tfs)
+        f1.set(5, self.eqos & 4 != 0)
+        f1.set(6, self.eqos & 2 != 0)
+        f1.set(7, self.eqos & 1 != 0)
+
+        let f2 = Flag()
+        f2.set(0, self.ack)
+        f2.set(1, self.priority)
+        f2.set(2, self.lastMessage)
+        f2.set(3, self.gateway)
+        f2.set(4, self.type.rawValue & 8 != 0)
+        f2.set(5, self.type.rawValue & 4 != 0)
+        f2.set(6, self.type.rawValue & 2 != 0)
+        f2.set(7, self.type.rawValue & 1 != 0)
+
+        bb.append(f1.value)
+        bb.append(f2.value)
+        bb.append(self.sequenceNumber)
+        bb.append(self.ackNumber)
+        let size = payload.count - ((type == MessageType.ENCRYPTED && !forEncryption) ? 8 : 0)
+        bb.append(UInt8(size >> 3))
+        bb.append(UInt8((size << 5) & 0xff))
+        bb.append(self.source.address)
+        bb.append(self.destination.address)
+
+        bb.append(payload)
+
+        return bb
     }
     
     var fault: DetailedStatus? {
@@ -105,7 +191,31 @@ struct Message {
 
 extension Message: CustomDebugStringConvertible {
     var debugDescription: String {
-        let sequenceNumStr = String(format: "%02d", sequenceNum)
-        return "Message(\(Data(bigEndian: address).hexadecimalString) seq:\(sequenceNumStr) \(messageBlocks))"
+        let sequenceNumberStr = String(format: "%02d", sequenceNumber)
+        return "Message(\(destination.address.hexadecimalString) seq:\(sequenceNumberStr) \(messageBlocks))"
+    }
+}
+
+private class Flag {
+    var value: UInt8
+    
+    init(_ value: UInt8 = 0) {
+        self.value = value
+    }
+    
+    func set(_ idx: UInt8, _ set: Bool) {
+        let mask: UInt8 = 1 << (7 - idx)
+        if (!set) {
+            return
+        }
+        value = value | mask
+    }
+
+    func get(_ idx: UInt8) -> UInt8 {
+        let mask: UInt8 = 1 << (7 - idx)
+        if (value & mask == 0) {
+            return 0
+        }
+        return 1
     }
 }

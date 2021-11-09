@@ -108,9 +108,6 @@ class PodMessageTransport: MessageTransport {
     }
 
     /// Sends the given pod message over the encrypted Dash transport and returns the pod's response
-    /// XXX - need to figure out if Dash sends Messages or MessageBlocks over the encrypted connection,
-    /// possibly it might make sense to have a differnt definition for a Message for Dash without
-    /// the 32 bit address, the B9 byte (with its 4-bit mesage sequence #), the BLen byte, and the CRC16
     func sendMessage(_ message: Message) throws -> Message {
         let messageBlockType: MessageBlockType = message.messageBlocks[0].blockType
         let response: Message
@@ -136,6 +133,29 @@ class PodMessageTransport: MessageTransport {
         }
 
         return response
+        
+//        var sendMessage = message
+//        if message.type == .ENCRYPTED {
+//            let nonce = Nonce(Data(), UInt32(message.sequenceNumber))
+//            let endecrypt = EnDecrypt(nonce: nonce, ck: state.ltk)
+//            sendMessage = try endecrypt.encrypt(message)
+//        }
+//        let writeResult = try manager.sendMessage(sendMessage)
+//        guard ((writeResult as? MessageSendSuccess) != nil) else {
+//            throw BluetoothErrors.MessageIOException("Could not write $msgType: \(writeResult)")
+//        }
+//
+//        let readResponse = try manager.readMessage()
+//        guard var readMessage = readResponse else {
+//            throw BluetoothErrors.MessageIOException("Could not read response")
+//        }
+//        if (message.type == .ENCRYPTED) {
+//            let nonce = Nonce(Data(), UInt32(message.sequenceNumber))
+//            let endecrypt = EnDecrypt(nonce: nonce, ck: state.ltk)
+//            readMessage = try endecrypt.decrypt(readMessage)
+//        }
+//
+//        return readMessage
     }
 
     func assertOnSessionQueue() {

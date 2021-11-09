@@ -216,7 +216,7 @@ public class PodCommsSession {
     ///     - PodCommsError.nonceResyncFailed
     ///     - MessageError
     ///     - RileyLinkDeviceError
-    func send<T: MessageBlock>(_ messageBlocks: [MessageBlock], confirmationBeepType: BeepConfigType? = nil, expectFollowOnMessage: Bool = false) throws -> T {
+    func send<T: MessageBlock>(_ messageBlocks: [MessageBlock], confirmationBeepType: BeepConfigType? = nil, lastMessage: Bool = false) throws -> T {
         
         var triesRemaining = 2  // Retries only happen for nonce resync
         var blocksToSend = messageBlocks
@@ -245,7 +245,7 @@ public class PodCommsSession {
                 }
             }
 
-            let message = Message(address: podState.address, messageBlocks: blocksToSend, sequenceNum: messageNumber, expectFollowOnMessage: expectFollowOnMessage)
+            let message = Message(type: .ENCRYPTED, address: podState.address, messageBlocks: blocksToSend, sequenceNumber: UInt8(messageNumber), lastMessage: lastMessage)
 
             let response = try transport.sendMessage(message)
             
@@ -274,8 +274,8 @@ public class PodCommsSession {
                     log.error("Unexpected bad nonce response: %{public}@", String(describing: response.messageBlocks[0]))
                     throw PodCommsError.unexpectedResponse(response: responseType)
                 }
-                podState.resyncNonce(syncWord: nonceResyncKey, sentNonce: sentNonce, messageSequenceNum: message.sequenceNum)
-                log.info("resyncNonce(syncWord: 0x%02x, sentNonce: 0x%04x, messageSequenceNum: %d) -> 0x%04x", nonceResyncKey, sentNonce, message.sequenceNum, podState.currentNonce)
+                podState.resyncNonce(syncWord: nonceResyncKey, sentNonce: sentNonce, messageSequenceNum: Int(message.sequenceNumber))
+                log.info("resyncNonce(syncWord: 0x%02x, sentNonce: 0x%04x, messageSequenceNum: %d) -> 0x%04x", nonceResyncKey, sentNonce, message.sequenceNumber, podState.currentNonce)
                 blocksToSend = blocksToSend.map({ (block) -> MessageBlock in
                     if var resyncableBlock = block as? NonceResyncableMessageBlock {
                         log.info("Replaced old nonce 0x%04x with resync nonce 0x%04x", resyncableBlock.nonce, podState.currentNonce)

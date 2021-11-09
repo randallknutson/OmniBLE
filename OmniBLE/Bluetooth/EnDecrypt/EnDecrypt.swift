@@ -21,7 +21,7 @@ class EnDecrypt {
         self.ck = ck
     }
 
-    func decrypt(_ msg: MessagePacket) throws -> MessagePacket {
+    func decrypt(_ msg: Message) throws -> Message {
         let payload = msg.payload
         let header = msg.asData().subdata(in: 0..<16)
 
@@ -38,7 +38,7 @@ class EnDecrypt {
         return msgCopy
     }
 
-    func encrypt(_ headerMessage: MessagePacket) throws -> MessagePacket {
+    func encrypt(_ headerMessage: Message) throws -> Message {
         let payload = headerMessage.payload
         let header = headerMessage.asData().subdata(in: 0..<16)
 

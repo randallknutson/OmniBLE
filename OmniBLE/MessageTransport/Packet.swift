@@ -19,7 +19,7 @@ public enum PacketType: UInt8 {
     case pdm = 0b101
     case con = 0b100
     case ack = 0b010
-    
+
     func maxBodyLen() -> Int {
         switch self {
         case .ack:
@@ -36,12 +36,12 @@ public struct Packet {
     let packetType: PacketType
     let sequenceNum: Int
     let data: Data
-    
+
     init(address: UInt32, packetType: PacketType, sequenceNum: Int, data: Data = Data()) {
         self.address = address
         self.packetType = packetType
         self.sequenceNum = sequenceNum
-        
+
         let bodyMaxLen = packetType.maxBodyLen()
         if data.count > bodyMaxLen {
             self.data = data.subdata(in: 0..<bodyMaxLen)
@@ -49,21 +49,21 @@ public struct Packet {
             self.data = data
         }
     }
-    
+
     init(encodedData: Data) throws {
         guard encodedData.count >= 7 else {
             // Not enough data for packet
             throw PacketError.insufficientData
         }
-        
+
         self.address = encodedData[0...].toBigEndian(UInt32.self)
-        
+
         guard let packetType = PacketType(rawValue: encodedData[4] >> 5) else {
             throw PacketError.unknownPacketType(rawType: encodedData[4])
         }
         self.packetType = packetType
         self.sequenceNum = Int(encodedData[4] & 0b11111)
-        
+
         let len = encodedData.count
 
         // Check crc
@@ -71,10 +71,10 @@ public struct Packet {
             // Invalid CRC
             throw PacketError.crcMismatch
         }
-        
+
         self.data = encodedData.subdata(in: 5..<len-1)
     }
-    
+
     func encoded() -> Data {
         var output = Data(bigEndian: address)
         output.append(UInt8(packetType.rawValue << 5) + UInt8(sequenceNum & 0b11111))

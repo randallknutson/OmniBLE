@@ -92,7 +92,7 @@ public class PodComms: CustomDebugStringConvertible {
         // Create the Assign Address command message
         // XXX - use the ids.podId here or use the generated 0x1F0xxxxx address?
         let assignAddress = AssignAddressCommand(address: address)
-        let message = Message(address: 0xffffffff, messageBlocks: [assignAddress], sequenceNum: transport.messageNumber)
+        let message = Message(type: .CLEAR, address: 0xffffffff, messageBlocks: [assignAddress], sequenceNumber: UInt8(transport.messageNumber))
 
         let versionResponse = try sendPairMessage(transport: transport, message: message)
 
@@ -125,7 +125,7 @@ public class PodComms: CustomDebugStringConvertible {
         let dateComponents = SetupPodCommand.dateComponents(date: Date(), timeZone: timeZone)
         let setupPod = SetupPodCommand(address: podState.address, dateComponents: dateComponents, lot: UInt32(podState.lotNo), tid: podState.lotSeq)
 
-        let message = Message(address: 0xffffffff, messageBlocks: [setupPod], sequenceNum: transport.messageNumber)
+        let message = Message(type: .CLEAR, address: 0xffffffff, messageBlocks: [setupPod], sequenceNumber: UInt8(transport.messageNumber))
 
         let versionResponse = try sendPairMessage(transport: transport, message: message)
 

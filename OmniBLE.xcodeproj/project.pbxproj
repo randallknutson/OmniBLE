@@ -61,8 +61,6 @@
 		10389A3A26FF7841002115E9 /* SetInsulinScheduleCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10389A1B26FF7841002115E9 /* SetInsulinScheduleCommand.swift */; };
 		10389A3B26FF7841002115E9 /* ConfigureAlertsCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10389A1C26FF7841002115E9 /* ConfigureAlertsCommand.swift */; };
 		10389A3C26FF7841002115E9 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10389A1D26FF7841002115E9 /* Message.swift */; };
-		10389A3D26FF7841002115E9 /* Packet+RFPacket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10389A1E26FF7841002115E9 /* Packet+RFPacket.swift */; };
-		10389A3E26FF7841002115E9 /* CRC8.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10389A1F26FF7841002115E9 /* CRC8.swift */; };
 		10389A3F26FF7841002115E9 /* CRC16.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10389A2026FF7841002115E9 /* CRC16.swift */; };
 		10389A4026FF7841002115E9 /* Packet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10389A2126FF7841002115E9 /* Packet.swift */; };
 		10389A4126FF7841002115E9 /* MessageTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10389A2226FF7841002115E9 /* MessageTransport.swift */; };
@@ -72,8 +70,6 @@
 		84752ED626ED13F5009FD801 /* Id.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752EBF26ED13F5009FD801 /* Id.swift */; };
 		84752ED726ED13F5009FD801 /* X25519KeyGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752EC126ED13F5009FD801 /* X25519KeyGenerator.swift */; };
 		84752ED826ED13F5009FD801 /* RandomByteGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752EC226ED13F5009FD801 /* RandomByteGenerator.swift */; };
-		84752EDA26ED13F5009FD801 /* MessagePacket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752EC526ED13F5009FD801 /* MessagePacket.swift */; };
-		84752EDB26ED13F5009FD801 /* MessageType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752EC626ED13F5009FD801 /* MessageType.swift */; };
 		84752EDC26ED13F5009FD801 /* StringLengthPrefixEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752EC726ED13F5009FD801 /* StringLengthPrefixEncoding.swift */; };
 		84752EDD26ED13F5009FD801 /* Ids.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752EC826ED13F5009FD801 /* Ids.swift */; };
 		84752EDE26ED13F5009FD801 /* PeripheralManagerError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752EC926ED13F5009FD801 /* PeripheralManagerError.swift */; };
@@ -200,8 +196,6 @@
 		10389A1B26FF7841002115E9 /* SetInsulinScheduleCommand.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetInsulinScheduleCommand.swift; sourceTree = "<group>"; };
 		10389A1C26FF7841002115E9 /* ConfigureAlertsCommand.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConfigureAlertsCommand.swift; sourceTree = "<group>"; };
 		10389A1D26FF7841002115E9 /* Message.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
-		10389A1E26FF7841002115E9 /* Packet+RFPacket.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Packet+RFPacket.swift"; sourceTree = "<group>"; };
-		10389A1F26FF7841002115E9 /* CRC8.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CRC8.swift; sourceTree = "<group>"; };
 		10389A2026FF7841002115E9 /* CRC16.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CRC16.swift; sourceTree = "<group>"; };
 		10389A2126FF7841002115E9 /* Packet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Packet.swift; sourceTree = "<group>"; };
 		10389A2226FF7841002115E9 /* MessageTransport.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MessageTransport.swift; sourceTree = "<group>"; };
@@ -215,8 +209,6 @@
 		84752EBF26ED13F5009FD801 /* Id.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Id.swift; sourceTree = "<group>"; };
 		84752EC126ED13F5009FD801 /* X25519KeyGenerator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = X25519KeyGenerator.swift; sourceTree = "<group>"; };
 		84752EC226ED13F5009FD801 /* RandomByteGenerator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RandomByteGenerator.swift; sourceTree = "<group>"; };
-		84752EC526ED13F5009FD801 /* MessagePacket.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MessagePacket.swift; sourceTree = "<group>"; };
-		84752EC626ED13F5009FD801 /* MessageType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MessageType.swift; sourceTree = "<group>"; };
 		84752EC726ED13F5009FD801 /* StringLengthPrefixEncoding.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StringLengthPrefixEncoding.swift; sourceTree = "<group>"; };
 		84752EC826ED13F5009FD801 /* Ids.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Ids.swift; sourceTree = "<group>"; };
 		84752EC926ED13F5009FD801 /* PeripheralManagerError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PeripheralManagerError.swift; sourceTree = "<group>"; };
@@ -311,8 +303,6 @@
 			children = (
 				10389A0326FF7841002115E9 /* MessageBlocks */,
 				10389A1D26FF7841002115E9 /* Message.swift */,
-				10389A1E26FF7841002115E9 /* Packet+RFPacket.swift */,
-				10389A1F26FF7841002115E9 /* CRC8.swift */,
 				10389A2026FF7841002115E9 /* CRC16.swift */,
 				10389A2126FF7841002115E9 /* Packet.swift */,
 				10389A2226FF7841002115E9 /* MessageTransport.swift */,
@@ -455,8 +445,6 @@
 		84752EC426ED13F5009FD801 /* Message */ = {
 			isa = PBXGroup;
 			children = (
-				84752EC526ED13F5009FD801 /* MessagePacket.swift */,
-				84752EC626ED13F5009FD801 /* MessageType.swift */,
 				84752EC726ED13F5009FD801 /* StringLengthPrefixEncoding.swift */,
 			);
 			path = Message;
@@ -682,7 +670,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				10389A3E26FF7841002115E9 /* CRC8.swift in Sources */,
 				1016325E27185EE5007A3BC2 /* PodProgressStatus.swift in Sources */,
 				8475313A26ED838B009FD801 /* PodSetupCompleteViewController.swift in Sources */,
 				10389A3426FF7841002115E9 /* AssignAddressCommand.swift in Sources */,
@@ -715,8 +702,6 @@
 				8475315C26EDA193009FD801 /* TimeZone.swift in Sources */,
 				8475315726EDA193009FD801 /* LocalizedString.swift in Sources */,
 				10289E782734D10D000339E6 /* EnDecrypt.swift in Sources */,
-				84752EED26ED1402009FD801 /* Locked.swift in Sources */,
-				84752EDB26ED13F5009FD801 /* MessageType.swift in Sources */,
 				10389A2D26FF7841002115E9 /* BolusExtraCommand.swift in Sources */,
 				8475315926EDA193009FD801 /* UIColor.swift in Sources */,
 				10389A2926FF7841002115E9 /* PodInfoConfiguredAlerts.swift in Sources */,
@@ -729,7 +714,6 @@
 				10389A3F26FF7841002115E9 /* CRC16.swift in Sources */,
 				10289E68271B2A08000339E6 /* NumberFormatter.swift in Sources */,
 				1016325927185EE4007A3BC2 /* BeepType.swift in Sources */,
-				84752EDA26ED13F5009FD801 /* MessagePacket.swift in Sources */,
 				8475315326EDA193009FD801 /* TimeInterval.swift in Sources */,
 				10389A2326FF7841002115E9 /* PodInfoPulseLog.swift in Sources */,
 				10389A2726FF7841002115E9 /* DeactivatePodCommand.swift in Sources */,
@@ -768,7 +752,6 @@
 				10389A3926FF7841002115E9 /* PodInfoResponse.swift in Sources */,
 				84752EE226ED13F5009FD801 /* PayloadJoiner.swift in Sources */,
 				1029AE4827094D0E00B7F5B6 /* OmnipodPumpManager.swift in Sources */,
-				10389A3D26FF7841002115E9 /* Packet+RFPacket.swift in Sources */,
 				10389A3526FF7841002115E9 /* BeepConfigCommand.swift in Sources */,
 				1016325D27185EE5007A3BC2 /* AlertSlot.swift in Sources */,
 				84752EE726ED13F5009FD801 /* PairResult.swift in Sources */,
