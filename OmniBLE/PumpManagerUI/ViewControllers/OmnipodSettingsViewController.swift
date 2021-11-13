@@ -236,8 +236,6 @@ class OmnipodSettingsViewController: UITableViewController {
         case podAddress = 0
         case podLot
         case podTid
-        case piVersion
-        case pmVersion
     }
     
     private enum Diagnostics: Int, CaseIterable {
@@ -468,30 +466,20 @@ class OmnipodSettingsViewController: UITableViewController {
                 return cell
             case .podLot:
                 let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
-                cell.textLabel?.text = LocalizedString("Lot", comment: "The title of the cell showing the pod lot id")
-                //cell.detailTextLabel?.text = String(format:"L%d", podState.lot) //TODO: No lot on podState
+                cell.textLabel?.text = LocalizedString("Lot Number", comment: "The title of the cell showing the pod lot number")
+                cell.detailTextLabel?.text = String(format:"L%d", podState.lotNo)
                 return cell
             case .podTid:
                 let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
-                cell.textLabel?.text = LocalizedString("TID", comment: "The title of the cell showing the pod TID")
-                //cell.detailTextLabel?.text = String(format:"%07d", podState.tid) //TODO: No tid on podState
-                return cell
-            case .piVersion:
-                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
-                cell.textLabel?.text = LocalizedString("PI Version", comment: "The title of the cell showing the pod pi version")
-                //cell.detailTextLabel?.text = podState.piVersion //TODO: No piVersion
-                return cell
-            case .pmVersion:
-                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
-                cell.textLabel?.text = LocalizedString("PM Version", comment: "The title of the cell showing the pod pm version")
-                //cell.detailTextLabel?.text = podState.pmVersion //TODO: No pmVersion on podState
+                cell.textLabel?.text = LocalizedString("Sequence Number", comment: "The title of the cell showing the lot sequence number")
+                cell.detailTextLabel?.text = String(format:"%07d", podState.lotSeq)
                 return cell
             }
 
         case .deletePumpManager:
             let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(TextButtonTableViewCell.self), for: indexPath) as! TextButtonTableViewCell
 
-            cell.textLabel?.text = LocalizedString("Switch from Omnipod Pumps", comment: "Title text for the button to delete Omnipod PumpManager")
+            cell.textLabel?.text = LocalizedString("Switch from Omnipod Dash Pumps", comment: "Title text for the button to delete Omnipod Dash PumpManager")
             cell.textLabel?.textAlignment = .center
             cell.tintColor = .deleteColor
             cell.isEnabled = true
