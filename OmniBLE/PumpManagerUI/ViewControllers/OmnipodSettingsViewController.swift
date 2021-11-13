@@ -758,12 +758,12 @@ private extension UIAlertController {
     convenience init(pumpManagerDeletionHandler handler: @escaping () -> Void) {
         self.init(
             title: nil,
-            message: LocalizedString("Are you sure you want to stop using Omnipod?", comment: "Confirmation message for removing Omnipod PumpManager"),
+            message: LocalizedString("Are you sure you want to stop using Omnipod Dash?", comment: "Confirmation message for removing Omnipod Dash PumpManager"),
             preferredStyle: .actionSheet
         )
         
         addAction(UIAlertAction(
-            title: LocalizedString("Delete Omnipod", comment: "Button title to delete Omnipod PumpManager"),
+            title: LocalizedString("Delete Omnipod Dash", comment: "Button title to delete Omnipod Dash PumpManager"),
             style: .destructive,
             handler: { (_) in
                 handler()
