@@ -87,11 +87,10 @@ class OmnipodSettingsViewController: UITableViewController {
         tableView.sectionHeaderHeight = UITableView.automaticDimension
         tableView.estimatedSectionHeaderHeight = 55
         
-// TODO: Fix this.
-//        tableView.register(SettingsTableViewCell.self, forCellReuseIdentifier: SettingsTableViewCell.className)
-//        tableView.register(TextButtonTableViewCell.self, forCellReuseIdentifier: TextButtonTableViewCell.className)
-//        tableView.register(AlarmsTableViewCell.self, forCellReuseIdentifier: AlarmsTableViewCell.className)
-        tableView.register(ExpirationReminderDateTableViewCell.nib(), forCellReuseIdentifier: ExpirationReminderDateTableViewCell.className)
+        tableView.register(SettingsTableViewCell.self, forCellReuseIdentifier: NSStringFromClass(SettingsTableViewCell.self))
+        tableView.register(TextButtonTableViewCell.self, forCellReuseIdentifier: NSStringFromClass(TextButtonTableViewCell.self))
+        tableView.register(AlarmsTableViewCell.self, forCellReuseIdentifier: NSStringFromClass(AlarmsTableViewCell.self))
+        tableView.register(ExpirationReminderDateTableViewCell.nib(), forCellReuseIdentifier: NSStringFromClass(ExpirationReminderDateTableViewCell.self))
         
         let podImage = UIImage(named: "PodLarge", in: Bundle(for: OmnipodSettingsViewController.self), compatibleWith: nil)!
         let imageView = UIImageView(image: podImage)
@@ -237,8 +236,6 @@ class OmnipodSettingsViewController: UITableViewController {
         case podAddress = 0
         case podLot
         case podTid
-        case piVersion
-        case pmVersion
     }
     
     private enum Diagnostics: Int, CaseIterable {
@@ -317,188 +314,178 @@ class OmnipodSettingsViewController: UITableViewController {
         }
     }
     
-//    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-//        switch sections[indexPath.section] {
-//        case .status:
-//            let podState = self.podState!
-//            let statusRow = StatusRow(rawValue: indexPath.row)!
-//            if statusRow == .alarms {
-//                let cell = tableView.dequeueReusableCell(withIdentifier: AlarmsTableViewCell.className, for: indexPath) as! AlarmsTableViewCell
-//                cell.textLabel?.text = LocalizedString("Alarms", comment: "The title of the cell showing alarm status")
-//                cell.alerts = podState.activeAlerts
-//                return cell
-//            }
-//            let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.className, for: indexPath)
-//
-//            switch statusRow {
-//            case .expiresAt:
-//                let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.className, for: indexPath)
-//                if let expiresAt = podState.expiresAt {
-//                    if expiresAt.timeIntervalSinceNow > 0 {
-//                        cell.textLabel?.text = LocalizedString("Expires", comment: "The title of the cell showing the pod expiration")
-//                    } else {
-//                        cell.textLabel?.text = LocalizedString("Expired", comment: "The title of the cell showing the pod expiration after expiry")
-//                    }
-//                }
-//                cell.setDetailDate(podState.expiresAt, formatter: dateFormatter)
-//                return cell
-//            case .podActiveClock:
-//                let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.className, for: indexPath)
-//                cell.textLabel?.text = LocalizedString("Pod Active Clock", comment: "The title of the cell showing the pod active clock")
-//                cell.setDetailAge(podState.expiresAt?.addingTimeInterval(-Pod.nominalPodLife).timeIntervalSinceNow)
-//                return cell
-//            case .bolus:
-//                cell.textLabel?.text = LocalizedString("Bolus Delivery", comment: "The title of the cell showing pod bolus status")
-//
-//                let deliveredUnits: Double?
-//                if let dose = podState.unfinalizedBolus {
-//                    deliveredUnits = pumpManager.roundToSupportedBolusVolume(units: dose.progress * dose.units)
-//                } else {
-//                    deliveredUnits = nil
-//                }
-//
-//                cell.setDetailBolus(suspended: podState.isSuspended, dose: podState.unfinalizedBolus, deliveredUnits: deliveredUnits)
-//                // TODO: This timer is in the wrong context; should be part of a custom bolus progress cell
-////              if bolusProgressTimer == nil {
-////                  bolusProgressTimer = Timer.scheduledTimer(withTimeInterval: .seconds(2), repeats: true) { [weak self] (_) in
-////                      self?.tableView.reloadRows(at: [indexPath], with: .none)
-////                  }
-////              }
-//            case .basal:
-//                cell.textLabel?.text = LocalizedString("Basal Delivery", comment: "The title of the cell showing pod basal status")
-//                cell.setDetailBasal(suspended: podState.isSuspended, dose: podState.unfinalizedTempBasal)
-//            case .reservoirLevel:
-//                cell.textLabel?.text = LocalizedString("Reservoir", comment: "The title of the cell showing reservoir status")
-//                cell.setReservoirDetail(podState.lastInsulinMeasurements)
-//            case .deliveredInsulin:
-//                cell.textLabel?.text = LocalizedString("Insulin Delivered", comment: "The title of the cell showing delivered insulin")
-//                cell.setDeliveredInsulinDetail(podState.lastInsulinMeasurements)
-//            default:
-//                break
-//            }
-//            return cell
-//
-//        case .configuration:
-//            switch configurationRows[indexPath.row] {
-//            case .suspendResume:
-//                return suspendResumeTableViewCell
-//            case .enableDisableConfirmationBeeps:
-//                return confirmationBeepsTableViewCell
-//            case .reminder:
-//                let cell = tableView.dequeueReusableCell(withIdentifier: ExpirationReminderDateTableViewCell.className, for: indexPath) as! ExpirationReminderDateTableViewCell
-//                if let podState = podState, let reminderDate = pumpManager.expirationReminderDate {
-//                    cell.titleLabel.text = LocalizedString("Expiration Reminder", comment: "The title of the cell showing the pod expiration reminder date")
-//                    cell.date = reminderDate
-//                    cell.datePicker.datePickerMode = .dateAndTime
-//                    #if swift(>=5.2)
-//                        if #available(iOS 14.0, *) {
-//                            cell.datePicker.preferredDatePickerStyle = .wheels
-//                        }
-//                    #endif
-//                    cell.datePicker.maximumDate = podState.expiresAt?.addingTimeInterval(-Pod.expirationReminderAlertMinTimeBeforeExpiration)
-//                    cell.datePicker.minimumDate = podState.expiresAt?.addingTimeInterval(-Pod.expirationReminderAlertMaxTimeBeforeExpiration)
-//                    cell.datePicker.minuteInterval = 1
-//                    cell.delegate = self
-//                }
-//                return cell
-//            case .timeZoneOffset:
-//                let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.className, for: indexPath)
-//                cell.textLabel?.text = LocalizedString("Change Time Zone", comment: "The title of the command to change pump time zone")
-//
-//                let localTimeZone = TimeZone.current
-//                let localTimeZoneName = localTimeZone.abbreviation() ?? localTimeZone.identifier
-//
-//                if let timeZone = pumpManagerStatus?.timeZone {
-//                    let timeZoneDiff = TimeInterval(timeZone.secondsFromGMT() - localTimeZone.secondsFromGMT())
-//                    let formatter = DateComponentsFormatter()
-//                    formatter.allowedUnits = [.hour, .minute]
-//                    let diffString = timeZoneDiff != 0 ? formatter.string(from: abs(timeZoneDiff)) ?? String(abs(timeZoneDiff)) : ""
-//
-//                    cell.detailTextLabel?.text = String(format: LocalizedString("%1$@%2$@%3$@", comment: "The format string for displaying an offset from a time zone: (1: GMT)(2: -)(3: 4:00)"), localTimeZoneName, timeZoneDiff != 0 ? (timeZoneDiff < 0 ? "-" : "+") : "", diffString)
-//                }
-//                cell.accessoryType = .disclosureIndicator
-//                return cell
-//            case .replacePod:
-//                let cell = tableView.dequeueReusableCell(withIdentifier: TextButtonTableViewCell.className, for: indexPath) as! TextButtonTableViewCell
-//                if podState == nil {
-//                    cell.textLabel?.text = LocalizedString("Pair New Pod", comment: "The title of the command to pair new pod")
-//                } else if let podState = podState, podState.isFaulted {
-//                    cell.textLabel?.text = LocalizedString("Replace Pod Now", comment: "The title of the command to replace pod when there is a pod fault")
-//                } else if let podState = podState, podState.unfinishedSetup {
-//                    cell.textLabel?.text = LocalizedString("Finish pod setup", comment: "The title of the command to finish pod setup")
-//                } else {
-//                    cell.textLabel?.text = LocalizedString("Replace Pod", comment: "The title of the command to replace pod")
-//                    cell.tintColor = .deleteColor
-//                }
-//
-//                cell.isEnabled = true
-//                return cell
-//            }
-//
-//        case .diagnostics:
-//            switch Diagnostics(rawValue: indexPath.row)! {
-//            case .readPodStatus:
-//                let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.className, for: indexPath)
-//                cell.textLabel?.text = LocalizedString("Read Pod Status", comment: "The title of the command to read the pod status")
-//                cell.accessoryType = .disclosureIndicator
-//                return cell
-//            case .playTestBeeps:
-//                let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.className, for: indexPath)
-//                cell.textLabel?.text = LocalizedString("Play Test Beeps", comment: "The title of the command to play test beeps")
-//                cell.accessoryType = .disclosureIndicator
-//                return cell
-//            case .readPulseLog:
-//                let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.className, for: indexPath)
-//                cell.textLabel?.text = LocalizedString("Read Pulse Log", comment: "The title of the command to read the pulse log")
-//                cell.accessoryType = .disclosureIndicator
-//                return cell
-//            case .testCommand:
-//                let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.className, for: indexPath)
-//                cell.textLabel?.text = LocalizedString("Test Command", comment: "The title of the command to run the test command")
-//                cell.accessoryType = .disclosureIndicator
-//                return cell
-//            }
-//
-//        case .podDetails:
-//            let podState = self.podState!
-//            switch PodDetailsRow(rawValue: indexPath.row)! {
-//            case .podAddress:
-//                let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.className, for: indexPath)
-//                cell.textLabel?.text = LocalizedString("Assigned Address", comment: "The title text for the address assigned to the pod")
-//                cell.detailTextLabel?.text = String(format:"%04X", podState.address)
-//                return cell
-//            case .podLot:
-//                let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.className, for: indexPath)
-//                cell.textLabel?.text = LocalizedString("Lot", comment: "The title of the cell showing the pod lot id")
-//                cell.detailTextLabel?.text = String(format:"L%d", podState.lot)
-//                return cell
-//            case .podTid:
-//                let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.className, for: indexPath)
-//                cell.textLabel?.text = LocalizedString("TID", comment: "The title of the cell showing the pod TID")
-//                cell.detailTextLabel?.text = String(format:"%07d", podState.tid)
-//                return cell
-//            case .piVersion:
-//                let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.className, for: indexPath)
-//                cell.textLabel?.text = LocalizedString("PI Version", comment: "The title of the cell showing the pod pi version")
-//                cell.detailTextLabel?.text = podState.piVersion
-//                return cell
-//            case .pmVersion:
-//                let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.className, for: indexPath)
-//                cell.textLabel?.text = LocalizedString("PM Version", comment: "The title of the cell showing the pod pm version")
-//                cell.detailTextLabel?.text = podState.pmVersion
-//                return cell
-//            }
-//
-//        case .deletePumpManager:
-//            let cell = tableView.dequeueReusableCell(withIdentifier: TextButtonTableViewCell.className, for: indexPath) as! TextButtonTableViewCell
-//
-//            cell.textLabel?.text = LocalizedString("Switch from Omnipod Pumps", comment: "Title text for the button to delete Omnipod PumpManager")
-//            cell.textLabel?.textAlignment = .center
-//            cell.tintColor = .deleteColor
-//            cell.isEnabled = true
-//            return cell
-//        }
-//    }
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        switch sections[indexPath.section] {
+        case .status:
+            let podState = self.podState!
+            let statusRow = StatusRow(rawValue: indexPath.row)!
+            if statusRow == .alarms {
+                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(AlarmsTableViewCell.self), for: indexPath) as! AlarmsTableViewCell
+                cell.textLabel?.text = LocalizedString("Alarms", comment: "The title of the cell showing alarm status")
+                cell.alerts = podState.activeAlerts
+                return cell
+            }
+            let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
+
+            switch statusRow {
+            case .expiresAt:
+                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
+                if let expiresAt = podState.expiresAt {
+                    if expiresAt.timeIntervalSinceNow > 0 {
+                        cell.textLabel?.text = LocalizedString("Expires", comment: "The title of the cell showing the pod expiration")
+                    } else {
+                        cell.textLabel?.text = LocalizedString("Expired", comment: "The title of the cell showing the pod expiration after expiry")
+                    }
+                }
+                cell.setDetailDate(podState.expiresAt, formatter: dateFormatter)
+                return cell
+            case .podActiveClock:
+                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
+                cell.textLabel?.text = LocalizedString("Pod Active Clock", comment: "The title of the cell showing the pod active clock")
+                cell.setDetailAge(podState.expiresAt?.addingTimeInterval(-Pod.nominalPodLife).timeIntervalSinceNow)
+                return cell
+            case .bolus:
+                cell.textLabel?.text = LocalizedString("Bolus Delivery", comment: "The title of the cell showing pod bolus status")
+
+                let deliveredUnits: Double?
+                if let dose = podState.unfinalizedBolus {
+                    deliveredUnits = pumpManager.roundToSupportedBolusVolume(units: dose.progress * dose.units)
+                } else {
+                    deliveredUnits = nil
+                }
+
+                cell.setDetailBolus(suspended: podState.isSuspended, dose: podState.unfinalizedBolus, deliveredUnits: deliveredUnits)
+                // TODO: This timer is in the wrong context; should be part of a custom bolus progress cell
+//              if bolusProgressTimer == nil {
+//                  bolusProgressTimer = Timer.scheduledTimer(withTimeInterval: .seconds(2), repeats: true) { [weak self] (_) in
+//                      self?.tableView.reloadRows(at: [indexPath], with: .none)
+//                  }
+//              }
+            case .basal:
+                cell.textLabel?.text = LocalizedString("Basal Delivery", comment: "The title of the cell showing pod basal status")
+                cell.setDetailBasal(suspended: podState.isSuspended, dose: podState.unfinalizedTempBasal)
+            case .reservoirLevel:
+                cell.textLabel?.text = LocalizedString("Reservoir", comment: "The title of the cell showing reservoir status")
+                cell.setReservoirDetail(podState.lastInsulinMeasurements)
+            case .deliveredInsulin:
+                cell.textLabel?.text = LocalizedString("Insulin Delivered", comment: "The title of the cell showing delivered insulin")
+                cell.setDeliveredInsulinDetail(podState.lastInsulinMeasurements)
+            default:
+                break
+            }
+            return cell
+
+        case .configuration:
+            switch configurationRows[indexPath.row] {
+            case .suspendResume:
+                return suspendResumeTableViewCell
+            case .enableDisableConfirmationBeeps:
+                return confirmationBeepsTableViewCell
+            case .reminder:
+                let cell = tableView.dequeueReusableCell(withIdentifier: ExpirationReminderDateTableViewCell.className, for: indexPath) as! ExpirationReminderDateTableViewCell
+                if let podState = podState, let reminderDate = pumpManager.expirationReminderDate {
+                    cell.titleLabel.text = LocalizedString("Expiration Reminder", comment: "The title of the cell showing the pod expiration reminder date")
+                    cell.date = reminderDate
+                    cell.datePicker.datePickerMode = .dateAndTime
+                    #if swift(>=5.2)
+                        if #available(iOS 14.0, *) {
+                            cell.datePicker.preferredDatePickerStyle = .wheels
+                        }
+                    #endif
+                    cell.datePicker.maximumDate = podState.expiresAt?.addingTimeInterval(-Pod.expirationReminderAlertMinTimeBeforeExpiration)
+                    cell.datePicker.minimumDate = podState.expiresAt?.addingTimeInterval(-Pod.expirationReminderAlertMaxTimeBeforeExpiration)
+                    cell.datePicker.minuteInterval = 1
+                    cell.delegate = self
+                }
+                return cell
+            case .timeZoneOffset:
+                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
+                cell.textLabel?.text = LocalizedString("Change Time Zone", comment: "The title of the command to change pump time zone")
+
+                let localTimeZone = TimeZone.current
+                let localTimeZoneName = localTimeZone.abbreviation() ?? localTimeZone.identifier
+
+                if let timeZone = pumpManagerStatus?.timeZone {
+                    let timeZoneDiff = TimeInterval(timeZone.secondsFromGMT() - localTimeZone.secondsFromGMT())
+                    let formatter = DateComponentsFormatter()
+                    formatter.allowedUnits = [.hour, .minute]
+                    let diffString = timeZoneDiff != 0 ? formatter.string(from: abs(timeZoneDiff)) ?? String(abs(timeZoneDiff)) : ""
+
+                    cell.detailTextLabel?.text = String(format: LocalizedString("%1$@%2$@%3$@", comment: "The format string for displaying an offset from a time zone: (1: GMT)(2: -)(3: 4:00)"), localTimeZoneName, timeZoneDiff != 0 ? (timeZoneDiff < 0 ? "-" : "+") : "", diffString)
+                }
+                cell.accessoryType = .disclosureIndicator
+                return cell
+            case .replacePod:
+                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(TextButtonTableViewCell.self), for: indexPath) as! TextButtonTableViewCell
+                if podState == nil {
+                    cell.textLabel?.text = LocalizedString("Pair New Pod", comment: "The title of the command to pair new pod")
+                } else if let podState = podState, podState.isFaulted {
+                    cell.textLabel?.text = LocalizedString("Replace Pod Now", comment: "The title of the command to replace pod when there is a pod fault")
+                } else if let podState = podState, podState.unfinishedSetup {
+                    cell.textLabel?.text = LocalizedString("Finish pod setup", comment: "The title of the command to finish pod setup")
+                } else {
+                    cell.textLabel?.text = LocalizedString("Replace Pod", comment: "The title of the command to replace pod")
+                    cell.tintColor = .deleteColor
+                }
+
+                cell.isEnabled = true
+                return cell
+            }
+
+        case .diagnostics:
+            switch Diagnostics(rawValue: indexPath.row)! {
+            case .readPodStatus:
+                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
+                cell.textLabel?.text = LocalizedString("Read Pod Status", comment: "The title of the command to read the pod status")
+                cell.accessoryType = .disclosureIndicator
+                return cell
+            case .playTestBeeps:
+                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
+                cell.textLabel?.text = LocalizedString("Play Test Beeps", comment: "The title of the command to play test beeps")
+                cell.accessoryType = .disclosureIndicator
+                return cell
+            case .readPulseLog:
+                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
+                cell.textLabel?.text = LocalizedString("Read Pulse Log", comment: "The title of the command to read the pulse log")
+                cell.accessoryType = .disclosureIndicator
+                return cell
+            case .testCommand:
+                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
+                cell.textLabel?.text = LocalizedString("Test Command", comment: "The title of the command to run the test command")
+                cell.accessoryType = .disclosureIndicator
+                return cell
+            }
+
+        case .podDetails:
+            let podState = self.podState!
+            switch PodDetailsRow(rawValue: indexPath.row)! {
+            case .podAddress:
+                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
+                cell.textLabel?.text = LocalizedString("Assigned Address", comment: "The title text for the address assigned to the pod")
+                cell.detailTextLabel?.text = String(format:"%04X", podState.address)
+                return cell
+            case .podLot:
+                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
+                cell.textLabel?.text = LocalizedString("Lot Number", comment: "The title of the cell showing the pod lot number")
+                cell.detailTextLabel?.text = String(format:"L%d", podState.lotNo)
+                return cell
+            case .podTid:
+                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
+                cell.textLabel?.text = LocalizedString("Sequence Number", comment: "The title of the cell showing the lot sequence number")
+                cell.detailTextLabel?.text = String(format:"%07d", podState.lotSeq)
+                return cell
+            }
+
+        case .deletePumpManager:
+            let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(TextButtonTableViewCell.self), for: indexPath) as! TextButtonTableViewCell
+
+            cell.textLabel?.text = LocalizedString("Switch from Omnipod Dash Pumps", comment: "Title text for the button to delete Omnipod Dash PumpManager")
+            cell.textLabel?.textAlignment = .center
+            cell.tintColor = .deleteColor
+            cell.isEnabled = true
+            return cell
+        }
+    }
     
     override func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
         switch sections[indexPath.section] {
@@ -771,12 +758,12 @@ private extension UIAlertController {
     convenience init(pumpManagerDeletionHandler handler: @escaping () -> Void) {
         self.init(
             title: nil,
-            message: LocalizedString("Are you sure you want to stop using Omnipod?", comment: "Confirmation message for removing Omnipod PumpManager"),
+            message: LocalizedString("Are you sure you want to stop using Omnipod Dash?", comment: "Confirmation message for removing Omnipod Dash PumpManager"),
             preferredStyle: .actionSheet
         )
         
         addAction(UIAlertAction(
-            title: LocalizedString("Delete Omnipod", comment: "Button title to delete Omnipod PumpManager"),
+            title: LocalizedString("Delete Omnipod Dash", comment: "Button title to delete Omnipod Dash PumpManager"),
             style: .destructive,
             handler: { (_) in
                 handler()
