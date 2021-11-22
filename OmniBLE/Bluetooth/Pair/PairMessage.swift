@@ -13,7 +13,7 @@ struct PairMessage {
     public let destination: Id
     private let keys: [String]
     private let payloads: [Data]
-    public let message: Message
+    public let message: MessagePacket
     
     init(sequenceNumber: UInt8, source: Id, destination: Id, keys: [String], payloads: [Data]) {
         self.sequenceNumber = sequenceNumber
@@ -21,7 +21,7 @@ struct PairMessage {
         self.destination = destination
         self.keys = keys
         self.payloads = payloads
-        message = Message(
+        message = MessagePacket(
             type: MessageType.PAIRING,
             address: destination.toUInt32(),
             payload: StringLengthPrefixEncoding.formatKeys(

@@ -17,7 +17,9 @@ protocol PodCommsDelegate: AnyObject {
 public class PodComms: CustomDebugStringConvertible {
     
     var manager: PeripheralManager?
-    
+    private let lotNo: UInt64?
+    private let lotSeq: UInt32?
+
 //    private let configuredDevices: Locked<Set<Omnipod>> = Locked(Set())
     
     weak var delegate: PodCommsDelegate?
@@ -35,10 +37,12 @@ public class PodComms: CustomDebugStringConvertible {
         }
     }
     
-    init(podState: PodState?) {
+    init(podState: PodState?, lotNo: UInt64?, lotSeq: UInt32?) {
         self.podState = podState
         self.delegate = nil
         self.messageLogger = nil
+        self.lotNo = lotNo
+        self.lotSeq = lotSeq
     }
 
     // Handles all the common work to send and verify the version response for the two pairing pod commands, AssignAddress and SetupPod.
@@ -71,42 +75,50 @@ public class PodComms: CustomDebugStringConvertible {
         let ltkExchanger = LTKExchanger(manager: manager, ids: ids)
         let response = try ltkExchanger.negotiateLTK()
 
+        if self.podState == nil {
+            log.default("Creating PodState for versionResponse %{public}@", String(describing: lotSeq))
+            self.podState = PodState(
+                address: response.address,
+                ltk: response.ltk,
+                lotNo: lotNo ?? 1,
+                lotSeq: lotSeq ?? 1
+            )
+            // podState setupProgress state should be addressAssigned
+        }
+
+        log.info("Establish an Eap Session")
+        
+        try self.establishSession(msgSeq: Int(response.msgSeq))
+
         log.info("LTK and encrypted transport now ready")
 
         // If we get here, we have the LTK all set up and we should be able use encrypted pod messages
-        let messageNumber: Int
-        let ltk: Data
-        if let podState = self.podState {
-            ltk = podState.messageTransportState.ltk
-            messageNumber = podState.messageTransportState.messageNumber
-        } else {
-            ltk = response.ltk
-            messageNumber = Int(response.msgSeq)
+        guard let podState = self.podState else {
+            throw PodCommsError.noPodPaired
         }
 
         log.debug("Attempting encrypted pod assign address command using address %{public}@", String(format: "%04X", address))
-        let messageTransportState = MessageTransportState(ltk: ltk, messageNumber: messageNumber)
-        let transport = PodMessageTransport(manager: manager, address: 0xffffffff, state: messageTransportState)
+        let transport = PodMessageTransport(manager: manager, address: 0xffffffff, state: podState.messageTransportState)
         transport.messageLogger = messageLogger
 
         // Create the Assign Address command message
         // XXX - use the ids.podId here or use the generated 0x1F0xxxxx address?
         let assignAddress = AssignAddressCommand(address: address)
-        let message = Message(type: .CLEAR, address: 0xffffffff, messageBlocks: [assignAddress], sequenceNumber: UInt8(transport.messageNumber))
+        let message = Message(address: 0xffffffff, messageBlocks: [assignAddress], sequenceNum: transport.msgSeq)
 
         let versionResponse = try sendPairMessage(transport: transport, message: message)
 
-        if self.podState == nil {
-            log.default("Creating PodState for versionResponse %{public}@", String(describing: versionResponse))
-            self.podState = PodState(
-                address: response.address, // YYY is this correct or use config.address?
-                ltk: response.ltk,
-                messageNumber: transport.messageNumber,
-                lotNo: UInt64(versionResponse.lot),
-                lotSeq: versionResponse.tid
-            )
-            // podState setupProgress state should be addressAssigned
-        }
+//        if self.podState == nil {
+//            log.default("Creating PodState for versionResponse %{public}@", String(describing: versionResponse))
+//            self.podState = PodState(
+//                address: response.address, // YYY is this correct or use config.address?
+//                ltk: response.ltk,
+//                messageNumber: transport.messageNumber,
+//                lotNo: UInt64(versionResponse.lot),
+//                lotSeq: versionResponse.tid
+//            )
+//            // podState setupProgress state should be addressAssigned
+//        }
 
         // Now that we have podState, check for an activation timeout condition that can be noted in setupProgress
         guard versionResponse.podProgressStatus != .activationTimeExceeded else {
@@ -117,6 +129,48 @@ public class PodComms: CustomDebugStringConvertible {
 
     }
     
+    private func syncSession(_ ltk: Data, _ eapSqn: Data, _ address: UInt32, _ msgSeq: Int) throws -> Int? {
+        guard let manager = manager else { throw PodCommsError.noPodPaired }
+        let eapAkaExchanger = try SessionEstablisher(manager: manager, ltk: ltk, eapSqn: eapSqn, address: address, msgSeq: msgSeq)
+        
+        let result = try eapAkaExchanger.negotiateSessionKeys()
+        
+        switch result {
+        case .SessionNegotiationResynchronization(let keys):
+            log.info("EAP AKA resynchronization: %@", keys.synchronizedEapSqn.data.hexadecimalString)
+            return keys.synchronizedEapSqn.toInt()
+        case .SessionKeys(let keys):
+            log.debug("CK: %@", keys.ck.hexadecimalString)
+            log.info("msgSequenceNumber: %@", keys.msgSequenceNumber)
+            log.info("Nonce: %@", keys.nonce.prefix.hexadecimalString)
+            
+            return nil
+//            session = Session(aapsLogger, mIO, ids, sessionKeys = keys, enDecrypt = enDecrypt)
+        }
+    }
+    
+    public func establishSession(msgSeq: Int) throws {
+        guard let podState = self.podState else {
+            throw PodCommsError.noPodPaired
+        }
+        
+        let messageTransportState = podState.messageTransportState
+        
+//        let eapSqn = messageTransportState.increaseEapAkaSequenceNumber()
+        let eapSqn = Data(bigEndian: 0).subdata(in: 2..<8)
+
+        var newSqn = try self.syncSession(podState.ltk, eapSqn, podState.address, messageTransportState.msgSeq ?? 0)
+        
+        if (newSqn != nil) {
+            log.debug("Updating EAP SQN to: $newSqn")
+//            podState.eapAkaSequenceNumber = newSqn
+            newSqn = try self.syncSession(podState.ltk, Data(bigEndian: messageTransportState.msgSeq ?? 0).subdata(in: 2..<8), podState.address, 1)
+            if (newSqn != nil) {
+                throw PodCommsError.diagnosticMessage(str: "Received resynchronization SQN for the second time")
+            }
+        }
+    }
+    
     private func setupPod(podState: PodState, timeZone: TimeZone) throws {
         guard let manager = manager else { throw PodCommsError.noPodAvailable }
         let transport = PodMessageTransport(manager: manager, address: 0xffffffff, state: podState.messageTransportState)
@@ -125,7 +179,7 @@ public class PodComms: CustomDebugStringConvertible {
         let dateComponents = SetupPodCommand.dateComponents(date: Date(), timeZone: timeZone)
         let setupPod = SetupPodCommand(address: podState.address, dateComponents: dateComponents, lot: UInt32(podState.lotNo), tid: podState.lotSeq)
 
-        let message = Message(type: .CLEAR, address: 0xffffffff, messageBlocks: [setupPod], sequenceNumber: UInt8(transport.messageNumber))
+        let message = Message(address: 0xffffffff, messageBlocks: [setupPod], sequenceNum: transport.msgSeq)
 
         let versionResponse = try sendPairMessage(transport: transport, message: message)
 
@@ -190,24 +244,24 @@ public class PodComms: CustomDebugStringConvertible {
                     try self.pairPod(ids: ids)
                 }
                 
-                guard self.podState != nil else {
+                guard let podState = self.podState else {
                     block(.failure(PodCommsError.noPodPaired))
                     return
                 }
 
-                if self.podState!.setupProgress.isPaired == false {
+                if podState.setupProgress.isPaired == false {
                     try self.setupPod(podState: self.podState!, timeZone: timeZone)
                 }
 
-                guard self.podState!.setupProgress.isPaired else {
-                    self.log.error("Unexpected podStatus setupProgress value of %{public}@", String(describing: self.podState!.setupProgress))
+                guard podState.setupProgress.isPaired else {
+                    self.log.error("Unexpected podStatus setupProgress value of %{public}@", String(describing: podState.setupProgress))
                     throw PodCommsError.invalidData
                 }
 
                 // Run a session now for any post-pairing commands
-                let transport = PodMessageTransport(manager: manager, address: self.podState!.address, state: self.podState!.messageTransportState)
+                let transport = PodMessageTransport(manager: manager, address: podState.address, state: podState.messageTransportState)
                 transport.messageLogger = self.messageLogger
-                let podSession = PodCommsSession(podState: self.podState!, transport: transport, delegate: self)
+                let podSession = PodCommsSession(podState: podState, transport: transport, delegate: self)
 
                 block(.success(session: podSession))
             } catch let error as PodCommsError {

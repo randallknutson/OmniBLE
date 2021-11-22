@@ -33,7 +33,7 @@ extension PeripheralManager {
     }
     
     /// - Throws: PeripheralManagerError
-    func sendMessage(_ message: Message, _ forEncryption: Bool = false) throws -> MessageResult {
+    func sendMessage(_ message: MessagePacket, _ forEncryption: Bool = false) throws -> MessageResult {
         dispatchPrecondition(condition: .onQueue(queue))
 
         var result: MessageResult = MessageSendSuccess()
@@ -60,10 +60,10 @@ extension PeripheralManager {
     }
     
     /// - Throws: PeripheralManagerError
-    func readMessage(_ readRTS: Bool = true) throws -> Message? {
+    func readMessage(_ readRTS: Bool = true) throws -> MessagePacket? {
         dispatchPrecondition(condition: .onQueue(queue))
 
-        var packet: Message?
+        var packet: MessagePacket?
 
         do {
             if (readRTS) {
@@ -93,7 +93,7 @@ extension PeripheralManager {
             }
             let fullPayload = try joiner.finalize()
             try  sendCommandType(PodCommand.SUCCESS)
-            packet = try Message(encodedData: fullPayload)
+            packet = try MessagePacket.parse(payload: fullPayload)
         }
         catch {
             print(error)

@@ -111,14 +111,14 @@ class LTKExchanger {
         )
     }
 
-    private func throwOnSendError(_ msg: Message, _ msgType: String) throws {
+    private func throwOnSendError(_ msg: MessagePacket, _ msgType: String) throws {
         let result = try manager.sendMessage(msg)
         guard ((result as? MessageSendSuccess) != nil) else {
             throw BluetoothErrors.PairingException("Could not send or confirm $msgType: \(result)")
         }
     }
 
-    private func processSps1FromPod(_ msg: Message) throws {
+    private func processSps1FromPod(_ msg: MessagePacket) throws {
         log.debug("Received SPS1 from pod: %@", msg.payload.hexadecimalString)
 
         let payload = try StringLengthPrefixEncoding.parseKeys([LTKExchanger.SPS1], msg.payload)[0]
@@ -126,7 +126,7 @@ class LTKExchanger {
         try keyExchange.updatePodPublicData(payload)
     }
 
-    private func validatePodSps2(_ msg: Message) throws {
+    private func validatePodSps2(_ msg: MessagePacket) throws {
         log.debug("Received SPS2 from pod: %@", msg.payload.hexadecimalString)
 
         let payload = try StringLengthPrefixEncoding.parseKeys([LTKExchanger.SPS2], msg.payload)[0]
@@ -144,7 +144,7 @@ class LTKExchanger {
         return LTKExchanger.GET_POD_STATUS_HEX_COMMAND
     }
 
-    private func validateP0(_ msg: Message) throws {
+    private func validateP0(_ msg: MessagePacket) throws {
         log.debug("Received P0 from pod: %@", msg.payload.hexadecimalString)
 
         let payload = try StringLengthPrefixEncoding.parseKeys([LTKExchanger.P0], msg.payload)[0]

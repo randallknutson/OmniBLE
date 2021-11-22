@@ -11,7 +11,7 @@ class Nonce {
     let prefix: Data
     var sqn: UInt32
     
-    init (_ prefix: Data, _ sqn: UInt32) {
+    init (prefix: Data, sqn: UInt32) {
         guard prefix.count == 8 else { fatalError("Nonce prefix should be 8 bytes long") }
         self.prefix = prefix
         self.sqn = sqn

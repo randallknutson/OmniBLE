@@ -53,7 +53,7 @@ public class Omnipod {
         self.serviceUUIDs = []
 
 //        self.bluetoothManager.peripheralIdentifier = peripheralIdentifier
-        self.podComms = PodComms(podState: state)
+        self.podComms = PodComms(podState: state, lotNo: lotNo, lotSeq: sequenceNo)
         self.bluetoothManager.delegate = self
     }
     
@@ -152,8 +152,8 @@ extension Omnipod {
     
     private func parseLotNo() -> UInt64? {
         print(serviceUUIDs[5].uuidString + serviceUUIDs[6].uuidString)
-        let lotSeq: String = serviceUUIDs[5].uuidString + serviceUUIDs[6].uuidString + serviceUUIDs[7].uuidString
-        return UInt64(lotSeq[lotSeq.startIndex..<lotSeq.index(lotSeq.startIndex, offsetBy: 10)], radix: 16)
+        let lotNo: String = serviceUUIDs[5].uuidString + serviceUUIDs[6].uuidString + serviceUUIDs[7].uuidString
+        return UInt64(lotNo[lotNo.startIndex..<lotNo.index(lotNo.startIndex, offsetBy: 10)], radix: 16)
     }
 
     private func parseSeqNo() -> UInt32? {
@@ -184,6 +184,8 @@ extension Omnipod {
 extension Omnipod: BluetoothManagerDelegate {
     func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, isReadyWithError error: Error?) {
         podComms.manager = peripheralManager
+        // Will fail if ltk is not established. That's fine.
+        try? podComms.establishSession(msgSeq: 1)
     }
     
     func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral) -> Bool {
