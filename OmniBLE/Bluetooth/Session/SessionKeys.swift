@@ -11,7 +11,7 @@ import Foundation
 struct SessionKeys {
     var ck: Data
     var nonce: Nonce
-    var msgSequenceNumber: UInt8
+    var msgSequenceNumber: Int
 }
 
 struct SessionNegotiationResynchronization {

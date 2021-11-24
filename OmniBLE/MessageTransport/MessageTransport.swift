@@ -20,9 +20,9 @@ public struct MessageTransportState: Equatable, RawRepresentable {
 
     public var ck: Data?
     public var nonce: Data?
-    public var msgSeq: Int?
+    public var msgSeq: Int
     
-    init(ck: Data?, nonce: Data?, msgSeq: Int?) {
+    init(ck: Data?, nonce: Data?, msgSeq: Int = 0) {
         self.ck = ck
         self.nonce = nonce
         self.msgSeq = msgSeq
@@ -44,8 +44,8 @@ public struct MessageTransportState: Equatable, RawRepresentable {
     
     public var rawValue: RawValue {
         return [
-            "ck": ck?.hexadecimalString,
-            "nonce": nonce?.hexadecimalString,
+            "ck": ck?.hexadecimalString ?? "",
+            "nonce": nonce?.hexadecimalString ?? "",
             "msgSeq": msgSeq
         ]
     }
@@ -99,7 +99,7 @@ class PodMessageTransport: MessageTransport {
     
     private(set) var msgSeq: Int {
         get {
-            return state.msgSeq ?? 0
+            return state.msgSeq
         }
         set {
             state.msgSeq = newValue
@@ -118,7 +118,7 @@ class PodMessageTransport: MessageTransport {
     }
     
     private func incrementMsgSeq(_ count: Int = 1) {
-        msgSeq = ((msgSeq ?? 0) + count) & 0b1111
+        msgSeq = ((msgSeq) + count) & 0b1111
     }
 
     /// Sends the given pod message over the encrypted Dash transport and returns the pod's response
@@ -147,10 +147,10 @@ class PodMessageTransport: MessageTransport {
 //        }
 //
 //        return response
-        guard let noncePrefix = state.nonce, let ck = state.ck, let msgSeq = state.msgSeq else { throw PodCommsError.noPodAvailable }
+        guard let noncePrefix = state.nonce, let ck = state.ck else { throw PodCommsError.noPodAvailable }
         
         var sendMessage = MessagePacket(type: .ENCRYPTED, address: message.address, payload: message.encoded(), sequenceNumber: UInt8(msgSeq))
-        var nonce = Nonce(prefix: noncePrefix, sqn: UInt32(msgSeq))
+        var nonce = Nonce(prefix: noncePrefix, sqn: msgSeq)
         var endecrypt = EnDecrypt(nonce: nonce, ck: ck)
         sendMessage = try endecrypt.encrypt(sendMessage)
 
@@ -164,7 +164,7 @@ class PodMessageTransport: MessageTransport {
             throw BluetoothErrors.MessageIOException("Could not read response")
         }
 
-        nonce = Nonce(prefix: noncePrefix, sqn: UInt32(msgSeq))
+        nonce = Nonce(prefix: noncePrefix, sqn: msgSeq)
         endecrypt = EnDecrypt(nonce: nonce, ck: ck)
         readMessage = try endecrypt.decrypt(readMessage)
 

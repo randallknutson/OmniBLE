@@ -39,8 +39,8 @@ struct EapMessage {
         bb.append(identifier)
         bb.append(UInt8((totalSize >> 8) & 0xFF))
         bb.append(UInt8(totalSize & 0xFF))
-        bb.append(EapMessage.AKA_PACKET_TYPE)
-        bb.append(EapMessage.SUBTYPE_AKA_CHALLENGE)
+        bb.append(UInt8(EapMessage.AKA_PACKET_TYPE))
+        bb.append(UInt8(EapMessage.SUBTYPE_AKA_CHALLENGE))
         bb.append(Data([0x00, 0x00]))
         bb.append(joinedAttributes)
 
@@ -57,7 +57,7 @@ struct EapMessage {
         guard payload.count > 4 else { throw MessageError.notEnoughData }
 
         let totalSize = (Int(payload[2]) << 8) | Int(payload[3])
-        guard payload.count > totalSize else { throw MessageError.notEnoughData }
+        guard payload.count == totalSize else { throw MessageError.notEnoughData }
 
 
         if (payload.count == 4) { // SUCCESS/FAILURE

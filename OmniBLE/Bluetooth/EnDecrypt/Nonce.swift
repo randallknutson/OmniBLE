@@ -9,9 +9,9 @@ import Foundation
 
 class Nonce {
     let prefix: Data
-    var sqn: UInt32
+    var sqn: Int
     
-    init (prefix: Data, sqn: UInt32) {
+    init (prefix: Data, sqn: Int) {
         guard prefix.count == 8 else { fatalError("Nonce prefix should be 8 bytes long") }
         self.prefix = prefix
         self.sqn = sqn

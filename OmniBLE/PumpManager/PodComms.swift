@@ -129,7 +129,7 @@ public class PodComms: CustomDebugStringConvertible {
 
     }
     
-    private func syncSession(_ ltk: Data, _ eapSqn: Data, _ address: UInt32, _ msgSeq: Int) throws -> Int? {
+    private func syncSession(_ ltk: Data, _ eapSqn: Int, _ address: UInt32, _ msgSeq: Int) throws -> Int? {
         guard let manager = manager else { throw PodCommsError.noPodPaired }
         let eapAkaExchanger = try SessionEstablisher(manager: manager, ltk: ltk, eapSqn: eapSqn, address: address, msgSeq: msgSeq)
         
@@ -141,30 +141,28 @@ public class PodComms: CustomDebugStringConvertible {
             return keys.synchronizedEapSqn.toInt()
         case .SessionKeys(let keys):
             log.debug("CK: %@", keys.ck.hexadecimalString)
-            log.info("msgSequenceNumber: %@", keys.msgSequenceNumber)
+            log.info("msgSequenceNumber: %@", String(keys.msgSequenceNumber))
             log.info("Nonce: %@", keys.nonce.prefix.hexadecimalString)
             
+            self.podState?.messageTransportState = MessageTransportState(ck: keys.ck, nonce: keys.nonce.prefix, msgSeq: keys.msgSequenceNumber)
+            
             return nil
-//            session = Session(aapsLogger, mIO, ids, sessionKeys = keys, enDecrypt = enDecrypt)
         }
     }
     
     public func establishSession(msgSeq: Int) throws {
-        guard let podState = self.podState else {
+        guard var podState = self.podState else {
             throw PodCommsError.noPodPaired
         }
         
-        let messageTransportState = podState.messageTransportState
-        
-//        let eapSqn = messageTransportState.increaseEapAkaSequenceNumber()
-        let eapSqn = Data(bigEndian: 0).subdata(in: 2..<8)
+        let eapSqn = podState.increaseEapAkaSequenceNumber()
 
-        var newSqn = try self.syncSession(podState.ltk, eapSqn, podState.address, messageTransportState.msgSeq ?? 0)
+        var newSqn = try self.syncSession(podState.ltk, eapSqn, podState.address, msgSeq)
         
         if (newSqn != nil) {
-            log.debug("Updating EAP SQN to: $newSqn")
-//            podState.eapAkaSequenceNumber = newSqn
-            newSqn = try self.syncSession(podState.ltk, Data(bigEndian: messageTransportState.msgSeq ?? 0).subdata(in: 2..<8), podState.address, 1)
+            log.debug("Updating EAP SQN to: %@", String(newSqn!))
+            podState.eapAkaSequenceNumber = newSqn!
+            newSqn = try self.syncSession(podState.ltk, msgSeq, podState.address, podState.increaseEapAkaSequenceNumber())
             if (newSqn != nil) {
                 throw PodCommsError.diagnosticMessage(str: "Received resynchronization SQN for the second time")
             }

@@ -162,7 +162,7 @@ class EapAkaAttributeCustomIV: EapAkaAttribute {
     }
 
     override func toData() -> Data {
-        return Data([EapAkaAttributeType.AT_CUSTOM_IV.rawValue, UInt8(EapAkaAttributeAuts.SIZE / SIZE_MULTIPLIER), 0x00, 0x00]) + payload
+        return Data([EapAkaAttributeType.AT_CUSTOM_IV.rawValue, UInt8(EapAkaAttributeCustomIV.SIZE / SIZE_MULTIPLIER), 0x00, 0x00]) + payload
     }
 
     static func parse(payload: Data) throws -> EapAkaAttributeCustomIV {
@@ -184,7 +184,7 @@ class EapAkaAttributeClientErrorCode: EapAkaAttribute {
     }
 
     override func toData() -> Data {
-        return Data([EapAkaAttributeType.AT_CLIENT_ERROR_CODE.rawValue, UInt8(EapAkaAttributeAuts.SIZE / SIZE_MULTIPLIER), 0x00, 0x00]) + payload
+        return Data([EapAkaAttributeType.AT_CLIENT_ERROR_CODE.rawValue, UInt8(EapAkaAttributeClientErrorCode.SIZE / SIZE_MULTIPLIER), 0x00, 0x00]) + payload
     }
 
     static func parse(payload: Data) throws -> EapAkaAttributeClientErrorCode {

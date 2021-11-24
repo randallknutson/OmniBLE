@@ -52,6 +52,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
     
     public let address: UInt32
     public let ltk: Data
+    public var eapAkaSequenceNumber: Int
     fileprivate var nonceState: NonceState
 
     public var activatedAt: Date?
@@ -111,10 +112,11 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         self.suspendState = .resumed(Date())
         self.fault = nil
         self.activeAlertSlots = .none
-        self.messageTransportState = MessageTransportState(ck: nil, nonce: nil, msgSeq: nil)
+        self.messageTransportState = MessageTransportState(ck: nil, nonce: nil)
         self.primeFinishTime = nil
         self.setupProgress = .addressAssigned
         self.configuredAlerts = [.slot7: .waitingForPairingReminder]
+        self.eapAkaSequenceNumber = 1
     }
     
     public var unfinishedSetup: Bool {
@@ -139,6 +141,11 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
 
     public var isFaulted: Bool {
         return fault != nil || setupProgress == .activationTimeout || setupProgress == .podIncompatible
+    }
+    
+    public mutating func increaseEapAkaSequenceNumber() -> Int {
+        self.eapAkaSequenceNumber += 1
+        return eapAkaSequenceNumber
     }
 
     public mutating func advanceToNextNonce() {
@@ -262,6 +269,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         guard
             let address = rawValue["address"] as? UInt32,
             let ltkString = rawValue["ltk"] as? String,
+            let eapAkaSequenceNumber = rawValue["eapAkaSequenceNumber"] as? Int,
             let nonceStateRaw = rawValue["nonceState"] as? NonceState.RawValue,
             let nonceState = NonceState(rawValue: nonceStateRaw),
             let lotNo = rawValue["lotNo"] as? UInt64,
@@ -272,6 +280,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         
         self.address = address
         self.ltk = Data(hex: ltkString)
+        self.eapAkaSequenceNumber = eapAkaSequenceNumber
         self.nonceState = nonceState
         self.lotNo = lotNo
         self.lotSeq = lotSeq
@@ -364,7 +373,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         {
             self.messageTransportState = messageTransportState
         } else {
-            self.messageTransportState = MessageTransportState(ck: nil, nonce: nil, msgSeq: nil)
+            self.messageTransportState = MessageTransportState(ck: nil, nonce: nil)
         }
 
         if let rawConfiguredAlerts = rawValue["configuredAlerts"] as? [String: PodAlert.RawValue] {
@@ -394,6 +403,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         var rawValue: RawValue = [
             "address": address,
             "ltk": ltk.hexadecimalString,
+            "eapAkaSequenceNumber": eapAkaSequenceNumber,
             "nonceState": nonceState.rawValue,
             "lotNo": lotNo,
             "lotSeq": lotSeq,
@@ -460,6 +470,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             "### PodState",
             "* address: \(String(format: "%04X", address))",
             "* ltk: \(ltk.hexadecimalString)",
+            "* eapAkaSequenceNumber: \(eapAkaSequenceNumber)",
             "* activatedAt: \(String(reflecting: activatedAt))",
             "* expiresAt: \(String(reflecting: expiresAt))",
             "* setupUnitsDelivered: \(String(reflecting: setupUnitsDelivered))",

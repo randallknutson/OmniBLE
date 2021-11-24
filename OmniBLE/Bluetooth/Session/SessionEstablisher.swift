@@ -34,8 +34,8 @@ class SessionEstablisher {
     private let milenage: Milenage
     private let log = OSLog(category: "SessionEstablisher")
     
-    init(manager: PeripheralManager, ltk: Data, eapSqn: Data, address: UInt32, msgSeq: Int) throws {
-        guard eapSqn.count == 6 else { throw SessionEstablishmentException.InvalidParameter("EAP-SQN has to be 6 bytes long") }
+    init(manager: PeripheralManager, ltk: Data, eapSqn: Int, address: UInt32, msgSeq: Int) throws {
+//        guard eapSqn.count == 6 else { throw SessionEstablishmentException.InvalidParameter("EAP-SQN has to be 6 bytes long") }
         guard ltk.count == 16 else { throw SessionEstablishmentException.InvalidParameter("LTK has to be 16 bytes long") }
 
         let random = RandomByteGenerator()
@@ -43,10 +43,10 @@ class SessionEstablisher {
 
         self.manager = manager
         self.ltk = ltk
-        self.eapSqn = eapSqn
+        self.eapSqn = Data(bigEndian: eapSqn).subdata(in: 2..<8)
         self.address = address
         self.msgSeq = msgSeq
-        self.milenage = try Milenage(k: ltk, sqn: eapSqn)
+        self.milenage = try Milenage(k: ltk, sqn: self.eapSqn)
     }
     
     func negotiateSessionKeys() throws -> SessionResult {
@@ -78,7 +78,7 @@ class SessionEstablisher {
                 prefix: controllerIV + nodeIV,
                 sqn: 0
             ),
-            msgSequenceNumber: UInt8(msgSeq)
+            msgSequenceNumber: msgSeq
         ))
     }
 

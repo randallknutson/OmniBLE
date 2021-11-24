@@ -185,7 +185,10 @@ extension Omnipod: BluetoothManagerDelegate {
     func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, isReadyWithError error: Error?) {
         podComms.manager = peripheralManager
         // Will fail if ltk is not established. That's fine.
-        try? podComms.establishSession(msgSeq: 1)
+        peripheralManager.perform { [weak podComms] _ in
+            guard let podComms = podComms else { fatalError() }
+            try? podComms.establishSession(msgSeq: 1)
+        }
     }
     
     func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral) -> Bool {
