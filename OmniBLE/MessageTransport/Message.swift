@@ -44,11 +44,13 @@ struct Message {
         
         self.expectFollowOnMessage = (b9 & 0b10000000) != 0
         self.sequenceNum = Int((b9 >> 2) & 0b11111)
- //       let crc = (UInt16(encodedData[encodedData.count-2]) << 8) + UInt16(encodedData[encodedData.count-1])
+        let crc = (UInt16(encodedData[encodedData.count-2]) << 8) + UInt16(encodedData[encodedData.count-1])
         let msgWithoutCrc = encodedData.prefix(encodedData.count - 2)
-//        guard msgWithoutCrc.crc16() == crc else {
-//            throw MessageError.invalidCrc
-//        }
+        let computedCrc: UInt16 = UInt16(msgWithoutCrc.crc16())
+        guard computedCrc == crc else {
+            throw MessageError.invalidCrc
+
+        }
         self.messageBlocks = try Message.decodeBlocks(data: Data(msgWithoutCrc.suffix(from: 6)))
     }
     
@@ -83,8 +85,8 @@ struct Message {
         bytes.append(UInt8(cmdData.count & 0xff))
         
         var data = Data(bytes) + cmdData
-//        let crc = data.crc16()
-//          data.appendBigEndian(crc)
+        let crc: UInt16 = data.crc16()
+        data.appendBigEndian(crc)
         return data
     }
     
@@ -100,6 +102,13 @@ struct Message {
             return nil
         }
     }
+
+     // returns the encoded length of a message
+     static func messageLength(message: [MessageBlock]) -> Int {
+         let message = Message(address: 0, messageBlocks: message, sequenceNum: 0)
+         let encodedData = message.encoded()
+         return encodedData.count
+     }
 }
 
 extension Message: CustomDebugStringConvertible {

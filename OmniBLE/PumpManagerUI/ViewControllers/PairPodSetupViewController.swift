@@ -131,11 +131,20 @@ class PairPodSetupViewController: SetupTableViewController {
                 errorStrings = [lastError?.localizedDescription].compactMap { $0 }
             }
             
-            if let commsError = lastError as? PodCommsError, commsError.possibleWeakCommsCause {
-                if previouslyEncounteredWeakComms {
-                    errorStrings.append(LocalizedString("If the problem persists, move to a new area and try again", comment: "Additional pairing recovery suggestion on multiple pairing failures"))
-                } else {
-                    previouslyEncounteredWeakComms = true
+            if let commsError = lastError as? PodCommsError {
+                switch commsError {
+                case .commsError(let error):
+                    // overwrite errorStrings with info on the underlying comms failure
+                    errorStrings = [ String(describing: error) ]
+                    break
+                default:
+                    if commsError.possibleWeakCommsCause {
+                        if previouslyEncounteredWeakComms {
+                            errorStrings.append(LocalizedString("If the problem persists, move to a new area and try again", comment: "Additional pairing recovery suggestion on multiple pairing failures"))
+                        } else {
+                            previouslyEncounteredWeakComms = true
+                        }
+                    }
                 }
             }
 
@@ -226,7 +235,7 @@ class PairPodSetupViewController: SetupTableViewController {
 private extension PodCommsError {
     var possibleWeakCommsCause: Bool {
         switch self {
-        case .invalidData, .noResponse, .invalidAddress, .rssiTooLow, .rssiTooHigh, .unexpectedPacketType:
+        case .invalidData, .noResponse, .invalidAddress, .rssiTooLow, .rssiTooHigh:
             return true
         default:
             return false

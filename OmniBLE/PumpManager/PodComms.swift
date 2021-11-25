@@ -76,14 +76,13 @@ public class PodComms: CustomDebugStringConvertible {
         let response = try ltkExchanger.negotiateLTK()
 
         if self.podState == nil {
-            log.default("Creating PodState for versionResponse %{public}@", String(describing: lotSeq))
+            log.default("Creating temp podState for LTK") // XXX need to rethink the podState setup stuff
             self.podState = PodState(
                 address: response.address,
                 ltk: response.ltk,
                 lotNo: lotNo ?? 1,
                 lotSeq: lotSeq ?? 1
             )
-            // podState setupProgress state should be addressAssigned
         }
 
         log.info("Establish an Eap Session")
@@ -108,17 +107,16 @@ public class PodComms: CustomDebugStringConvertible {
 
         let versionResponse = try sendPairMessage(transport: transport, message: message)
 
-//        if self.podState == nil {
-//            log.default("Creating PodState for versionResponse %{public}@", String(describing: versionResponse))
-//            self.podState = PodState(
-//                address: response.address, // YYY is this correct or use config.address?
-//                ltk: response.ltk,
-//                messageNumber: transport.messageNumber,
-//                lotNo: UInt64(versionResponse.lot),
-//                lotSeq: versionResponse.tid
-//            )
-//            // podState setupProgress state should be addressAssigned
-//        }
+        // Now create the real PodState using the versionResponse info
+        log.default("Creating PodState for versionResponse %{public}@", String(describing: versionResponse))
+        self.podState = PodState(
+            address: response.address,
+            ltk: podState.ltk,
+            messageNumber: transport.msgSeq,
+            lotNo: UInt64(versionResponse.lot),
+            lotSeq: versionResponse.tid
+        )
+        // podState setupProgress state should be addressAssigned
 
         // Now that we have podState, check for an activation timeout condition that can be noted in setupProgress
         guard versionResponse.podProgressStatus != .activationTimeExceeded else {
@@ -242,24 +240,24 @@ public class PodComms: CustomDebugStringConvertible {
                     try self.pairPod(ids: ids)
                 }
                 
-                guard let podState = self.podState else {
+                guard self.podState != nil else {
                     block(.failure(PodCommsError.noPodPaired))
                     return
                 }
 
-                if podState.setupProgress.isPaired == false {
+                if self.podState!.setupProgress.isPaired == false {
                     try self.setupPod(podState: self.podState!, timeZone: timeZone)
                 }
 
-                guard podState.setupProgress.isPaired else {
-                    self.log.error("Unexpected podStatus setupProgress value of %{public}@", String(describing: podState.setupProgress))
+                guard self.podState!.setupProgress.isPaired else {
+                    self.log.error("Unexpected podStatus setupProgress value of %{public}@", String(describing: self.podState!.setupProgress))
                     throw PodCommsError.invalidData
                 }
 
                 // Run a session now for any post-pairing commands
-                let transport = PodMessageTransport(manager: manager, address: podState.address, state: podState.messageTransportState)
+                let transport = PodMessageTransport(manager: manager, address: self.podState!.address, state: self.podState!.messageTransportState)
                 transport.messageLogger = self.messageLogger
-                let podSession = PodCommsSession(podState: podState, transport: transport, delegate: self)
+                let podSession = PodCommsSession(podState: self.podState!, transport: transport, delegate: self)
 
                 block(.success(session: podSession))
             } catch let error as PodCommsError {

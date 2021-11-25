@@ -17,7 +17,6 @@ public enum PodCommsError: Error {
     case noResponse
     case emptyResponse
     case podAckedInsteadOfReturningResponse
-    case unexpectedPacketType(packetType: PacketType)
     case unexpectedResponse(response: MessageBlockType)
     case unknownResponseType(rawType: UInt8)
     case invalidAddress(address: UInt32, expectedAddress: UInt32)
@@ -50,8 +49,6 @@ extension PodCommsError: LocalizedError {
             return LocalizedString("Empty response from pod", comment: "Error message shown when empty response from pod was received")
         case .podAckedInsteadOfReturningResponse:
             return LocalizedString("Pod sent ack instead of response", comment: "Error message shown when pod sends ack instead of response")
-        case .unexpectedPacketType:
-            return nil
         case .unexpectedResponse:
             return LocalizedString("Unexpected response from pod", comment: "Error message shown when empty response from pod was received")
         case .unknownResponseType:
@@ -101,19 +98,17 @@ extension PodCommsError: LocalizedError {
         case .invalidData:
             return nil
         case .noResponse:
-            return LocalizedString("Please try repositioning the RileyLink and try again", comment: "Recovery suggestion when no response is received from pod")
+            return LocalizedString("Please try repositioning the RileyLink", comment: "Recovery suggestion when no response is received from pod")
         case .emptyResponse:
             return nil
         case .podAckedInsteadOfReturningResponse:
             return LocalizedString("Try again", comment: "Recovery suggestion when ack received instead of response")
-        case .unexpectedPacketType:
-            return nil
         case .unexpectedResponse:
             return nil
         case .unknownResponseType:
             return nil
         case .invalidAddress:
-            return LocalizedString("Crosstalk possible. Please move to a new location and try again", comment: "Recovery suggestion when unexpected address received")
+            return LocalizedString("Crosstalk possible. Please move to a new location", comment: "Recovery suggestion when unexpected address received")
         case .noPodAvailable:
             return LocalizedString("Make sure your pod is filled and nearby", comment: "Recovery suggestion when no pod is available")
         case .unfinalizedBolus:
@@ -123,7 +118,7 @@ extension PodCommsError: LocalizedError {
         case .nonceResyncFailed:
             return nil
         case .podSuspended:
-            return nil
+            return LocalizedString("Resume delivery", comment: "Recovery suggestion when pod is suspended")
         case .podFault:
             return nil
         case .commsError:

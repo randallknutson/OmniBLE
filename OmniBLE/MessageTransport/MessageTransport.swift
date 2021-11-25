@@ -107,6 +107,7 @@ class PodMessageTransport: MessageTransport {
     }
     
     private let address: UInt32
+    private let fakeSendMessage = false // whether to fake sending pod messages
     
     weak var messageLogger: MessageLogger?
     weak var delegate: MessageTransportDelegate?
@@ -123,52 +124,63 @@ class PodMessageTransport: MessageTransport {
 
     /// Sends the given pod message over the encrypted Dash transport and returns the pod's response
     func sendMessage(_ message: Message) throws -> Message {
-//        let messageBlockType: MessageBlockType = message.messageBlocks[0].blockType
-//        let response: Message
-//
-//        // XXX placeholder code returning the fixed responses from the pi pod simulator
-//        switch messageBlockType {
-//        case .assignAddress:
-//            response = try Message(encodedData: Data(hexadecimalString: "FFFFFFFF00000115040A00010300040208146CC1000954D400FFFFFFFF0000")!)
-//            break
-//        case .setupPod:
-//            response = try Message(encodedData: Data(hexadecimalString: "FFFFFFFF0000011B13881008340A50040A00010300040308146CC1000954D4024200010000")!)
-//            break
-//        case .versionResponse, .podInfoResponse, .errorResponse, .statusResponse:
-//            log.error("Trying to send a response type message!: %@", String(describing: message))
-//            throw PodCommsError.invalidData
-//        case .basalScheduleExtra, .tempBasalExtra, .bolusExtra:
-//            log.error("Trying to send an insulin extra sub-message type!: %@", String(describing: message))
-//            throw PodCommsError.invalidData
-//        default:
-//            // A random general status response (assumes type 0 for a getStatus command)
-//            response = try Message(encodedData: Data(hexadecimalString: "FFFFFFFF00001D1800A02800000463FF0000")!)
-//            break
-//        }
-//
-//        return response
-        guard let noncePrefix = state.nonce, let ck = state.ck else { throw PodCommsError.noPodAvailable }
-        
-        var sendMessage = MessagePacket(type: .ENCRYPTED, address: message.address, payload: message.encoded(), sequenceNumber: UInt8(msgSeq))
-        var nonce = Nonce(prefix: noncePrefix, sqn: msgSeq)
-        var endecrypt = EnDecrypt(nonce: nonce, ck: ck)
-        sendMessage = try endecrypt.encrypt(sendMessage)
+        let response: Message
 
-        let writeResult = try manager.sendMessage(sendMessage)
-        guard ((writeResult as? MessageSendSuccess) != nil) else {
-            throw BluetoothErrors.MessageIOException("Could not write $msgType: \(writeResult)")
+        let dataToSend = message.encoded()
+        log.default("Send(Hex): %@", dataToSend.hexadecimalString)
+        messageLogger?.didSend(dataToSend)
+
+        if fakeSendMessage {
+            // temporary code to fake basic pi simulator message exchange
+            let messageBlockType: MessageBlockType = message.messageBlocks[0].blockType
+            switch messageBlockType {
+            case .assignAddress:
+                response = try Message(encodedData: Data(hexadecimalString: "FFFFFFFF00000115040A00010300040208146CC1000954D400FFFFFFFF800F")!)
+                break
+            case .setupPod:
+                response = try Message(encodedData: Data(hexadecimalString: "FFFFFFFF0000011B13881008340A50040A00010300040308146CC1000954D40242000100A2")!)
+                break
+            case .versionResponse, .podInfoResponse, .errorResponse, .statusResponse:
+                log.error("Trying to send a response type message!: %@", String(describing: message))
+                throw PodCommsError.invalidData
+            case .basalScheduleExtra, .tempBasalExtra, .bolusExtra:
+                log.error("Trying to send an insulin extra sub-message type!: %@", String(describing: message))
+                throw PodCommsError.invalidData
+            default:
+                // A random general status response (assumes type 0 for a getStatus command)
+                response = try Message(encodedData: Data(hexadecimalString: "FFFFFFFF00001D1800A02800000463FF0244")!)
+                break
+            }
+        } else {
+            guard let noncePrefix = state.nonce, let ck = state.ck else { throw PodCommsError.noPodAvailable }
+
+            var sendMessage = MessagePacket(type: .ENCRYPTED, address: message.address, payload: message.encoded(), sequenceNumber: UInt8(msgSeq))
+            var nonce = Nonce(prefix: noncePrefix, sqn: msgSeq)
+            var endecrypt = EnDecrypt(nonce: nonce, ck: ck)
+            sendMessage = try endecrypt.encrypt(sendMessage)
+
+            let writeResult = try manager.sendMessage(sendMessage)
+            guard ((writeResult as? MessageSendSuccess) != nil) else {
+                throw BluetoothErrors.MessageIOException("Could not write $msgType: \(writeResult)")
+            }
+
+            let readResponse = try manager.readMessage()
+            guard var readMessage = readResponse else {
+                throw BluetoothErrors.MessageIOException("Could not read response")
+            }
+
+            nonce = Nonce(prefix: noncePrefix, sqn: msgSeq)
+            endecrypt = EnDecrypt(nonce: nonce, ck: ck)
+            readMessage = try endecrypt.decrypt(readMessage)
+
+            return try Message.init(encodedData: readMessage.payload)
         }
 
-        let readResponse = try manager.readMessage()
-        guard var readMessage = readResponse else {
-            throw BluetoothErrors.MessageIOException("Could not read response")
-        }
+        let responseData = response.encoded()
+        log.default("Recv(Hex): %@", responseData.hexadecimalString)
+        messageLogger?.didReceive(responseData)
 
-        nonce = Nonce(prefix: noncePrefix, sqn: msgSeq)
-        endecrypt = EnDecrypt(nonce: nonce, ck: ck)
-        readMessage = try endecrypt.decrypt(readMessage)
-
-        return try Message.init(encodedData: readMessage.payload)
+        return response
     }
 
     func assertOnSessionQueue() {

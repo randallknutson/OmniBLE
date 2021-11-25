@@ -70,7 +70,6 @@
 		10389A3B26FF7841002115E9 /* ConfigureAlertsCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10389A1C26FF7841002115E9 /* ConfigureAlertsCommand.swift */; };
 		10389A3C26FF7841002115E9 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10389A1D26FF7841002115E9 /* Message.swift */; };
 		10389A3F26FF7841002115E9 /* CRC16.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10389A2026FF7841002115E9 /* CRC16.swift */; };
-		10389A4026FF7841002115E9 /* Packet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10389A2126FF7841002115E9 /* Packet.swift */; };
 		10389A4126FF7841002115E9 /* MessageTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10389A2226FF7841002115E9 /* MessageTransport.swift */; };
 		84752E9126ED0FFE009FD801 /* OmnipodTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752E9026ED0FFE009FD801 /* OmnipodTests.swift */; };
 		84752E9326ED0FFE009FD801 /* OmniBLE.h in Headers */ = {isa = PBXBuildFile; fileRef = 84752E8526ED0FFE009FD801 /* OmniBLE.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -213,7 +212,6 @@
 		10389A1C26FF7841002115E9 /* ConfigureAlertsCommand.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConfigureAlertsCommand.swift; sourceTree = "<group>"; };
 		10389A1D26FF7841002115E9 /* Message.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		10389A2026FF7841002115E9 /* CRC16.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CRC16.swift; sourceTree = "<group>"; };
-		10389A2126FF7841002115E9 /* Packet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Packet.swift; sourceTree = "<group>"; };
 		10389A2226FF7841002115E9 /* MessageTransport.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MessageTransport.swift; sourceTree = "<group>"; };
 		84752E8226ED0FFE009FD801 /* OmniBLE.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = OmniBLE.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		84752E8526ED0FFE009FD801 /* OmniBLE.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OmniBLE.h; sourceTree = "<group>"; };
@@ -334,7 +332,6 @@
 				10389A0326FF7841002115E9 /* MessageBlocks */,
 				10389A1D26FF7841002115E9 /* Message.swift */,
 				10389A2026FF7841002115E9 /* CRC16.swift */,
-				10389A2126FF7841002115E9 /* Packet.swift */,
 				84752EC726ED13F5009FD801 /* StringLengthPrefixEncoding.swift */,
 				10389A2226FF7841002115E9 /* MessageTransport.swift */,
 			);
@@ -755,7 +752,6 @@
 				84752EE126ED13F5009FD801 /* PayloadSplitter.swift in Sources */,
 				84752EDE26ED13F5009FD801 /* PeripheralManagerError.swift in Sources */,
 				10389A2526FF7841002115E9 /* PodInfoActivationTime.swift in Sources */,
-				10389A4026FF7841002115E9 /* Packet.swift in Sources */,
 				10289E852739F939000339E6 /* Session.swift in Sources */,
 				1021114D2709467400784F13 /* PodComms.swift in Sources */,
 				10289E6E27309327000339E6 /* CBPeripheral.swift in Sources */,
