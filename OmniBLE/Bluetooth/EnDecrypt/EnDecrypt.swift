@@ -23,11 +23,13 @@ class EnDecrypt {
 
     func decrypt(_ msg: MessagePacket) throws -> MessagePacket {
         let payload = msg.payload
-        let header = msg.asData().subdata(in: 0..<16)
+        let header = msg.asData(forEncryption: true).subdata(in: 0..<16)
 
         let n = nonce.increment(podReceiving: false)
-        log.debug("Decrypt header %@ payload: %@", header.hexadecimalString, payload.hexadecimalString)
-        log.debug("Decrypt NONCE %@", n.hexadecimalString)
+        log.debug("Decrypt header %@", header.hexadecimalString)
+        log.debug("Decrypt payload: %@", payload.hexadecimalString)
+        log.debug("Decrypt Nonce %@", n.hexadecimalString)
+        log.debug("Decrypt Tag: %@", Data(payload).subdata(in: (payload.count - MAC_SIZE)..<payload.count).hexadecimalString)
         let ccm = CCM(iv: n.bytes, tagLength: MAC_SIZE, messageLength: payload.count, additionalAuthenticatedData: header.bytes)
         let aes = try AES(key: ck.bytes, blockMode: ccm, padding: .noPadding)
         let decryptedPayload = try aes.decrypt(payload.bytes)
@@ -40,14 +42,18 @@ class EnDecrypt {
 
     func encrypt(_ headerMessage: MessagePacket) throws -> MessagePacket {
         let payload = headerMessage.payload
-        let header = headerMessage.asData().subdata(in: 0..<16)
+        let header = headerMessage.asData(forEncryption: true).subdata(in: 0..<16)
 
         let n = nonce.increment(podReceiving: true)
-        log.debug("Encrypt header %@ payload: %@", header.hexadecimalString, payload.hexadecimalString)
-        log.debug("Encrypt NONCE %@", n.hexadecimalString)
+        log.debug("Encrypt Ck %@", ck.hexadecimalString)
+        log.debug("Encrypt Header %@", header.hexadecimalString)
+        log.debug("Encrypt Payload: %@", payload.hexadecimalString)
+        log.debug("Encrypt Nonce %@", n.hexadecimalString)
         let ccm = CCM(iv: n.bytes, tagLength: MAC_SIZE, messageLength: payload.count, additionalAuthenticatedData: header.bytes)
         let aes = try AES(key: ck.bytes, blockMode: ccm, padding: .noPadding)
         let encryptedPayload = try aes.encrypt(payload.bytes)
+        log.debug("Encrypted payload: %@", Data(encryptedPayload).subdata(in: 0..<(encryptedPayload.count - MAC_SIZE)).hexadecimalString)
+        log.debug("Encrypt Tag: %@", Data(encryptedPayload).subdata(in: (encryptedPayload.count - MAC_SIZE)..<encryptedPayload.count).hexadecimalString)
 
         var msgCopy = headerMessage
         msgCopy.payload = Data(encryptedPayload)

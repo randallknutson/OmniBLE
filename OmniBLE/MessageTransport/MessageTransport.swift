@@ -71,6 +71,10 @@ class PodMessageTransport: MessageTransport {
     
     private let manager: PeripheralManager
     
+    private var nonce: Nonce?
+    private var endecrypt: EnDecrypt?
+
+    
     private let log = OSLog(category: "PodMessageTransport")
     
     private var state: MessageTransportState {
@@ -88,7 +92,7 @@ class PodMessageTransport: MessageTransport {
         }
     }
     
-    private(set) var nonce: Data? {
+    private(set) var noncePrefix: Data? {
         get {
             return state.nonce
         }
@@ -116,6 +120,10 @@ class PodMessageTransport: MessageTransport {
         self.manager = manager
         self.address = address
         self.state = state
+        
+        guard let noncePrefix = self.noncePrefix, let ck = self.ck else { return }
+        self.nonce = Nonce(prefix: noncePrefix, sqn: 0)
+        self.endecrypt = EnDecrypt(nonce: self.nonce!, ck: ck)
     }
     
     private func incrementMsgSeq(_ count: Int = 1) {
@@ -152,11 +160,9 @@ class PodMessageTransport: MessageTransport {
                 break
             }
         } else {
-            guard let noncePrefix = state.nonce, let ck = state.ck else { throw PodCommsError.noPodAvailable }
+            guard let endecrypt = self.endecrypt else { throw PodCommsError.noPodAvailable }
 
-            var sendMessage = MessagePacket(type: .ENCRYPTED, address: message.address, payload: message.encoded(), sequenceNumber: UInt8(msgSeq))
-            var nonce = Nonce(prefix: noncePrefix, sqn: msgSeq)
-            var endecrypt = EnDecrypt(nonce: nonce, ck: ck)
+            var sendMessage = MessagePacket(type: .ENCRYPTED, address: message.address, payload: message.encoded(), sequenceNumber: UInt8(msgSeq), tfs: true)
             sendMessage = try endecrypt.encrypt(sendMessage)
 
             let writeResult = try manager.sendMessage(sendMessage)
@@ -169,8 +175,6 @@ class PodMessageTransport: MessageTransport {
                 throw BluetoothErrors.MessageIOException("Could not read response")
             }
 
-            nonce = Nonce(prefix: noncePrefix, sqn: msgSeq)
-            endecrypt = EnDecrypt(nonce: nonce, ck: ck)
             readMessage = try endecrypt.decrypt(readMessage)
 
             return try Message.init(encodedData: readMessage.payload)
