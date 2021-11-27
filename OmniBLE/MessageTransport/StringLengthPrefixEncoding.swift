@@ -19,7 +19,7 @@ final class StringLengthPrefixEncoding {
                 throw BluetoothErrors.MessageIOException("Payload too short: \(payload)")
             }
             if (String(decoding: remaining.subdata(in: 0..<key.count), as: UTF8.self) != key) {
-                throw BluetoothErrors.MessageIOException("Key not found: $key in \(payload)")
+                throw BluetoothErrors.MessageIOException("Key not found: \(key) in \(payload.hexadecimalString)")
             }
             // last key can be empty, no length
             else if index == keys.count - 1 && remaining.count == key.count {

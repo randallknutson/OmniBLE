@@ -23,7 +23,7 @@ struct PairMessage {
         self.payloads = payloads
         message = MessagePacket(
             type: MessageType.PAIRING,
-            address: destination.toUInt32(),
+            destination: destination.toUInt32(),
             payload: StringLengthPrefixEncoding.formatKeys(
                 keys: keys,
                 payloads: payloads

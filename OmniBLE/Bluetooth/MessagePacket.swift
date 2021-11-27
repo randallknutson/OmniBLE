@@ -50,7 +50,8 @@ struct MessagePacket {
 
         return MessagePacket(
             type: type,
-            address: Id(payload.subdata(in: 12..<16)).toUInt32(),
+            source: Id(payload.subdata(in: 8..<12)).toUInt32(),
+            destination: Id(payload.subdata(in: 12..<16)).toUInt32(),
             payload: payload.subdata(in: 16..<payloadEnd),
             sequenceNumber: sequenceNumber,
             ack: ack,
@@ -66,7 +67,7 @@ struct MessagePacket {
     }
 
     let type: MessageType
-    var source: Id = Id.fromInt(CONTROLLER_ID)
+    var source: Id
     let destination: Id
     var payload: Data
     let sequenceNumber: UInt8
@@ -79,9 +80,10 @@ struct MessagePacket {
     let sas: Bool // TODO: understand, seems to always be true
     let tfs: Bool // TODO: understand, seems to be false
     let version: Int16
-    init(type: MessageType, address: UInt32, payload: Data, sequenceNumber: UInt8, ack: Bool = false, ackNumber: UInt8 = 0, eqos: Int16 = 0, priority: Bool = false, lastMessage: Bool = false, gateway: Bool = false, sas: Bool = true, tfs: Bool = false, version: Int16 = 0) {
+    init(type: MessageType, source: UInt32 = UInt32(CONTROLLER_ID), destination: UInt32, payload: Data, sequenceNumber: UInt8, ack: Bool = false, ackNumber: UInt8 = 0, eqos: Int16 = 0, priority: Bool = false, lastMessage: Bool = false, gateway: Bool = false, sas: Bool = true, tfs: Bool = false, version: Int16 = 0) {
         self.type = type
-        self.destination = Id.fromLong(address)
+        self.source = Id.fromLong(source)
+        self.destination = Id.fromLong(destination)
         self.payload = payload
         self.sequenceNumber = sequenceNumber
         self.ack = ack

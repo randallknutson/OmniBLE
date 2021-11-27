@@ -96,7 +96,7 @@ class SessionEstablisher {
         )
         return MessagePacket(
             type: MessageType.SESSION_ESTABLISHMENT,
-            address: address,
+            destination: address,
             payload: eapMsg.toData(),
             sequenceNumber: UInt8(msgSeq)
         )
@@ -195,7 +195,7 @@ class SessionEstablisher {
 
         return MessagePacket(
             type: MessageType.SESSION_ESTABLISHMENT,
-            address: address,
+            destination: address,
             payload: eapMsg.toData(),
             sequenceNumber: UInt8(msgSeq)
         )

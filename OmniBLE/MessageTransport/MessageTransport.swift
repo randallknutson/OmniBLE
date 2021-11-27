@@ -68,11 +68,14 @@ protocol MessageTransport {
 }
 
 class PodMessageTransport: MessageTransport {
+    private let COMMAND_PREFIX = "S0.0="
+    private let COMMAND_SUFFIX = ",G0.0"
+    private let RESPONSE_PREFIX = "0.0="
     
     private let manager: PeripheralManager
     
     private var nonce: Nonce?
-    private var endecrypt: EnDecrypt?
+    private var enDecrypt: EnDecrypt?
 
     
     private let log = OSLog(category: "PodMessageTransport")
@@ -123,7 +126,7 @@ class PodMessageTransport: MessageTransport {
         
         guard let noncePrefix = self.noncePrefix, let ck = self.ck else { return }
         self.nonce = Nonce(prefix: noncePrefix, sqn: 0)
-        self.endecrypt = EnDecrypt(nonce: self.nonce!, ck: ck)
+        self.enDecrypt = EnDecrypt(nonce: self.nonce!, ck: ck)
     }
     
     private func incrementMsgSeq(_ count: Int = 1) {
@@ -132,6 +135,7 @@ class PodMessageTransport: MessageTransport {
 
     /// Sends the given pod message over the encrypted Dash transport and returns the pod's response
     func sendMessage(_ message: Message) throws -> Message {
+        msgSeq += 1
         let response: Message
 
         let dataToSend = message.encoded()
@@ -160,24 +164,14 @@ class PodMessageTransport: MessageTransport {
                 break
             }
         } else {
-            guard let endecrypt = self.endecrypt else { throw PodCommsError.noPodAvailable }
-
-            var sendMessage = MessagePacket(type: .ENCRYPTED, address: message.address, payload: message.encoded(), sequenceNumber: UInt8(msgSeq), tfs: true)
-            sendMessage = try endecrypt.encrypt(sendMessage)
+            let sendMessage = try getCmdMessage(cmd: message)
 
             let writeResult = try manager.sendMessage(sendMessage)
             guard ((writeResult as? MessageSendSuccess) != nil) else {
                 throw BluetoothErrors.MessageIOException("Could not write $msgType: \(writeResult)")
             }
 
-            let readResponse = try manager.readMessage()
-            guard var readMessage = readResponse else {
-                throw BluetoothErrors.MessageIOException("Could not read response")
-            }
-
-            readMessage = try endecrypt.decrypt(readMessage)
-
-            return try Message.init(encodedData: readMessage.payload)
+            return try readAndAckResponse()
         }
 
         let responseData = response.encoded()
@@ -186,7 +180,87 @@ class PodMessageTransport: MessageTransport {
 
         return response
     }
+    
+    private func getCmdMessage(cmd: Message) throws -> MessagePacket {
+        guard let enDecrypt = self.enDecrypt else { throw PodCommsError.noPodAvailable }
 
+        let wrapped = StringLengthPrefixEncoding.formatKeys(
+            keys: [COMMAND_PREFIX, COMMAND_SUFFIX],
+            payloads: [cmd.encoded(), Data()]
+        )
+
+        log.debug("Sending command: %@", wrapped.hexadecimalString)
+
+        let msg = MessagePacket(
+            type: MessageType.ENCRYPTED,
+            destination: cmd.address,
+            payload: wrapped,
+            sequenceNumber: UInt8(msgSeq),
+            eqos: 1
+        )
+
+        return try enDecrypt.encrypt(msg)
+    }
+    
+    func readAndAckResponse() throws -> Message {
+        guard let enDecrypt = self.enDecrypt else { throw PodCommsError.noPodAvailable }
+
+        let readResponse = try manager.readMessage()
+        guard let readMessage = readResponse else {
+            throw BluetoothErrors.MessageIOException("Could not read response")
+        }
+
+        let decrypted = try enDecrypt.decrypt(readMessage)
+
+        log.debug("Received response: %@", decrypted.payload.hexadecimalString)
+
+        let response = try parseResponse(decrypted: decrypted)
+
+        /*if (!responseType.isInstance(response)) {
+            if (response is AlarmStatusResponse) {
+                throw PodAlarmException(response)
+            }
+            if (response is NakResponse) {
+                throw NakResponseException(response)
+            }
+            throw IllegalResponseException(responseType, response)
+        }
+         */
+
+        msgSeq += 1
+        let ack = try getAck(response: decrypted)
+        log.debug("Sending ACK: %@ in packet $ack", ack.payload.hexadecimalString)
+        let ackResult = try manager.sendMessage(ack)
+        guard ((ackResult as? MessageSendSuccess) != nil) else {
+            throw BluetoothErrors.MessageIOException("Could not write $msgType: \(ackResult)")
+        }
+        return response
+    }
+    
+    private func parseResponse(decrypted: MessagePacket) throws -> Message {
+
+        let data = try StringLengthPrefixEncoding.parseKeys([RESPONSE_PREFIX], decrypted.payload)[0]
+        log.info("Received decrypted response: %@ in packet: %@", data.hexadecimalString, decrypted.payload.hexadecimalString)
+
+        return try Message.init(encodedData: data)
+    }
+    
+    private func getAck(response: MessagePacket) throws -> MessagePacket {
+        guard let enDecrypt = self.enDecrypt else { throw PodCommsError.noPodAvailable }
+
+        let msg = MessagePacket(
+            type: MessageType.ENCRYPTED,
+            source: response.destination.toUInt32(),
+            destination: response.source.toUInt32(),
+            payload: Data(),
+            sequenceNumber: UInt8(msgSeq),
+            ack: true,
+            ackNumber: response.sequenceNumber + 1,
+            eqos: 0
+        )
+        return try enDecrypt.encrypt((msg))
+    }
+    
     func assertOnSessionQueue() {
         dispatchPrecondition(condition: .onQueue(manager.queue))
     }

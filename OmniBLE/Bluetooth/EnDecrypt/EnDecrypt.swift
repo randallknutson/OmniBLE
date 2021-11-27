@@ -23,14 +23,15 @@ class EnDecrypt {
 
     func decrypt(_ msg: MessagePacket) throws -> MessagePacket {
         let payload = msg.payload
-        let header = msg.asData(forEncryption: true).subdata(in: 0..<16)
+        let header = msg.asData(forEncryption: false).subdata(in: 0..<16)
 
         let n = nonce.increment(podReceiving: false)
+        log.debug("Decrypt ck %@", ck.hexadecimalString)
         log.debug("Decrypt header %@", header.hexadecimalString)
         log.debug("Decrypt payload: %@", payload.hexadecimalString)
         log.debug("Decrypt Nonce %@", n.hexadecimalString)
         log.debug("Decrypt Tag: %@", Data(payload).subdata(in: (payload.count - MAC_SIZE)..<payload.count).hexadecimalString)
-        let ccm = CCM(iv: n.bytes, tagLength: MAC_SIZE, messageLength: payload.count, additionalAuthenticatedData: header.bytes)
+        let ccm = CCM(iv: n.bytes, tagLength: MAC_SIZE, messageLength: payload.count - MAC_SIZE, additionalAuthenticatedData: header.bytes)
         let aes = try AES(key: ck.bytes, blockMode: ccm, padding: .noPadding)
         let decryptedPayload = try aes.decrypt(payload.bytes)
         log.debug("Decrypted payload %@", Data(decryptedPayload).hexadecimalString)
