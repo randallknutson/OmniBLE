@@ -53,7 +53,6 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
     public let address: UInt32
     public let ltk: Data
     public var eapAkaSequenceNumber: Int
-    fileprivate var nonceState: NonceState
 
     public var activatedAt: Date?
     public var expiresAt: Date?  // set based on StatusResponse timeActive and can change with Pod clock drift and/or system time change
@@ -104,7 +103,6 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
     public init(address: UInt32, ltk: Data, messageNumber: Int = 0, lotNo: UInt64, lotSeq: UInt32) {
         self.address = address
         self.ltk = ltk
-        self.nonceState = NonceState(lot: 0, tid: 0)
         self.lotNo = lotNo
         self.lotSeq = lotSeq
         self.lastInsulinMeasurements = nil
@@ -149,17 +147,16 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
     }
 
     public mutating func advanceToNextNonce() {
-        nonceState.advanceToNextNonce()
+        // Dash nonce is a fixed value and is never advanced
     }
     
     public var currentNonce: UInt32 {
-        return nonceState.currentNonce
+        let fixedNonceValue: UInt32 = 0x494E532E // Dash uses a fixed value for pod nonce
+        return fixedNonceValue // not clear if the actual value even matters
     }
     
     public mutating func resyncNonce(syncWord: UInt16, sentNonce: UInt32, messageSequenceNum: Int) {
-        let sum = (sentNonce & 0xffff) + UInt32(crc16Table[messageSequenceNum]) + (0 & 0xffff) + (0 & 0xffff)
-        let seed = UInt16(sum & 0xffff) ^ syncWord
-        nonceState = NonceState(lot: 0, tid: 0, seed: seed)
+        assert(false) // XXX ?should never be called for Dash?
     }
     
     private mutating func updatePodTimes(timeActive: TimeInterval) -> Date {
@@ -270,8 +267,6 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             let address = rawValue["address"] as? UInt32,
             let ltkString = rawValue["ltk"] as? String,
             let eapAkaSequenceNumber = rawValue["eapAkaSequenceNumber"] as? Int,
-            let nonceStateRaw = rawValue["nonceState"] as? NonceState.RawValue,
-            let nonceState = NonceState(rawValue: nonceStateRaw),
             let lotNo = rawValue["lotNo"] as? UInt64,
             let lotSeq = rawValue["lotSeq"] as? UInt32
             else {
@@ -281,7 +276,6 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         self.address = address
         self.ltk = Data(hex: ltkString)
         self.eapAkaSequenceNumber = eapAkaSequenceNumber
-        self.nonceState = nonceState
         self.lotNo = lotNo
         self.lotSeq = lotSeq
 
@@ -404,7 +398,6 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             "address": address,
             "ltk": ltk.hexadecimalString,
             "eapAkaSequenceNumber": eapAkaSequenceNumber,
-            "nonceState": nonceState.rawValue,
             "lotNo": lotNo,
             "lotSeq": lotSeq,
             "suspendState": suspendState.rawValue,
@@ -493,68 +486,6 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         ].joined(separator: "\n")
     }
 }
-
-fileprivate struct NonceState: RawRepresentable, Equatable {
-    public typealias RawValue = [String: Any]
-
-    var table: [UInt32]
-    var idx: UInt8
-
-    public init(lot: UInt32 = 0, tid: UInt32 = 0, seed: UInt16 = 0) {
-        table = Array(repeating: UInt32(0), count: 2 + 16)
-        table[0] = (lot & 0xFFFF) &+ (lot >> 16) &+ 0x55543DC3
-        table[1] = (tid & 0xFFFF) &+ (tid >> 16) &+ 0xAAAAE44E
-
-        idx = 0
-
-        table[0] += UInt32((seed & 0x00ff))
-        table[1] += UInt32((seed & 0xff00) >> 8)
-
-        for i in 0..<16 {
-            table[2 + i] = generateEntry()
-        }
-
-        idx = UInt8((table[0] + table[1]) & 0x0F)
-    }
-
-    private mutating func generateEntry() -> UInt32 {
-        table[0] = (table[0] >> 16) &+ ((table[0] & 0xFFFF) &* 0x5D7F)
-        table[1] = (table[1] >> 16) &+ ((table[1] & 0xFFFF) &* 0x8CA0)
-        return table[1] &+ ((table[0] & 0xFFFF) << 16)
-    }
-
-    public mutating func advanceToNextNonce() {
-        let nonce = currentNonce
-        table[Int(2 + idx)] = generateEntry()
-        idx = UInt8(nonce & 0x0F)
-    }
-
-    public var currentNonce: UInt32 {
-        return table[Int(2 + idx)]
-    }
-
-    // RawRepresentable
-    public init?(rawValue: RawValue) {
-        guard
-            let table = rawValue["table"] as? [UInt32],
-            let idx = rawValue["idx"] as? UInt8
-            else {
-                return nil
-        }
-        self.table = table
-        self.idx = idx
-    }
-
-    public var rawValue: RawValue {
-        let rawValue: RawValue = [
-            "table": table,
-            "idx": idx,
-        ]
-
-        return rawValue
-    }
-}
-
 
 public enum SuspendState: Equatable, RawRepresentable {
     public typealias RawValue = [String: Any]

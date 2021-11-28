@@ -135,8 +135,7 @@ class PodMessageTransport: MessageTransport {
 
     /// Sends the given pod message over the encrypted Dash transport and returns the pod's response
     func sendMessage(_ message: Message) throws -> Message {
-        msgSeq += 1
-        let response: Message
+        incrementMsgSeq()
 
         let dataToSend = message.encoded()
         log.default("Send(Hex): %@", dataToSend.hexadecimalString)
@@ -145,12 +144,14 @@ class PodMessageTransport: MessageTransport {
         if fakeSendMessage {
             // temporary code to fake basic pi simulator message exchange
             let messageBlockType: MessageBlockType = message.messageBlocks[0].blockType
+            let responseData: Data
+
             switch messageBlockType {
             case .assignAddress:
-                response = try Message(encodedData: Data(hexadecimalString: "FFFFFFFF00000115040A00010300040208146CC1000954D400FFFFFFFF800F")!)
+                responseData = Data(hexadecimalString: "FFFFFFFF00000115040A00010300040208146CC1000954D400FFFFFFFF800F")!
                 break
             case .setupPod:
-                response = try Message(encodedData: Data(hexadecimalString: "FFFFFFFF0000011B13881008340A50040A00010300040308146CC1000954D40242000100A2")!)
+                responseData = Data(hexadecimalString: "FFFFFFFF0000011B13881008340A50040A00010300040308146CC1000954D40242000100A2")!
                 break
             case .versionResponse, .podInfoResponse, .errorResponse, .statusResponse:
                 log.error("Trying to send a response type message!: %@", String(describing: message))
@@ -160,24 +161,23 @@ class PodMessageTransport: MessageTransport {
                 throw PodCommsError.invalidData
             default:
                 // A random general status response (assumes type 0 for a getStatus command)
-                response = try Message(encodedData: Data(hexadecimalString: "FFFFFFFF00001D1800A02800000463FF0244")!)
+                responseData = Data(hexadecimalString: "FFFFFFFF00001D1800A02800000463FF0244")!
                 break
             }
-        } else {
-            let sendMessage = try getCmdMessage(cmd: message)
 
-            let writeResult = try manager.sendMessage(sendMessage)
-            guard ((writeResult as? MessageSendSuccess) != nil) else {
-                throw BluetoothErrors.MessageIOException("Could not write $msgType: \(writeResult)")
-            }
-
-            return try readAndAckResponse()
+            log.default("Recv(Hex): %@", responseData.hexadecimalString)
+            messageLogger?.didReceive(responseData)
+            return try Message(encodedData: responseData)
         }
 
-        let responseData = response.encoded()
-        log.default("Recv(Hex): %@", responseData.hexadecimalString)
-        messageLogger?.didReceive(responseData)
+        let sendMessage = try getCmdMessage(cmd: message)
 
+        let writeResult = try manager.sendMessage(sendMessage)
+        guard ((writeResult as? MessageSendSuccess) != nil) else {
+            throw BluetoothErrors.MessageIOException("Could not write $msgType: \(writeResult)")
+        }
+
+        let response = try readAndAckResponse()
         return response
     }
     
@@ -227,7 +227,7 @@ class PodMessageTransport: MessageTransport {
         }
          */
 
-        msgSeq += 1
+        incrementMsgSeq()
         let ack = try getAck(response: decrypted)
         log.debug("Sending ACK: %@ in packet $ack", ack.payload.hexadecimalString)
         let ackResult = try manager.sendMessage(ack)
@@ -242,7 +242,12 @@ class PodMessageTransport: MessageTransport {
         let data = try StringLengthPrefixEncoding.parseKeys([RESPONSE_PREFIX], decrypted.payload)[0]
         log.info("Received decrypted response: %@ in packet: %@", data.hexadecimalString, decrypted.payload.hexadecimalString)
 
-        return try Message.init(encodedData: data)
+        let response = try Message.init(encodedData: data)
+
+        log.default("Recv(Hex): %@", data.hexadecimalString)
+        messageLogger?.didReceive(data)
+
+        return response
     }
     
     private func getAck(response: MessagePacket) throws -> MessagePacket {
