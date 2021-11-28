@@ -42,6 +42,14 @@ class PeripheralManager: NSObject {
     /// The dispatch queue used to serialize operations on the peripheral
     let queue = DispatchQueue(label: "com.loopkit.PeripheralManager.queue", qos: .unspecified)
 
+    private let sessionQueue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.name = "com.randallknutson.OmniBLE.OmnipodDevice.sessionQueue"
+        queue.maxConcurrentOperationCount = 1
+
+        return queue
+    }()
+
     /// The condition used to signal command completion
     let commandLock = NSCondition()
 
@@ -497,13 +505,12 @@ extension CBPeripheral {
 // MARK: - Command session management
 // XXX need to figure out how much of this is actually really needed
 extension PeripheralManager {
-    public func runSession(withName name: String /* XXX , _ block: @escaping (_ session: CommandSession) -> Void XXX */) {
+    public func runSession(withName name: String , _ block: @escaping () -> Void) {
         self.log.default("Scheduling session %{public}@", name)
-//        sessionQueue.addOperation(self.configureAndRun({ [weak self] (manager) in
-//            self?.log.default("======================== %{public}@ ===========================", name)
-
-//            block(CommandSession(manager: manager, responseType: bleFirmwareVersion?.responseType ?? .buffered, firmwareVersion: radioFirmwareVersion ?? .unknown))
-//            self?.log.default("------------------------ %{public}@ ---------------------------", name)
-//        }))
+        sessionQueue.addOperation(self.configureAndRun({ [weak self] (manager) in
+            self?.log.default("======================== %{public}@ ===========================", name)
+            block()
+            self?.log.default("------------------------ %{public}@ ---------------------------", name)
+        }))
     }
 }

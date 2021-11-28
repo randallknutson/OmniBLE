@@ -282,7 +282,6 @@ public class PodComms: CustomDebugStringConvertible {
             return
         }
 
-        /*
         manager.runSession(withName: name) { () in
             guard self.podState != nil else {
                 block(.failure(PodCommsError.noPodPaired))
@@ -295,7 +294,6 @@ public class PodComms: CustomDebugStringConvertible {
             let podSession = PodCommsSession(podState: self.podState!, transport: transport, delegate: self)
             block(.success(session: podSession))
         }
-         */
     }
 
     // MARK: - CustomDebugStringConvertible

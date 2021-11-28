@@ -23,8 +23,6 @@ struct Message {
     let sequenceNum: Int
     let expectFollowOnMessage: Bool
     
-    let acceptZeroCRC16 = true // needed for pod simulator which doesn't compute a CRC16
-
     init(address: UInt32, messageBlocks: [MessageBlock], sequenceNum: Int, expectFollowOnMessage: Bool = false) {
         self.address = address
         self.messageBlocks = messageBlocks
@@ -49,6 +47,7 @@ struct Message {
         let crc = (UInt16(encodedData[encodedData.count-2]) << 8) + UInt16(encodedData[encodedData.count-1])
         let msgWithoutCrc = encodedData.prefix(encodedData.count - 2)
         let computedCrc: UInt16 = UInt16(msgWithoutCrc.crc16())
+        let acceptZeroCRC16 = true // needed for pod simulator which doesn't compute a CRC16
         guard computedCrc == crc || (acceptZeroCRC16 && crc == 0) else {
             throw MessageError.invalidCrc
         }
