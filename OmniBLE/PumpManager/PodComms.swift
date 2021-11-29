@@ -92,12 +92,8 @@ public class PodComms: CustomDebugStringConvertible {
         log.info("LTK and encrypted transport now ready")
 
         // If we get here, we have the LTK all set up and we should be able use encrypted pod messages
-        guard let podState = self.podState else {
-            throw PodCommsError.noPodPaired
-        }
-
         log.debug("Attempting encrypted pod assign address command using address %{public}@", String(format: "%04X", address))
-        let transport = PodMessageTransport(manager: manager, address: 0xffffffff, state: podState.messageTransportState)
+        let transport = PodMessageTransport(manager: manager, address: 0xffffffff, state: podState!.messageTransportState)
         transport.messageLogger = messageLogger
 
         // Create the Assign Address command message
@@ -111,10 +107,11 @@ public class PodComms: CustomDebugStringConvertible {
         log.default("Creating PodState for versionResponse %{public}@", String(describing: versionResponse))
         self.podState = PodState(
             address: response.address,
-            ltk: podState.ltk,
+            ltk: podState!.ltk,
             messageNumber: transport.msgSeq,
             lotNo: UInt64(versionResponse.lot),
-            lotSeq: versionResponse.tid
+            lotSeq: versionResponse.tid,
+            messageTransportState: podState!.messageTransportState
         )
         // podState setupProgress state should be addressAssigned
 
@@ -138,6 +135,7 @@ public class PodComms: CustomDebugStringConvertible {
             log.info("EAP AKA resynchronization: %@", keys.synchronizedEapSqn.data.hexadecimalString)
             return keys.synchronizedEapSqn.toInt()
         case .SessionKeys(let keys):
+            log.debug("Session Established")
             log.debug("CK: %@", keys.ck.hexadecimalString)
             log.info("msgSequenceNumber: %@", String(keys.msgSequenceNumber))
             log.info("Nonce: %@", keys.nonce.prefix.hexadecimalString)
@@ -231,7 +229,7 @@ public class PodComms: CustomDebugStringConvertible {
             return
         }
 
-        manager.perform { [weak self] _ in
+        manager.runSession(withName: "Pair and setup pod") { [weak self] in
             do {
                 guard let self = self else { fatalError() }
 

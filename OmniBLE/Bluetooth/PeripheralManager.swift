@@ -508,9 +508,11 @@ extension PeripheralManager {
     public func runSession(withName name: String , _ block: @escaping () -> Void) {
         self.log.default("Scheduling session %{public}@", name)
         sessionQueue.addOperation(self.configureAndRun({ [weak self] (manager) in
-            self?.log.default("======================== %{public}@ ===========================", name)
-            block()
-            self?.log.default("------------------------ %{public}@ ---------------------------", name)
+            manager.perform { _ in
+                self?.log.default("======================== %{public}@ ===========================", name)
+                block()
+                self?.log.default("------------------------ %{public}@ ---------------------------", name)
+            }
         }))
     }
 }
