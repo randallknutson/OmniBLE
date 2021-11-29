@@ -138,9 +138,9 @@ public class PodComms: CustomDebugStringConvertible {
             log.debug("Session Established")
             log.debug("CK: %@", keys.ck.hexadecimalString)
             log.info("msgSequenceNumber: %@", String(keys.msgSequenceNumber))
-            log.info("Nonce: %@", keys.nonce.prefix.hexadecimalString)
+            log.info("NoncePrefix: %@", keys.nonce.prefix.hexadecimalString)
             
-            self.podState?.messageTransportState = MessageTransportState(ck: keys.ck, nonce: keys.nonce.prefix, msgSeq: keys.msgSequenceNumber)
+            self.podState?.messageTransportState = MessageTransportState(ck: keys.ck, noncePrefix: keys.nonce.prefix, msgSeq: keys.msgSequenceNumber, nonceSeq: 0)
             
             return nil
         }

@@ -21,11 +21,11 @@ class EnDecrypt {
         self.ck = ck
     }
 
-    func decrypt(_ msg: MessagePacket) throws -> MessagePacket {
+    func decrypt(_ msg: MessagePacket, _ nonceSeq: Int) throws -> MessagePacket {
         let payload = msg.payload
         let header = msg.asData(forEncryption: false).subdata(in: 0..<16)
 
-        let n = nonce.increment(podReceiving: false)
+        let n = nonce.toData(sqn: nonceSeq, podReceiving: false)
         log.debug("Decrypt ck %@", ck.hexadecimalString)
         log.debug("Decrypt header %@", header.hexadecimalString)
         log.debug("Decrypt payload: %@", payload.hexadecimalString)
@@ -41,11 +41,11 @@ class EnDecrypt {
         return msgCopy
     }
 
-    func encrypt(_ headerMessage: MessagePacket) throws -> MessagePacket {
+    func encrypt(_ headerMessage: MessagePacket, _ nonceSeq: Int) throws -> MessagePacket {
         let payload = headerMessage.payload
         let header = headerMessage.asData(forEncryption: true).subdata(in: 0..<16)
 
-        let n = nonce.increment(podReceiving: true)
+        let n = nonce.toData(sqn: nonceSeq, podReceiving: true)
         log.debug("Encrypt Ck %@", ck.hexadecimalString)
         log.debug("Encrypt Header %@", header.hexadecimalString)
         log.debug("Encrypt Payload: %@", payload.hexadecimalString)

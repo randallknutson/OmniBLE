@@ -9,16 +9,13 @@ import Foundation
 
 class Nonce {
     let prefix: Data
-    var sqn: Int
     
-    init (prefix: Data, sqn: Int) {
+    init (prefix: Data) {
         guard prefix.count == 8 else { fatalError("Nonce prefix should be 8 bytes long") }
         self.prefix = prefix
-        self.sqn = sqn
     }
 
-    func increment(podReceiving: Bool) -> Data {
-        sqn += 1
+    func toData(sqn: Int, podReceiving: Bool) -> Data {
         var ret = Data(bigEndian: sqn)
             .subdata(in: 3..<8)
         if (podReceiving) {

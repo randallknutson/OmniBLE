@@ -19,34 +19,39 @@ public struct MessageTransportState: Equatable, RawRepresentable {
     public typealias RawValue = [String: Any]
 
     public var ck: Data?
-    public var nonce: Data?
+    public var noncePrefix: Data?
     public var msgSeq: Int
+    public var nonceSeq: Int
     
-    init(ck: Data?, nonce: Data?, msgSeq: Int = 0) {
+    init(ck: Data?, noncePrefix: Data?, msgSeq: Int = 0, nonceSeq: Int = 0) {
         self.ck = ck
-        self.nonce = nonce
+        self.noncePrefix = noncePrefix
         self.msgSeq = msgSeq
+        self.nonceSeq = nonceSeq
     }
     
     // RawRepresentable
     public init?(rawValue: RawValue) {
         guard
             let ckString = rawValue["ck"] as? String,
-            let nonceString = rawValue["nonce"] as? String,
-            let msgSeq = rawValue["msgSeq"] as? Int
+            let noncePrefixString = rawValue["noncePrefix"] as? String,
+            let msgSeq = rawValue["msgSeq"] as? Int,
+            let nonceSeq = rawValue["nonceSeq"] as? Int
             else {
                 return nil
         }
         self.ck = Data(hex: ckString)
-        self.nonce = Data(hex: nonceString)
+        self.noncePrefix = Data(hex: noncePrefixString)
         self.msgSeq = msgSeq
+        self.nonceSeq = nonceSeq
     }
     
     public var rawValue: RawValue {
         return [
             "ck": ck?.hexadecimalString ?? "",
-            "nonce": nonce?.hexadecimalString ?? "",
-            "msgSeq": msgSeq
+            "noncePrefix": noncePrefix?.hexadecimalString ?? "",
+            "msgSeq": msgSeq,
+            "nonceSeq": nonceSeq
         ]
     }
 
@@ -97,10 +102,10 @@ class PodMessageTransport: MessageTransport {
     
     private(set) var noncePrefix: Data? {
         get {
-            return state.nonce
+            return state.noncePrefix
         }
         set {
-            state.nonce = newValue
+            state.noncePrefix = newValue
         }
     }
     
@@ -110,6 +115,15 @@ class PodMessageTransport: MessageTransport {
         }
         set {
             state.msgSeq = newValue
+        }
+    }
+    
+    private(set) var nonceSeq: Int {
+        get {
+            return state.nonceSeq
+        }
+        set {
+            state.nonceSeq = newValue
         }
     }
     
@@ -125,12 +139,16 @@ class PodMessageTransport: MessageTransport {
         self.state = state
         
         guard let noncePrefix = self.noncePrefix, let ck = self.ck else { return }
-        self.nonce = Nonce(prefix: noncePrefix, sqn: 0)
+        self.nonce = Nonce(prefix: noncePrefix)
         self.enDecrypt = EnDecrypt(nonce: self.nonce!, ck: ck)
     }
     
     private func incrementMsgSeq(_ count: Int = 1) {
         msgSeq = ((msgSeq) + count) & 0b1111
+    }
+
+    private func incrementNonceSeq(_ count: Int = 1) {
+        nonceSeq = nonceSeq + count
     }
 
     /// Sends the given pod message over the encrypted Dash transport and returns the pod's response
@@ -199,7 +217,8 @@ class PodMessageTransport: MessageTransport {
             eqos: 1
         )
 
-        return try enDecrypt.encrypt(msg)
+        incrementNonceSeq()
+        return try enDecrypt.encrypt(msg, nonceSeq)
     }
     
     func readAndAckResponse() throws -> Message {
@@ -210,7 +229,8 @@ class PodMessageTransport: MessageTransport {
             throw BluetoothErrors.MessageIOException("Could not read response")
         }
 
-        let decrypted = try enDecrypt.decrypt(readMessage)
+        incrementNonceSeq()
+        let decrypted = try enDecrypt.decrypt(readMessage, nonceSeq)
 
         log.debug("Received response: %@", decrypted.payload.hexadecimalString)
 
@@ -228,6 +248,7 @@ class PodMessageTransport: MessageTransport {
          */
 
         incrementMsgSeq()
+        incrementNonceSeq()
         let ack = try getAck(response: decrypted)
         log.debug("Sending ACK: %@ in packet $ack", ack.payload.hexadecimalString)
         let ackResult = try manager.sendMessage(ack)
@@ -263,7 +284,7 @@ class PodMessageTransport: MessageTransport {
             ackNumber: response.sequenceNumber + 1,
             eqos: 0
         )
-        return try enDecrypt.encrypt((msg))
+        return try enDecrypt.encrypt(msg, nonceSeq)
     }
     
     func assertOnSessionQueue() {

@@ -74,10 +74,7 @@ class SessionEstablisher {
 
         return .SessionKeys(SessionKeys(
             ck: milenage.ck,
-            nonce:  Nonce(
-                prefix: controllerIV + nodeIV,
-                sqn: 0
-            ),
+            nonce:  Nonce(prefix: controllerIV + nodeIV),
             msgSequenceNumber: msgSeq
         ))
     }
