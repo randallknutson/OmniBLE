@@ -318,6 +318,7 @@ class PodMessageTransport: MessageTransport {
     private func getAck(response: MessagePacket) throws -> MessagePacket {
         guard let enDecrypt = self.enDecrypt else { throw PodCommsError.noPodAvailable }
 
+        let ackNumber = (UInt(response.sequenceNumber) + 1) & 0xff
         let msg = MessagePacket(
             type: MessageType.ENCRYPTED,
             source: response.destination.toUInt32(),
@@ -325,7 +326,7 @@ class PodMessageTransport: MessageTransport {
             payload: Data(),
             sequenceNumber: UInt8(msgSeq),
             ack: true,
-            ackNumber: response.sequenceNumber + 1,
+            ackNumber: UInt8(ackNumber),
             eqos: 0
         )
         return try enDecrypt.encrypt(msg, nonceSeq)
