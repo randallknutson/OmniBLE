@@ -110,10 +110,18 @@ class InsertCannulaSetupViewController: SetupTableViewController {
                     errorText = localizedText + "."
                 }
             }
+            if let bluetoothError = lastError as? BluetoothErrors {
+                switch bluetoothError {
+                case .InvalidLTKKey(let message), .PairingException(let message), .MessageIOException(let message), .CouldNotParseMessageException(let message):
+                    errorText = message
+                default:
+                    break
+                }
+            }
             
             // If we have an error but no error text, generate a string to describe the error
             if let error = lastError, (errorText == nil || errorText!.isEmpty) {
-                errorText = String(describing: error)
+                errorText = String(reflecting: error)
             }
             loadingText = errorText
             

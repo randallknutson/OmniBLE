@@ -173,7 +173,7 @@ public class PodCommsSession {
         self.podState = podState
         self.transport = transport
         self.delegate = delegate
-//        self.transport.delegate = self
+        self.transport.delegate = self
     }
 
     // Handles updating PodState on first pod fault seen
@@ -226,7 +226,7 @@ public class PodCommsSession {
 //            podState.advanceToNextNonce()
 //        }
         
-        let messageNumber = transport.msgSeq
+        let messageNumber = transport.messageNumber
 
         var sentNonce: UInt32?
 
@@ -806,9 +806,9 @@ public class PodCommsSession {
     }
 }
 
-//extension PodCommsSession: MessageTransportDelegate {
-//    func messageTransport(_ messageTransport: MessageTransport, didUpdate state: MessageTransportState) {
-//        messageTransport.assertOnSessionQueue()
-//        podState.messageTransportState = state
-//    }
-//}
+extension PodCommsSession: MessageTransportDelegate {
+    func messageTransport(_ messageTransport: MessageTransport, didUpdate state: MessageTransportState) {
+        messageTransport.assertOnSessionQueue()
+        podState.messageTransportState = state
+    }
+}

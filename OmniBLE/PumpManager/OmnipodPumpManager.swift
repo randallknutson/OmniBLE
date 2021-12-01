@@ -988,7 +988,7 @@ extension OmnipodPumpManager {
 // MARK: - PumpManager
 extension OmnipodPumpManager: PumpManager {
 
-    public static let managerIdentifier: String = "Omnipod Dash"
+    public static let managerIdentifier: String = "Omnipod-Dash" // use a single token to make parsing log files easier
 
     public static let localizedTitle = LocalizedString("Omnipod Dash", comment: "Generic title of the omnipod pump manager")
 

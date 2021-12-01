@@ -43,7 +43,7 @@ struct Message {
         }
         
         self.expectFollowOnMessage = (b9 & 0b10000000) != 0
-        self.sequenceNum = Int((b9 >> 2) & 0b11111)
+        self.sequenceNum = Int((b9 >> 2) & 0b1111)
         let crc = (UInt16(encodedData[encodedData.count-2]) << 8) + UInt16(encodedData[encodedData.count-1])
         let msgWithoutCrc = encodedData.prefix(encodedData.count - 2)
         let computedCrc: UInt16 = UInt16(msgWithoutCrc.crc16())

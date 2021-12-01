@@ -100,7 +100,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         return active
     }
     
-    public init(address: UInt32, ltk: Data, messageNumber: Int = 0, lotNo: UInt64, lotSeq: UInt32, messageTransportState: MessageTransportState? = nil) {
+    public init(address: UInt32, ltk: Data, lotNo: UInt64, lotSeq: UInt32, messageTransportState: MessageTransportState? = nil) {
         self.address = address
         self.ltk = ltk
         self.lotNo = lotNo

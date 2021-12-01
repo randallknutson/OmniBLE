@@ -20,14 +20,16 @@ public struct MessageTransportState: Equatable, RawRepresentable {
 
     public var ck: Data?
     public var noncePrefix: Data?
-    public var msgSeq: Int
+    public var msgSeq: Int // 8-bit Dash MessagePacket sequence #
     public var nonceSeq: Int
+    public var messageNumber: Int // 4-bit Omnipod Message #
     
-    init(ck: Data?, noncePrefix: Data?, msgSeq: Int = 0, nonceSeq: Int = 0) {
+    init(ck: Data?, noncePrefix: Data?, msgSeq: Int = 0, nonceSeq: Int = 0, messageNumber: Int = 0) {
         self.ck = ck
         self.noncePrefix = noncePrefix
         self.msgSeq = msgSeq
         self.nonceSeq = nonceSeq
+        self.messageNumber = messageNumber
     }
     
     // RawRepresentable
@@ -36,7 +38,8 @@ public struct MessageTransportState: Equatable, RawRepresentable {
             let ckString = rawValue["ck"] as? String,
             let noncePrefixString = rawValue["noncePrefix"] as? String,
             let msgSeq = rawValue["msgSeq"] as? Int,
-            let nonceSeq = rawValue["nonceSeq"] as? Int
+            let nonceSeq = rawValue["nonceSeq"] as? Int,
+            let messageNumber = rawValue["messageNumber"] as? Int
             else {
                 return nil
         }
@@ -44,6 +47,7 @@ public struct MessageTransportState: Equatable, RawRepresentable {
         self.noncePrefix = Data(hex: noncePrefixString)
         self.msgSeq = msgSeq
         self.nonceSeq = nonceSeq
+        self.messageNumber = messageNumber
     }
     
     public var rawValue: RawValue {
@@ -51,10 +55,24 @@ public struct MessageTransportState: Equatable, RawRepresentable {
             "ck": ck?.hexadecimalString ?? "",
             "noncePrefix": noncePrefix?.hexadecimalString ?? "",
             "msgSeq": msgSeq,
-            "nonceSeq": nonceSeq
+            "nonceSeq": nonceSeq,
+            "messageNumber": messageNumber
         ]
     }
 
+}
+
+extension MessageTransportState: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        return [
+            "## MessageTransportState",
+            "ck: " + (ck != nil ? ck!.hexadecimalString : "nil"),
+            "noncePrefix: " + (noncePrefix != nil ? noncePrefix!.hexadecimalString : "nil"),
+            "msgSeq: \(msgSeq)",
+            "nonceSeq: \(nonceSeq)",
+            "messageNumber: \(messageNumber)",
+        ].joined(separator: "\n")
+    }
 }
 
 protocol MessageTransportDelegate: AnyObject {
@@ -64,7 +82,7 @@ protocol MessageTransportDelegate: AnyObject {
 protocol MessageTransport {
     var delegate: MessageTransportDelegate? { get set }
 
-    var msgSeq: Int { get }
+    var messageNumber: Int { get }
 
     func sendMessage(_ message: Message) throws -> Message
 
@@ -82,7 +100,6 @@ class PodMessageTransport: MessageTransport {
     private var nonce: Nonce?
     private var enDecrypt: EnDecrypt?
 
-    
     private let log = OSLog(category: "PodMessageTransport")
     
     private var state: MessageTransportState {
@@ -127,6 +144,15 @@ class PodMessageTransport: MessageTransport {
         }
     }
     
+    private(set) var messageNumber: Int {
+        get {
+            return state.messageNumber
+        }
+        set {
+            state.messageNumber = newValue
+        }
+    }
+
     private let address: UInt32
     private let fakeSendMessage = false // whether to fake sending pod messages
     
@@ -144,16 +170,22 @@ class PodMessageTransport: MessageTransport {
     }
     
     private func incrementMsgSeq(_ count: Int = 1) {
-        msgSeq = ((msgSeq) + count) & 0b1111
+        msgSeq = ((msgSeq) + count) & 0xff // msgSeq is the 8-bit Dash MessagePacket sequence #
     }
 
     private func incrementNonceSeq(_ count: Int = 1) {
         nonceSeq = nonceSeq + count
     }
 
+    private func incrementMessageNumber(_ count: Int = 1) {
+        messageNumber = ((messageNumber) + count) & 0b1111 // messageNumber is the 4-bit Omnipod Message #
+    }
+
     /// Sends the given pod message over the encrypted Dash transport and returns the pod's response
     func sendMessage(_ message: Message) throws -> Message {
-        incrementMsgSeq()
+
+        messageNumber = message.sequenceNum // reset our Omnipod message # to given value
+        incrementMessageNumber() // bump to match expected Omnipod message # in response
 
         let dataToSend = message.encoded()
         log.default("Send(Hex): %@", dataToSend.hexadecimalString)
@@ -183,9 +215,11 @@ class PodMessageTransport: MessageTransport {
                 break
             }
 
+            let response = try Message(encodedData: responseData)
             log.default("Recv(Hex): %@", responseData.hexadecimalString)
             messageLogger?.didReceive(responseData)
-            return try Message(encodedData: responseData)
+            incrementMessageNumber()
+            return response
         }
 
         let sendMessage = try getCmdMessage(cmd: message)
@@ -196,11 +230,15 @@ class PodMessageTransport: MessageTransport {
         }
 
         let response = try readAndAckResponse()
+        incrementMessageNumber() // bump the 4-bit Omnipod Message number
+
         return response
     }
     
     private func getCmdMessage(cmd: Message) throws -> MessagePacket {
         guard let enDecrypt = self.enDecrypt else { throw PodCommsError.noPodAvailable }
+
+        incrementMsgSeq()
 
         let wrapped = StringLengthPrefixEncoding.formatKeys(
             keys: [COMMAND_PREFIX, COMMAND_SUFFIX],
@@ -255,6 +293,12 @@ class PodMessageTransport: MessageTransport {
         guard ((ackResult as? MessageSendSuccess) != nil) else {
             throw BluetoothErrors.MessageIOException("Could not write $msgType: \(ackResult)")
         }
+
+        // verify that the Omnipod message # matches the expected value
+        guard response.sequenceNum == messageNumber else {
+            throw MessageError.invalidSequence
+        }
+
         return response
     }
     
@@ -289,5 +333,18 @@ class PodMessageTransport: MessageTransport {
     
     func assertOnSessionQueue() {
         dispatchPrecondition(condition: .onQueue(manager.queue))
+    }
+}
+
+extension PodMessageTransport: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        return [
+            "## PodMessageTransport",
+            "ck: " + (ck != nil ? ck!.hexadecimalString : "nil"),
+            "noncePrefix: " + (noncePrefix != nil ? noncePrefix!.hexadecimalString : "nil"),
+            "msgSeq: \(msgSeq)",
+            "nonceSeq: \(nonceSeq)",
+            "messageNumber: \(messageNumber)",
+        ].joined(separator: "\n")
     }
 }

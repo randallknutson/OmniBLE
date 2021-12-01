@@ -48,6 +48,14 @@ public class PodComms: CustomDebugStringConvertible {
     // Handles all the common work to send and verify the version response for the two pairing pod commands, AssignAddress and SetupPod.
     private func sendPairMessage(transport: PodMessageTransport, message: Message) throws -> VersionResponse {
 
+        defer {
+            if self.podState != nil {
+                log.debug("sendPairMessage saving current message transport state %@", String(reflecting: transport))
+                self.podState!.messageTransportState = MessageTransportState(ck: transport.ck, noncePrefix: transport.noncePrefix, msgSeq: transport.msgSeq, nonceSeq: transport.nonceSeq, messageNumber: transport.messageNumber)
+            }
+        }
+
+        log.debug("sendPairMessage: attempting to use PodMessageTransport %@ to send message %@", String(reflecting: transport), String(reflecting: message))
         let podMessageResponse = try transport.sendMessage(message)
 
         if let fault = podMessageResponse.fault {
@@ -64,6 +72,7 @@ public class PodComms: CustomDebugStringConvertible {
             throw PodCommsError.unexpectedResponse(response: responseType)
         }
 
+        log.debug("sendPairMessage: returning versionResponse %@", String(describing: versionResponse))
         return versionResponse
     }
 
@@ -74,41 +83,46 @@ public class PodComms: CustomDebugStringConvertible {
 
         let ltkExchanger = LTKExchanger(manager: manager, ids: ids)
         let response = try ltkExchanger.negotiateLTK()
+        let ltk = response.ltk
 
+        guard address == response.address else {
+            log.debug("podPair: address %{public} doesn't match response value?!: %@", String(format: "%04X", address), String(describing: response))
+            throw PodCommsError.invalidAddress(address: response.address, expectedAddress: address)
+        }
+
+        // XXX need to rework things so that we don't have to create a temp PodState to set up the LTK
         if self.podState == nil {
-            log.default("Creating temp podState for LTK") // XXX need to rethink the podState setup stuff
+            log.debug("pairPod: creating a temp podState for LTK using response %@", String(describing: response))
             self.podState = PodState(
                 address: response.address,
-                ltk: response.ltk,
+                ltk: ltk,
                 lotNo: lotNo ?? 1,
                 lotSeq: lotSeq ?? 1
             )
         }
 
         log.info("Establish an Eap Session")
-        
         try self.establishSession(msgSeq: Int(response.msgSeq))
 
         log.info("LTK and encrypted transport now ready")
+        log.debug("pairPod: LTK and encrypted transport now ready, podState messageTransportState: %@", String(reflecting: podState!.messageTransportState))
 
         // If we get here, we have the LTK all set up and we should be able use encrypted pod messages
-        log.debug("Attempting encrypted pod assign address command using address %{public}@", String(format: "%04X", address))
         let transport = PodMessageTransport(manager: manager, address: 0xffffffff, state: podState!.messageTransportState)
         transport.messageLogger = messageLogger
 
         // Create the Assign Address command message
         // XXX - use the ids.podId here or use the generated 0x1F0xxxxx address?
         let assignAddress = AssignAddressCommand(address: address)
-        let message = Message(address: 0xffffffff, messageBlocks: [assignAddress], sequenceNum: transport.msgSeq)
+        let message = Message(address: 0xffffffff, messageBlocks: [assignAddress], sequenceNum: transport.messageNumber)
 
         let versionResponse = try sendPairMessage(transport: transport, message: message)
 
         // Now create the real PodState using the versionResponse info
-        log.default("Creating PodState for versionResponse %{public}@", String(describing: versionResponse))
+        log.debug("pairPod: creating PodState for versionResponse %{public}@", String(describing: versionResponse))
         self.podState = PodState(
             address: response.address,
-            ltk: podState!.ltk,
-            messageNumber: transport.msgSeq,
+            ltk: ltk,
             lotNo: UInt64(versionResponse.lot),
             lotSeq: versionResponse.tid,
             messageTransportState: podState!.messageTransportState
@@ -122,12 +136,13 @@ public class PodComms: CustomDebugStringConvertible {
             throw PodCommsError.activationTimeExceeded
         }
 
+        log.debug("pairPod: self.PodState messageTransportState now: %@", String(reflecting: self.podState?.messageTransportState))
     }
     
     private func syncSession(_ ltk: Data, _ eapSqn: Int, _ address: UInt32, _ msgSeq: Int) throws -> Int? {
         guard let manager = manager else { throw PodCommsError.noPodPaired }
         let eapAkaExchanger = try SessionEstablisher(manager: manager, ltk: ltk, eapSqn: eapSqn, address: address, msgSeq: msgSeq)
-        
+
         let result = try eapAkaExchanger.negotiateSessionKeys()
         
         switch result {
@@ -142,6 +157,7 @@ public class PodComms: CustomDebugStringConvertible {
             
             self.podState?.messageTransportState = MessageTransportState(ck: keys.ck, noncePrefix: keys.nonce.prefix, msgSeq: keys.msgSequenceNumber, nonceSeq: 0)
             
+            log.debug("syncSession: set up podState messageTransportState: %@", String(reflecting: self.podState?.messageTransportState))
             return nil
         }
     }
@@ -153,6 +169,12 @@ public class PodComms: CustomDebugStringConvertible {
         
         let eapSqn = podState.increaseEapAkaSequenceNumber()
 
+        guard self.podState!.ltk == podState.ltk else {
+            throw PodCommsError.invalidData
+        }
+        guard self.podState!.address == podState.address else {
+            throw PodCommsError.invalidData
+        }
         var newSqn = try self.syncSession(podState.ltk, eapSqn, podState.address, msgSeq)
         
         if (newSqn != nil) {
@@ -167,14 +189,17 @@ public class PodComms: CustomDebugStringConvertible {
     
     private func setupPod(podState: PodState, timeZone: TimeZone) throws {
         guard let manager = manager else { throw PodCommsError.noPodAvailable }
+
         let transport = PodMessageTransport(manager: manager, address: 0xffffffff, state: podState.messageTransportState)
         transport.messageLogger = messageLogger
+        log.debug("setupPod: created transport %@ using podState %@ with messageTransportState %@", String(reflecting: transport), String(reflecting: podState), String(reflecting: podState.messageTransportState))
 
         let dateComponents = SetupPodCommand.dateComponents(date: Date(), timeZone: timeZone)
         let setupPod = SetupPodCommand(address: podState.address, dateComponents: dateComponents, lot: UInt32(podState.lotNo), tid: podState.lotSeq)
 
-        let message = Message(address: 0xffffffff, messageBlocks: [setupPod], sequenceNum: transport.msgSeq)
+        let message = Message(address: 0xffffffff, messageBlocks: [setupPod], sequenceNum: transport.messageNumber)
 
+        log.debug("setupPod: calling sendPairMessage %@ for message %@", String(reflecting: transport), String(describing: message))
         let versionResponse = try sendPairMessage(transport: transport, message: message)
 
         // Verify that the fundemental pod constants returned match the expected constant values in the Pod struct.
