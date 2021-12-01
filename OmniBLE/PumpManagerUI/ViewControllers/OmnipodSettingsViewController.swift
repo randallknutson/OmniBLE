@@ -90,7 +90,7 @@ class OmnipodSettingsViewController: UITableViewController {
         tableView.register(SettingsTableViewCell.self, forCellReuseIdentifier: NSStringFromClass(SettingsTableViewCell.self))
         tableView.register(TextButtonTableViewCell.self, forCellReuseIdentifier: NSStringFromClass(TextButtonTableViewCell.self))
         tableView.register(AlarmsTableViewCell.self, forCellReuseIdentifier: NSStringFromClass(AlarmsTableViewCell.self))
-//        tableView.register(ExpirationReminderDateTableViewCell.nib(), forCellReuseIdentifier: NSStringFromClass(ExpirationReminderDateTableViewCell.self))
+        tableView.register(ExpirationReminderDateTableViewCell.nib(), forCellReuseIdentifier: ExpirationReminderDateTableViewCell.className)
         
         let podImage = UIImage(named: "PodLarge", in: Bundle(for: OmnipodSettingsViewController.self), compatibleWith: nil)!
         let imageView = UIImageView(image: podImage)
@@ -256,7 +256,7 @@ class OmnipodSettingsViewController: UITableViewController {
     private enum ConfigurationRow: Int, CaseIterable {
         case suspendResume = 0
         case enableDisableConfirmationBeeps
-        //case reminder
+        case reminder
         case timeZoneOffset
         case replacePod
     }
@@ -381,7 +381,6 @@ class OmnipodSettingsViewController: UITableViewController {
                 return suspendResumeTableViewCell
             case .enableDisableConfirmationBeeps:
                 return confirmationBeepsTableViewCell
-/*
             case .reminder:
                 let cell = tableView.dequeueReusableCell(withIdentifier: ExpirationReminderDateTableViewCell.className, for: indexPath) as! ExpirationReminderDateTableViewCell
                 if let podState = podState, let reminderDate = pumpManager.expirationReminderDate {
@@ -399,7 +398,6 @@ class OmnipodSettingsViewController: UITableViewController {
                     cell.delegate = self
                 }
                 return cell
-*/
             case .timeZoneOffset:
                 let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
                 cell.textLabel?.text = LocalizedString("Change Time Zone", comment: "The title of the command to change pump time zone")
@@ -506,9 +504,9 @@ class OmnipodSettingsViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
-//        if indexPath == IndexPath(row: ConfigurationRow.reminder.rawValue, section: Section.configuration.rawValue) {
-//            tableView.beginUpdates()
-//        }
+        if indexPath == IndexPath(row: ConfigurationRow.reminder.rawValue, section: Section.configuration.rawValue) {
+            tableView.beginUpdates()
+        }
         return indexPath
     }
 
@@ -547,9 +545,9 @@ class OmnipodSettingsViewController: UITableViewController {
             case .enableDisableConfirmationBeeps:
                 confirmationBeepsTapped()
                 tableView.deselectRow(at: indexPath, animated: true)
-//            case .reminder:
-//                tableView.deselectRow(at: indexPath, animated: true)
-//                tableView.endUpdates()
+            case .reminder:
+                tableView.deselectRow(at: indexPath, animated: true)
+                tableView.endUpdates()
             case .timeZoneOffset:
                 let vc = CommandResponseViewController.changeTime(pumpManager: pumpManager)
                 vc.title = sender?.textLabel?.text
@@ -612,7 +610,7 @@ class OmnipodSettingsViewController: UITableViewController {
             break
         case .configuration:
             switch configurationRows[indexPath.row] {
-            case /* .reminder, */ .suspendResume:
+            case .reminder, .suspendResume:
                 break
             case .enableDisableConfirmationBeeps, .timeZoneOffset, .replacePod:
                 tableView.reloadRows(at: [indexPath], with: .fade)
@@ -750,11 +748,11 @@ extension OmnipodSettingsViewController: PumpManagerStatusObserver {
     }
 }
 
-//extension OmnipodSettingsViewController: DatePickerTableViewCellDelegate {
-//    func datePickerTableViewCellDidUpdateDate(_ cell: DatePickerTableViewCell) {
-//        pumpManager.expirationReminderDate = cell.date
-//    }
-//}
+extension OmnipodSettingsViewController: DatePickerTableViewCellDelegate {
+    func datePickerTableViewCellDidUpdateDate(_ cell: DatePickerTableViewCell) {
+        pumpManager.expirationReminderDate = cell.date
+    }
+}
 
 private extension UIAlertController {
     convenience init(pumpManagerDeletionHandler handler: @escaping () -> Void) {
