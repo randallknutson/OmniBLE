@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import RileyLinkBLEKit
 import LoopKit
 import os.log
 
@@ -76,9 +75,9 @@ extension PodCommsError: LocalizedError {
             return LocalizedString("Unexpected pod change", comment: "Format string for unexpected pod change")
         case .activationTimeExceeded:
             return LocalizedString("Activation time exceeded", comment: "Format string for activation time exceeded")
-        case .rssiTooLow: // occurs when RileyLink is too far from pod for reliable pairing, but can sometimes occur at other distances & positions
+        case .rssiTooLow: // occurs when pod is too far for reliable pairing, but can sometimes occur at other distances & positions
             return LocalizedString("Poor signal strength", comment: "Format string for poor pod signal strength")
-        case .rssiTooHigh: // only occurs when RileyLink is too close to the pod for reliable pairing
+        case .rssiTooHigh: // only occurs when pod is too close for reliable pairing
             return LocalizedString("Signal strength too high", comment: "Format string for pod signal strength too high")
         case .diagnosticMessage(let str):
             return str
@@ -98,7 +97,7 @@ extension PodCommsError: LocalizedError {
         case .invalidData:
             return nil
         case .noResponse:
-            return LocalizedString("Please try repositioning the RileyLink", comment: "Recovery suggestion when no response is received from pod")
+            return LocalizedString("Make sure iPhone is nearby the active pod", comment: "Recovery suggestion when no response is received from pod")
         case .emptyResponse:
             return nil
         case .podAckedInsteadOfReturningResponse:
@@ -130,9 +129,9 @@ extension PodCommsError: LocalizedError {
         case .activationTimeExceeded:
             return nil
         case .rssiTooLow:
-            return LocalizedString("Please reposition the RileyLink relative to the pod", comment: "Recovery suggestion when pairing signal strength is too low")
+            return LocalizedString("Please reposition iPhone relative to the pod", comment: "Recovery suggestion when pairing signal strength is too low")
         case .rssiTooHigh:
-            return LocalizedString("Please reposition the RileyLink further from the pod", comment: "Recovery suggestion when pairing signal strength is too high")
+            return LocalizedString("Please reposition iPhone further from the pod", comment: "Recovery suggestion when pairing signal strength is too high")
         case .diagnosticMessage:
             return nil
         case .podIncompatible:
@@ -210,7 +209,6 @@ public class PodCommsSession {
     ///     - PodCommsError.rejectedMessage
     ///     - PodCommsError.nonceResyncFailed
     ///     - MessageError
-    ///     - RileyLinkDeviceError
     func send<T: MessageBlock>(_ messageBlocks: [MessageBlock], confirmationBeepType: BeepConfigType? = nil, lastMessage: Bool = false) throws -> T {
         
         var triesRemaining = 2  // Retries only happen for nonce resync

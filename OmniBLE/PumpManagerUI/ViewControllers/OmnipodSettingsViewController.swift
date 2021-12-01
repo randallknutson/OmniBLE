@@ -714,7 +714,6 @@ extension OmnipodSettingsViewController: PodStateObserver {
         self.podState = state
 
         if sectionsChanged {
-//            self.devicesDataSource.devicesSectionIndex = self.sections.firstIndex(of: .rileyLinks)!
             self.tableView.reloadData()
         } else {
             if oldConfigurationRowsCount != self.configurationRows.count, let idx = newSections.firstIndex(of: .configuration) {

@@ -12,7 +12,6 @@ import UIKit
 import LoopKit
 import LoopKitUI
 import OmniKit
-import RileyLinkKitUI
 
 // PumpManagerSetupViewController
 public class OmnipodPumpManagerSetupViewController: UINavigationController, PumpManagerSetupViewController, UINavigationControllerDelegate, CompletionNotifying {

@@ -1162,7 +1162,7 @@ extension OmnipodPumpManager: PumpManager {
     }
 
     public func setMustProvideBLEHeartbeat(_ mustProvideBLEHeartbeat: Bool) {
-//        rileyLinkDeviceProvider.timerTickEnabled = self.state.isPumpDataStale || mustProvideBLEHeartbeat
+        // do nothing here for Dash
     }
     
     // Called only from pumpDelegate notify block
@@ -1183,8 +1183,6 @@ extension OmnipodPumpManager: PumpManager {
             return state.isPumpDataStale
         }
         
-//        checkRileyLinkBattery()
-
         switch shouldFetchStatus {
         case .none:
             return // No active pod
