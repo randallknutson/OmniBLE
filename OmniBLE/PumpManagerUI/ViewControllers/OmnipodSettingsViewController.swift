@@ -234,8 +234,10 @@ class OmnipodSettingsViewController: UITableViewController {
     
     private enum PodDetailsRow: Int, CaseIterable {
         case podAddress = 0
-        case podLot
-        case podTid
+        case lotNo
+        case sequenceNumber
+        case firmwareVersion
+        case bleFirmwareVersion
     }
     
     private enum Diagnostics: Int, CaseIterable {
@@ -464,15 +466,25 @@ class OmnipodSettingsViewController: UITableViewController {
                 cell.textLabel?.text = LocalizedString("Assigned Address", comment: "The title text for the address assigned to the pod")
                 cell.detailTextLabel?.text = String(format:"%04X", podState.address)
                 return cell
-            case .podLot:
+            case .lotNo:
                 let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
                 cell.textLabel?.text = LocalizedString("Lot Number", comment: "The title of the cell showing the pod lot number")
                 cell.detailTextLabel?.text = String(format:"L%d", podState.lotNo)
                 return cell
-            case .podTid:
+            case .sequenceNumber:
                 let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
-                cell.textLabel?.text = LocalizedString("Sequence Number", comment: "The title of the cell showing the lot sequence number")
+                cell.textLabel?.text = LocalizedString("Sequence Number", comment: "The title of the cell showing the pod sequence number")
                 cell.detailTextLabel?.text = String(format:"%07d", podState.lotSeq)
+                return cell
+            case .firmwareVersion:
+                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
+                cell.textLabel?.text = LocalizedString("Firmware Version", comment: "The title of the cell showing the firmware version")
+                cell.detailTextLabel?.text = podState.firmwareVersion
+                return cell
+            case .bleFirmwareVersion:
+                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
+                cell.textLabel?.text = LocalizedString("BLE Firmware Version", comment: "The title of the cell showing the BLE firmware version")
+                cell.detailTextLabel?.text = podState.bleFirmwareVersion
                 return cell
             }
 

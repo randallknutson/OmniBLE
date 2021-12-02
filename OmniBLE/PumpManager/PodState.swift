@@ -59,6 +59,8 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
 
     public var setupUnitsDelivered: Double?
 
+    public let firmwareVersion: String
+    public let bleFirmwareVersion: String
     public let lotNo: UInt64
     public let lotSeq: UInt32
     var activeAlertSlots: AlertSet
@@ -100,9 +102,11 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         return active
     }
     
-    public init(address: UInt32, ltk: Data, lotNo: UInt64, lotSeq: UInt32, messageTransportState: MessageTransportState? = nil) {
+    public init(address: UInt32, ltk: Data, firmwareVersion: String, bleFirmwareVersion: String, lotNo: UInt64, lotSeq: UInt32, messageTransportState: MessageTransportState? = nil) {
         self.address = address
         self.ltk = ltk
+        self.firmwareVersion = firmwareVersion
+        self.bleFirmwareVersion = bleFirmwareVersion
         self.lotNo = lotNo
         self.lotSeq = lotSeq
         self.lastInsulinMeasurements = nil
@@ -267,6 +271,8 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             let address = rawValue["address"] as? UInt32,
             let ltkString = rawValue["ltk"] as? String,
             let eapAkaSequenceNumber = rawValue["eapAkaSequenceNumber"] as? Int,
+            let firmwareVersion = rawValue["firmwareVersion"] as? String,
+            let bleFirmwareVersion = rawValue["bleFirmwareVersion"] as? String,
             let lotNo = rawValue["lotNo"] as? UInt64,
             let lotSeq = rawValue["lotSeq"] as? UInt32
             else {
@@ -276,6 +282,8 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         self.address = address
         self.ltk = Data(hex: ltkString)
         self.eapAkaSequenceNumber = eapAkaSequenceNumber
+        self.firmwareVersion = firmwareVersion
+        self.bleFirmwareVersion = bleFirmwareVersion
         self.lotNo = lotNo
         self.lotSeq = lotSeq
 
@@ -398,6 +406,8 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             "address": address,
             "ltk": ltk.hexadecimalString,
             "eapAkaSequenceNumber": eapAkaSequenceNumber,
+            "firmwareVersion": firmwareVersion,
+            "bleFirmwareVersion": bleFirmwareVersion,
             "lotNo": lotNo,
             "lotSeq": lotSeq,
             "suspendState": suspendState.rawValue,
@@ -467,6 +477,8 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             "* activatedAt: \(String(reflecting: activatedAt))",
             "* expiresAt: \(String(reflecting: expiresAt))",
             "* setupUnitsDelivered: \(String(reflecting: setupUnitsDelivered))",
+            "* firmwareVersion: \(firmwareVersion)",
+            "* bleFirmwareVersion: \(bleFirmwareVersion)",
             "* lotNo: \(lotNo)",
             "* lotSeq: \(lotSeq)",
             "* suspendState: \(suspendState)",

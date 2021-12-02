@@ -96,6 +96,8 @@ public class PodComms: CustomDebugStringConvertible {
             self.podState = PodState(
                 address: response.address,
                 ltk: ltk,
+                firmwareVersion: "",
+                bleFirmwareVersion: "",
                 lotNo: lotNo ?? 1,
                 lotSeq: lotSeq ?? 1
             )
@@ -123,6 +125,8 @@ public class PodComms: CustomDebugStringConvertible {
         self.podState = PodState(
             address: response.address,
             ltk: ltk,
+            firmwareVersion: String(describing: versionResponse.pmVersion),
+            bleFirmwareVersion: String(describing: versionResponse.piVersion),
             lotNo: UInt64(versionResponse.lot),
             lotSeq: versionResponse.tid,
             messageTransportState: podState!.messageTransportState
