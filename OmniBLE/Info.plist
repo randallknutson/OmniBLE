@@ -21,7 +21,7 @@
 	<key>com.loopkit.Loop.PumpManagerDisplayName</key>
 	<string>Omnipod Dash</string>
 	<key>com.loopkit.Loop.PumpManagerIdentifier</key>
-	<string>Omnipod Dash</string>
+	<string>Omnipod-Dash</string>
 	<key>NSPrincipalClass</key>
 	<string>OmniBLE.OmnipodPlugin</string>
 </dict>
