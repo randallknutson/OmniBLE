@@ -507,12 +507,12 @@ extension CBPeripheral {
 extension PeripheralManager {
     public func runSession(withName name: String , _ block: @escaping () -> Void) {
         self.log.default("Scheduling session %{public}@", name)
-        sessionQueue.addOperation(self.configureAndRun({ [weak self] (manager) in
-            manager.perform { _ in
-                self?.log.default("======================== %{public}@ ===========================", name)
+        sessionQueue.addOperation({ [weak self] in
+            self?.perform { (manager) in
+                manager.log.default("======================== %{public}@ ===========================", name)
                 block()
-                self?.log.default("------------------------ %{public}@ ---------------------------", name)
+                manager.log.default("------------------------ %{public}@ ---------------------------", name)
             }
-        }))
+        })
     }
 }
