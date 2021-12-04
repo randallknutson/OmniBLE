@@ -135,8 +135,8 @@ extension PeripheralManager {
         
         // Wait for data to be read.
         queueLock.lock()
-        while (cmdQueue.count == 0) {
-            queueLock.wait()
+        if (cmdQueue.count == 0) {
+            queueLock.wait(until: Date().addingTimeInterval(timeout))
         }
         queueLock.unlock()
 
@@ -176,8 +176,8 @@ extension PeripheralManager {
         
         // Wait for data to be read.
         queueLock.lock()
-        while (dataQueue.count == 0) {
-            queueLock.wait()
+        if (dataQueue.count == 0) {
+            queueLock.wait(until: Date().addingTimeInterval(timeout))
         }
         queueLock.unlock()
 
