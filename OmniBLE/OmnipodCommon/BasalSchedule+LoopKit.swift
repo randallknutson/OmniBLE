@@ -1,5 +1,6 @@
 //
-//  PodCommsSession+LoopKit.swift
+//  BasalSchedule+LoopKit.swift
+//  (formerly PodCommsSession+LoopKit.swift)
 //  OmnipodKit
 //
 //  Created by Pete Schwamb on 9/25/18.
