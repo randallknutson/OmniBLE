@@ -22,7 +22,7 @@ public class Omnipod {
     var manager: PeripheralManager?
     var sequenceNo: UInt32?
     var lotNo: UInt64?
-//    let podId: UInt64
+    var podId: UInt32? = nil
     
     private var serviceUUIDs: [CBUUID]
 
@@ -113,6 +113,8 @@ public class Omnipod {
 
 extension Omnipod {
     private func discoverData(advertisementData: [String: Any]) throws {
+        serviceUUIDs = advertisementData["kCBAdvDataServiceUUIDs"] as! [CBUUID]
+
         try validateServiceUUIDs()
         try validatePodId()
         lotNo = parseLotNo()
@@ -120,7 +122,12 @@ extension Omnipod {
     }
     
     private func validateServiceUUIDs() throws {
-        if (serviceUUIDs.count != 7) {
+        // For some reason the pod simulator doesn't have two values.
+        if (serviceUUIDs.count == 7) {
+            serviceUUIDs.append(CBUUID(string: "abcd"))
+            serviceUUIDs.append(CBUUID(string: "dcba"))
+        }
+        if (serviceUUIDs.count != 9) {
             throw BluetoothErrors.DiscoveredInvalidPodException("Expected 9 service UUIDs, got \(serviceUUIDs.count)", serviceUUIDs)
         }
         if (serviceUUIDs[0].uuidString != MAIN_SERVICE_UUID) {
@@ -141,13 +148,13 @@ extension Omnipod {
     
     private func validatePodId() throws {
         let hexPodId = serviceUUIDs[3].uuidString + serviceUUIDs[4].uuidString
-        let podId = UInt64(hexPodId, radix: 16)
-//        if (self.podId != podId) {
-//            throw BluetoothErrors.DiscoveredInvalidPodException(
-//                "This is not the POD we are looking for: \(self.podId) . Found: \(podId ?? 0)/\(hexPodId)",
-//                serviceUUIDs
-//            )
-//        }
+        let foundPodId = UInt32(hexPodId, radix: 16)
+        if (podId != foundPodId) {
+            throw BluetoothErrors.DiscoveredInvalidPodException(
+                "This is not the POD we are looking for: \(String(describing: self.state?.address)) . Found: \(podId ?? 0)/\(hexPodId)",
+                serviceUUIDs
+            )
+        }
     }
     
     private func parseLotNo() -> UInt64? {
@@ -183,16 +190,23 @@ extension Omnipod {
 
 extension Omnipod: BluetoothManagerDelegate {
     func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, isReadyWithError error: Error?) {
-        podComms.manager = peripheralManager
-        // Will fail if ltk is not established. That's fine.
-        peripheralManager.perform { [weak podComms] _ in
-            guard let podComms = podComms else { fatalError() }
-            try? podComms.establishSession(msgSeq: 1)
+        if (error == nil) {
+            podComms.manager = peripheralManager
         }
     }
     
-    func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral) -> Bool {
-        return true
+    func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral, advertisementData: [String : Any]?) -> Bool {
+        if (advertisementData == nil) {
+            return true
+        }
+        do {
+            podId = state?.address ?? POD_ID_NOT_ACTIVATED
+            try discoverData(advertisementData: advertisementData!)
+            return true
+        }
+        catch {
+            return false
+        }
     }
     
     func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, didReceiveControlResponse response: Data) {
@@ -206,4 +220,16 @@ extension Omnipod: BluetoothManagerDelegate {
     func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, didReceiveAuthenticationResponse response: Data) {
         
     }
+    
+    func bluetoothManager(_ manager: BluetoothManager, didCompleteConfiguration peripheralManager: PeripheralManager) {
+        peripheralManager.perform { [weak podComms, self] manager in
+            guard let podComms = podComms else { return }
+            guard let podState = self.state else { return }
+            if (podState.ltk.count > 0) {
+                try? manager.sendHello(Id.fromLong(podState.address).address)
+                try? podComms.establishSession(msgSeq: 1)
+            }
+        }
+    }
+
 }

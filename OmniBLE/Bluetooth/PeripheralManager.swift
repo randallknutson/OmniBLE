@@ -127,22 +127,16 @@ extension PeripheralManager {
             if self.needsConfiguration || self.peripheral.services == nil {
                 do {
                     try self.applyConfiguration()
+                    self.needsConfiguration = false
+                    
+                    if let delegate = self.delegate {
+                        try delegate.completeConfiguration(for: self)
+                        self.log.default("Delegate configuration notified")
+                    }
+
                     self.log.default("Peripheral configuration completed")
                 } catch let error {
                     self.log.error("Error applying peripheral configuration: %@", String(describing: error))
-                    // Will retry
-                }
-
-                do {
-                    if let delegate = self.delegate {
-                        try delegate.completeConfiguration(for: self)
-                        self.log.default("Delegate configuration completed")
-                        self.needsConfiguration = false
-                    } else {
-                        self.log.error("No delegate set configured")
-                    }
-                } catch let error {
-                    self.log.error("Error applying delegate configuration: %@", String(describing: error))
                     // Will retry
                 }
             }
@@ -503,7 +497,6 @@ extension CBPeripheral {
 }
 
 // MARK: - Command session management
-// XXX need to figure out how much of this is actually really needed
 extension PeripheralManager {
     public func runSession(withName name: String , _ block: @escaping () -> Void) {
         self.log.default("Scheduling session %{public}@", name)

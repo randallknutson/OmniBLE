@@ -30,7 +30,7 @@ protocol BluetoothManagerDelegate: AnyObject {
 
      - returns: True if the peripheral should connect
      */
-    func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral) -> Bool
+    func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral, advertisementData advertisementData: [String : Any]?) -> Bool
 
     /// Informs the delegate that the bluetooth manager received new data in the control characteristic
     ///
@@ -54,6 +54,14 @@ protocol BluetoothManagerDelegate: AnyObject {
     ///   - peripheralManager: The peripheral manager
     ///   - response: The data received on the authentication characteristic
     func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, didReceiveAuthenticationResponse response: Data)
+
+    /// Informs the delegate that the bluetooth device has completed configuration
+    ///
+    /// - Parameters:
+    ///   - manager: The bluetooth manager
+    ///   - peripheralManager: The peripheral manager
+    ///   - response: The data received on the authentication characteristic
+    func bluetoothManager(_ manager: BluetoothManager, didCompleteConfiguration peripheralManager: PeripheralManager)
 }
 
 
@@ -174,7 +182,7 @@ class BluetoothManager: NSObject {
             OmnipodServiceUUID.advertisement.cbUUID,
             OmnipodServiceUUID.service.cbUUID
         ]).first,
-        delegate == nil || delegate!.bluetoothManager(self, shouldConnectPeripheral: peripheral)
+        delegate == nil || delegate!.bluetoothManager(self, shouldConnectPeripheral: peripheral, advertisementData: nil)
         {
             log.debug("Found system-connected peripheral: %{public}@", peripheral.identifier.uuidString)
             self.peripheral = peripheral
@@ -248,7 +256,7 @@ extension BluetoothManager: CBCentralManagerDelegate {
 
         if let peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
             for peripheral in peripherals {
-                if delegate == nil || delegate!.bluetoothManager(self, shouldConnectPeripheral: peripheral) {
+                if delegate == nil || delegate!.bluetoothManager(self, shouldConnectPeripheral: peripheral, advertisementData: nil) {
                     log.default("Restoring peripheral from state: %{public}@", peripheral.identifier.uuidString)
                     self.peripheral = peripheral
                 }
@@ -260,12 +268,10 @@ extension BluetoothManager: CBCentralManagerDelegate {
         dispatchPrecondition(condition: .onQueue(managerQueue))
 
         log.info("%{public}@: %{public}@", #function, peripheral)
-        if delegate == nil || delegate!.bluetoothManager(self, shouldConnectPeripheral: peripheral) {
+        if delegate == nil || delegate!.bluetoothManager(self, shouldConnectPeripheral: peripheral, advertisementData: advertisementData) {
             self.peripheral = peripheral
 
             central.connect(peripheral, options: nil)
-
-            central.stopScan()
         }
     }
 
@@ -325,7 +331,7 @@ extension BluetoothManager: PeripheralManagerDelegate {
     }
 
     func completeConfiguration(for manager: PeripheralManager) throws {
-
+        self.delegate?.bluetoothManager(self, didCompleteConfiguration: manager)
     }
 
     func peripheralManager(_ manager: PeripheralManager, didUpdateNotificationStateFor characteristic: CBCharacteristic) {
