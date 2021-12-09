@@ -24,7 +24,8 @@ extension PeripheralManager {
     /// - Throws: PeripheralManagerError
     func sendHello(_ controllerId: Data) throws {
         dispatchPrecondition(condition: .onQueue(queue))
-        
+                
+        log.debug("Sending Hello %s", controllerId.hexadecimalString)
         guard let characteristic = peripheral.getCommandCharacteristic() else {
             throw PeripheralManagerError.notReady
         }

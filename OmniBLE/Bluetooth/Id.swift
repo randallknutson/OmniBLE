@@ -10,14 +10,12 @@ import Foundation
 class Id {
     static private let PERIPHERAL_NODE_INDEX = 1
 
-    static func fromInt(_ v: Int32) -> Id {
-        var value = v
-        return Id(Data(bytes: &value, count: 4))
+    static func fromInt(_ v: Int) -> Id {
+        return Id(Data(bigEndian: v).subdata(in: 4..<8))
     }
 
     static func fromLong(_ v: UInt32) -> Id {
-        var value = v
-        return Id(Data(bytes: &value, count: 8))
+        return Id(Data(bigEndian: v))
     }
 
     
@@ -39,10 +37,12 @@ class Id {
      * controllerID+1, controllerID+2 and controllerID+3
      */
     func increment() -> Id {
-        var nodeId = address
-        nodeId[3] = UInt8((Int(nodeId[3]) & -4))
-        nodeId[3] = UInt8((Int(nodeId[3]) | Id.PERIPHERAL_NODE_INDEX))
-        return Id(nodeId)
+        var val = address.toBigEndian(Int.self)
+        val += 1
+        if (val >= 4246) {
+            val = 4243
+        }
+        return Id.fromInt(val)
     }
 
     // TODO:
@@ -52,31 +52,11 @@ class Id {
 //    }
 
     func toInt64() -> Int64 {
-        return address.withUnsafeBytes { pointer in
-            return pointer.load(as: Int64.self)
-        }
+        return address.toBigEndian(Int64.self)
     }
 
     
     func toUInt32() -> UInt32 {
-        return address.withUnsafeBytes { pointer in
-            return pointer.load(as: UInt32.self)
-        }
+        return address.toBigEndian(UInt32.self)
     }
-    //
-    // TODO:
-//    override func equals(other: Any?): Boolean {
-//        if (this === other) return true
-//        if (javaClass != other?.javaClass) return false
-//
-//        other as Id
-//
-//        if (!address.contentEquals(other.address)) return false
-//
-//        return true
-//    }
-//
-//    override func hashCode() -> Int32 {
-//        return address.contentHashCode()
-//    }
 }

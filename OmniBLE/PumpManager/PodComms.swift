@@ -37,6 +37,12 @@ public class PodComms: CustomDebugStringConvertible {
         }
     }
     
+    public var isPaired: Bool {
+        get {
+            return self.podState?.ltk != nil && (self.podState?.ltk.count ?? 0) > 0
+        }
+    }
+    
     init(podState: PodState?, lotNo: UInt64?, lotSeq: UInt32?) {
         self.podState = podState
         self.delegate = nil

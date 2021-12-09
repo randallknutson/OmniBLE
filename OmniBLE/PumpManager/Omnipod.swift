@@ -200,7 +200,7 @@ extension Omnipod: BluetoothManagerDelegate {
             return true
         }
         do {
-            podId = state?.address ?? POD_ID_NOT_ACTIVATED
+            podId = state?.address ?? Ids.notActivated().toUInt32()
             try discoverData(advertisementData: advertisementData!)
             return true
         }
@@ -222,11 +222,10 @@ extension Omnipod: BluetoothManagerDelegate {
     }
     
     func bluetoothManager(_ manager: BluetoothManager, didCompleteConfiguration peripheralManager: PeripheralManager) {
-        peripheralManager.perform { [weak podComms, self] manager in
+        peripheralManager.perform { [weak podComms] manager in
             guard let podComms = podComms else { return }
-            guard let podState = self.state else { return }
-            if (podState.ltk.count > 0) {
-                try? manager.sendHello(Id.fromLong(podState.address).address)
+            if (podComms.isPaired) {
+                try? manager.sendHello(Ids.controllerId().address)
                 try? podComms.establishSession(msgSeq: 1)
             }
         }
