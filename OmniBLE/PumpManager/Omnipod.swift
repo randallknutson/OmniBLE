@@ -133,15 +133,14 @@ extension Omnipod {
         if (serviceUUIDs[0].uuidString != MAIN_SERVICE_UUID) {
             // this is the service that we filtered for
             throw BluetoothErrors.DiscoveredInvalidPodException(
-                "The first exposed service UUID should be 4024, got " + serviceUUIDs[0].uuidString,     serviceUUIDs
+                "The first exposed service UUID should be 4024, got " + serviceUUIDs[0].uuidString, serviceUUIDs
             )
         }
         // TODO understand what is serviceUUIDs[1]. 0x2470. Alarms?
         if (serviceUUIDs[2].uuidString != UNKNOWN_THIRD_SERVICE_UUID) {
             // constant?
             throw BluetoothErrors.DiscoveredInvalidPodException(
-                "The third exposed service UUID should be 000a, got " + serviceUUIDs[2].uuidString,
-                serviceUUIDs
+                "The third exposed service UUID should be 000a, got " + serviceUUIDs[2].uuidString, serviceUUIDs
             )
         }
     }
@@ -231,4 +230,19 @@ extension Omnipod: BluetoothManagerDelegate {
         }
     }
 
+}
+
+extension Omnipod: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        return [
+            "## Omnipod",
+            "* MAIN_SERVICE_UUID: \(MAIN_SERVICE_UUID)",
+            "* UNKNOWN_THIRD_SERVICE_UUID: \(UNKNOWN_THIRD_SERVICE_UUID)",
+            "* sequenceNo: \(String(describing: sequenceNo))",
+            "* lotNo: \(String(describing: lotNo))",
+            "* podId: \(String(describing: podId))",
+            "* serviceUUIDs: \(String(reflecting: serviceUUIDs))",
+            "* state: \(String(reflecting: state))",
+        ].joined(separator: "\n")
+    }
 }

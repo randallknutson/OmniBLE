@@ -515,13 +515,13 @@
 		8475311E26ED838A009FD801 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				8475311F26ED838A009FD801 /* PodLifeHUDView.swift */,
-				8475312026ED838A009FD801 /* HUDAssets.xcassets */,
 				8475312126ED838A009FD801 /* ExpirationReminderDateTableViewCell.swift */,
 				8475312226ED838A009FD801 /* ExpirationReminderDateTableViewCell.xib */,
-				8475312326ED838A009FD801 /* OmnipodReservoirView.xib */,
-				8475312426ED838A009FD801 /* PodLifeHUDView.xib */,
+				8475312026ED838A009FD801 /* HUDAssets.xcassets */,
 				8475312526ED838A009FD801 /* OmnipodReservoirView.swift */,
+				8475312326ED838A009FD801 /* OmnipodReservoirView.xib */,
+				8475311F26ED838A009FD801 /* PodLifeHUDView.swift */,
+				8475312426ED838A009FD801 /* PodLifeHUDView.xib */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -529,15 +529,15 @@
 		8475312626ED838A009FD801 /* ViewControllers */ = {
 			isa = PBXGroup;
 			children = (
-				8475312726ED838A009FD801 /* OmnipodSettingsViewController.swift */,
-				8475312826ED838A009FD801 /* PodSetupCompleteViewController.swift */,
-				8475312926ED838A009FD801 /* PodSettingsSetupViewController.swift */,
-				8475312A26ED838A009FD801 /* ReplacePodViewController.swift */,
-				8475312B26ED838A009FD801 /* InsertCannulaSetupViewController.swift */,
-				8475312C26ED838A009FD801 /* PodReplacementNavigationController.swift */,
 				8475312D26ED838A009FD801 /* CommandResponseViewController.swift */,
+				8475312B26ED838A009FD801 /* InsertCannulaSetupViewController.swift */,
 				8475312E26ED838A009FD801 /* OmnipodPumpManagerSetupViewController.swift */,
+				8475312726ED838A009FD801 /* OmnipodSettingsViewController.swift */,
 				8475312F26ED838A009FD801 /* PairPodSetupViewController.swift */,
+				8475312C26ED838A009FD801 /* PodReplacementNavigationController.swift */,
+				8475312926ED838A009FD801 /* PodSettingsSetupViewController.swift */,
+				8475312826ED838A009FD801 /* PodSetupCompleteViewController.swift */,
+				8475312A26ED838A009FD801 /* ReplacePodViewController.swift */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
