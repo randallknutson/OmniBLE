@@ -426,7 +426,7 @@ extension OmnipodPumpManager {
     }
     
     // MARK: Testing
-    #if targetEnvironment(simulator)
+    #if targetEnvironment(simulator) && false
     private func jumpStartPod(address: UInt32, lot: UInt32, tid: UInt32, fault: DetailedStatus? = nil, startDate: Date? = nil, mockFault: Bool) {
         let start = startDate ?? Date()
         var podState = PodState(address: address, piVersion: "jumpstarted", pmVersion: "jumpstarted", lot: lot, tid: tid)
@@ -450,7 +450,7 @@ extension OmnipodPumpManager {
 
     // Called on the main thread
     public func pairAndPrime(completion: @escaping (PumpManagerResult<TimeInterval>) -> Void) {
-        #if targetEnvironment(simulator)
+        #if targetEnvironment(simulator) && false
         // If we're in the simulator, create a mock PodState
         let mockFaultDuringPairing = false
         let mockCommsErrorDuringPairing = false

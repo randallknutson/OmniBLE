@@ -6,7 +6,7 @@
 //
 
 import Foundation
-class RandomByteGenerator {
+class OmniRandomByteGenerator: RandomByteGenerator {
     func nextBytes(length: Int) -> Data {
         var bytes = [Int8](repeating: 0, count: length)
         let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
@@ -15,4 +15,8 @@ class RandomByteGenerator {
         }
         return Data()
     }
+}
+
+protocol RandomByteGenerator {
+    func nextBytes(length: Int) -> Data
 }

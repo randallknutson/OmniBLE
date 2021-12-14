@@ -7,7 +7,7 @@
 import CryptoKit
 import Foundation
 
-struct X25519KeyGenerator {
+struct X25519KeyGenerator: PrivateKeyGenerator {
     func generatePrivateKey() -> Data {
         let key = Curve25519.KeyAgreement.PrivateKey()
         return key.rawRepresentation
@@ -22,4 +22,10 @@ struct X25519KeyGenerator {
         let secret = try priv.sharedSecretFromKeyAgreement(with: pub)
         return secret.withUnsafeBytes({ return Data($0)})
     }
+}
+
+protocol PrivateKeyGenerator {
+    func generatePrivateKey() -> Data
+    func publicFromPrivate(_ privateKey: Data) throws -> Data
+    func computeSharedSecret(_ privateKey: Data, _ publicKey: Data) throws -> Data
 }

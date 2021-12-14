@@ -27,16 +27,16 @@ class KeyExchange {
     var pdmConf: Data
     var ltk: Data
     
-    private let x25519: X25519KeyGenerator
+    private let keyGenerator: PrivateKeyGenerator
     let randomByteGenerator: RandomByteGenerator
     
-    init(_ x25519: X25519KeyGenerator, _ randomByteGenerator: RandomByteGenerator) throws {
-        self.x25519 = x25519
+    init(_ keyGenerator: PrivateKeyGenerator, _ randomByteGenerator: RandomByteGenerator) throws {
+        self.keyGenerator = keyGenerator
         self.randomByteGenerator = randomByteGenerator
         
         pdmNonce = randomByteGenerator.nextBytes(length: KeyExchange.NONCE_SIZE)
-        pdmPrivate = x25519.generatePrivateKey()
-        pdmPublic = try x25519.publicFromPrivate(pdmPrivate)
+        pdmPrivate = keyGenerator.generatePrivateKey()
+        pdmPublic = try keyGenerator.publicFromPrivate(pdmPrivate)
     
         podPublic = Data(capacity: KeyExchange.PUBLIC_KEY_SIZE)
         podNonce = Data(capacity: KeyExchange.NONCE_SIZE)
@@ -63,7 +63,7 @@ class KeyExchange {
     }
 
     private func generateKeys() throws  {
-        let curveLTK = try x25519.computeSharedSecret(pdmPrivate, podPublic)
+        let curveLTK = try keyGenerator.computeSharedSecret(pdmPrivate, podPublic)
 
         let firstKey = podPublic.subdata(in: podPublic.count - 4..<podPublic.count) +
             pdmPublic.subdata(in: pdmPublic.count - 4..<pdmPublic.count) +

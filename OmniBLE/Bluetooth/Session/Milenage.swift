@@ -51,7 +51,7 @@ class Milenage {
 
         let cipher = try AES(key: k.bytes, blockMode: ECB(), padding: .noPadding)
 
-        let random = RandomByteGenerator()
+        let random = OmniRandomByteGenerator()
         rand = randParam ?? random.nextBytes(length: Milenage.KEY_SIZE)
 
         let opc = Data(try cipher.encrypt(Milenage.MILENAGE_OP.bytes)) ^ Milenage.MILENAGE_OP

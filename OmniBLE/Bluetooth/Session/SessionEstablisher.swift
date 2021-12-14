@@ -38,7 +38,7 @@ class SessionEstablisher {
 //        guard eapSqn.count == 6 else { throw SessionEstablishmentException.InvalidParameter("EAP-SQN has to be 6 bytes long") }
         guard ltk.count == 16 else { throw SessionEstablishmentException.InvalidParameter("LTK has to be 16 bytes long") }
 
-        let random = RandomByteGenerator()
+        let random = OmniRandomByteGenerator()
         controllerIV = random.nextBytes(length: SessionEstablisher.IV_SIZE)
 
         self.manager = manager
