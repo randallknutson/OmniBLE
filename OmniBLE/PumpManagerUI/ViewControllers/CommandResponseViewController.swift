@@ -162,6 +162,13 @@ extension CommandResponseViewController {
             return LocalizedString("Reading Pulse Log…", comment: "Progress message for reading pulse log.")
         }
     }
+
+    static func displayState(pumpManager: OmnipodPumpManager, omnipod: Omnipod) -> T {
+        return T { (completionHander) -> String in
+            return String(reflecting: omnipod) + "\n\n\n" + String(reflecting: pumpManager)
+        }
+    }
+
 }
 
 extension Double {

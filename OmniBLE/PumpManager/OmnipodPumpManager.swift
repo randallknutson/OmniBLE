@@ -94,7 +94,7 @@ public class OmnipodPumpManager: DeviceManager {
         }
     }
     
-    private let omnipod: Omnipod
+    public let omnipod: Omnipod // public for easier diagnostic display
 
     private let podStateObservers = WeakSynchronizedSet<PodStateObserver>()
 

@@ -238,6 +238,7 @@ class OmnipodSettingsViewController: UITableViewController {
         case sequenceNumber
         case firmwareVersion
         case bleFirmwareVersion
+        case displayState
     }
     
     private enum Diagnostics: Int, CaseIterable {
@@ -281,16 +282,16 @@ class OmnipodSettingsViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch sections[section] {
-        case .podDetails:
-            return PodDetailsRow.allCases.count
-        case .diagnostics:
-            return Diagnostics.allCases.count
-        case .configuration:
-            return configurationRows.count
         case .status:
             return StatusRow.allCases.count
+        case .configuration:
+            return configurationRows.count
         case .deletePumpManager:
             return 1
+        case .diagnostics:
+            return Diagnostics.allCases.count
+        case .podDetails:
+            return PodDetailsRow.allCases.count
         }
     }
     
@@ -486,6 +487,11 @@ class OmnipodSettingsViewController: UITableViewController {
                 cell.textLabel?.text = LocalizedString("BLE Firmware Version", comment: "The title of the cell showing the BLE firmware version")
                 cell.detailTextLabel?.text = podState.bleFirmwareVersion
                 return cell
+            case .displayState:
+                let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
+                cell.textLabel?.text = LocalizedString("Display State", comment: "The title of the command to display state")
+                cell.accessoryType = .disclosureIndicator
+                return cell
             }
 
         case .deletePumpManager:
@@ -511,7 +517,12 @@ class OmnipodSettingsViewController: UITableViewController {
         case .configuration, .diagnostics, .deletePumpManager:
             return true
         case .podDetails:
-            return false
+            switch PodDetailsRow(rawValue: indexPath.row)! {
+            case .displayState:
+                return true
+            default:
+                return false
+            }
         }
     }
 
@@ -600,7 +611,15 @@ class OmnipodSettingsViewController: UITableViewController {
                 show(vc, sender: indexPath)
             }
         case .podDetails:
-            break
+            switch PodDetailsRow(rawValue: indexPath.row)! {
+            case .displayState:
+                let omnipod = self.pumpManager.omnipod
+                let vc = CommandResponseViewController.displayState(pumpManager: pumpManager, omnipod: omnipod)
+                vc.title = sender?.textLabel?.text
+                show(vc, sender: indexPath)
+            default:
+                break
+            }
         case .deletePumpManager:
             let confirmVC = UIAlertController(pumpManagerDeletionHandler: {
                 self.pumpManager.notifyDelegateOfDeactivation {
@@ -946,4 +965,3 @@ private extension UITableViewCell {
         }
     }
 }
-
