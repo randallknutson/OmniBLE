@@ -469,12 +469,12 @@ class OmnipodSettingsViewController: UITableViewController {
             case .lotNo:
                 let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
                 cell.textLabel?.text = LocalizedString("Lot Number", comment: "The title of the cell showing the pod lot number")
-                cell.detailTextLabel?.text = String(format:"L%d", podState.lotNo)
+                cell.detailTextLabel?.text = String(format:"L%d", podState.lotNo ?? 0)
                 return cell
             case .sequenceNumber:
                 let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)
                 cell.textLabel?.text = LocalizedString("Sequence Number", comment: "The title of the cell showing the pod sequence number")
-                cell.detailTextLabel?.text = String(format:"%07d", podState.lotSeq)
+                cell.detailTextLabel?.text = String(format:"%07d", podState.sequenceNo ?? 0)
                 return cell
             case .firmwareVersion:
                 let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(SettingsTableViewCell.self), for: indexPath)

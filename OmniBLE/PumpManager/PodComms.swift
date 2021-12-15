@@ -17,8 +17,6 @@ protocol PodCommsDelegate: AnyObject {
 public class PodComms: CustomDebugStringConvertible {
     
     var manager: PeripheralManager?
-    private let lotNo: UInt64?
-    private let lotSeq: UInt32?
 
 //    private let configuredDevices: Locked<Set<Omnipod>> = Locked(Set())
     
@@ -43,12 +41,10 @@ public class PodComms: CustomDebugStringConvertible {
         }
     }
     
-    init(podState: PodState?, lotNo: UInt64?, lotSeq: UInt32?) {
+    init(podState: PodState?) {
         self.podState = podState
         self.delegate = nil
         self.messageLogger = nil
-        self.lotNo = lotNo
-        self.lotSeq = lotSeq
     }
 
     // Handles all the common work to send and verify the version response for the two pairing pod commands, AssignAddress and SetupPod.
@@ -103,9 +99,7 @@ public class PodComms: CustomDebugStringConvertible {
                 address: response.address,
                 ltk: ltk,
                 firmwareVersion: "",
-                bleFirmwareVersion: "",
-                lotNo: lotNo ?? 1,
-                lotSeq: lotSeq ?? 1
+                bleFirmwareVersion: ""
             )
         }
 
@@ -133,8 +127,6 @@ public class PodComms: CustomDebugStringConvertible {
             ltk: ltk,
             firmwareVersion: String(describing: versionResponse.pmVersion),
             bleFirmwareVersion: String(describing: versionResponse.piVersion),
-            lotNo: UInt64(versionResponse.lot),
-            lotSeq: versionResponse.tid,
             messageTransportState: podState!.messageTransportState
         )
         // podState setupProgress state should be addressAssigned
@@ -205,7 +197,7 @@ public class PodComms: CustomDebugStringConvertible {
         log.debug("setupPod: created transport %@ using podState %@ with messageTransportState %@", String(reflecting: transport), String(reflecting: podState), String(reflecting: podState.messageTransportState))
 
         let dateComponents = SetupPodCommand.dateComponents(date: Date(), timeZone: timeZone)
-        let setupPod = SetupPodCommand(address: podState.address, dateComponents: dateComponents, lot: UInt32(podState.lotNo), tid: podState.lotSeq)
+        let setupPod = SetupPodCommand(address: podState.address, dateComponents: dateComponents, lot: UInt32(podState.lotNo ?? 0), tid: podState.sequenceNo ?? 0)
 
         let message = Message(address: 0xffffffff, messageBlocks: [setupPod], sequenceNum: transport.messageNumber)
 

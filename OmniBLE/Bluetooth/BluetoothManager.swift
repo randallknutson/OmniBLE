@@ -30,7 +30,7 @@ protocol BluetoothManagerDelegate: AnyObject {
 
      - returns: True if the peripheral should connect
      */
-    func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral, advertisementData advertisementData: [String : Any]?) -> Bool
+    func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral, advertisementData: [String : Any]?) -> Bool
 
     /// Informs the delegate that the bluetooth manager received new data in the control characteristic
     ///
@@ -174,11 +174,12 @@ class BluetoothManager: NSObject {
             return
         }
 
-        if let peripheralID = peripheralIdentifier, let peripheral = manager.retrievePeripherals(withIdentifiers: [peripheralID]).first {
-            log.debug("Re-connecting to known peripheral %{public}@", peripheral.identifier.uuidString)
-            self.peripheral = peripheral
-            self.manager.connect(peripheral)
-        } else if let peripheral = manager.retrieveConnectedPeripherals(withServices: [
+//        if let peripheralID = peripheralIdentifier, let peripheral = manager.retrievePeripherals(withIdentifiers: [peripheralID]).first {
+//            log.debug("Re-connecting to known peripheral %{public}@", peripheral.identifier.uuidString)
+//            self.peripheral = peripheral
+//            self.manager.connect(peripheral)
+//        } else
+        if let peripheral = manager.retrieveConnectedPeripherals(withServices: [
             OmnipodServiceUUID.advertisement.cbUUID,
             OmnipodServiceUUID.service.cbUUID
         ]).first,

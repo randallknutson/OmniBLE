@@ -61,8 +61,8 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
 
     public let firmwareVersion: String
     public let bleFirmwareVersion: String
-    public let lotNo: UInt64
-    public let lotSeq: UInt32
+    public var lotNo: UInt64?
+    public var sequenceNo: UInt32?
     var activeAlertSlots: AlertSet
     public var lastInsulinMeasurements: PodInsulinMeasurements?
 
@@ -102,13 +102,11 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         return active
     }
     
-    public init(address: UInt32, ltk: Data, firmwareVersion: String, bleFirmwareVersion: String, lotNo: UInt64, lotSeq: UInt32, messageTransportState: MessageTransportState? = nil) {
+    public init(address: UInt32, ltk: Data, firmwareVersion: String, bleFirmwareVersion: String, messageTransportState: MessageTransportState? = nil) {
         self.address = address
         self.ltk = ltk
         self.firmwareVersion = firmwareVersion
         self.bleFirmwareVersion = bleFirmwareVersion
-        self.lotNo = lotNo
-        self.lotSeq = lotSeq
         self.lastInsulinMeasurements = nil
         self.finalizedDoses = []
         self.suspendState = .resumed(Date())
@@ -274,7 +272,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             let firmwareVersion = rawValue["firmwareVersion"] as? String,
             let bleFirmwareVersion = rawValue["bleFirmwareVersion"] as? String,
             let lotNo = rawValue["lotNo"] as? UInt64,
-            let lotSeq = rawValue["lotSeq"] as? UInt32
+            let sequenceNo = rawValue["sequenceNo"] as? UInt32
             else {
                 return nil
             }
@@ -285,7 +283,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         self.firmwareVersion = firmwareVersion
         self.bleFirmwareVersion = bleFirmwareVersion
         self.lotNo = lotNo
-        self.lotSeq = lotSeq
+        self.sequenceNo = sequenceNo
 
 
         if let activatedAt = rawValue["activatedAt"] as? Date {
@@ -409,7 +407,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             "firmwareVersion": firmwareVersion,
             "bleFirmwareVersion": bleFirmwareVersion,
             "lotNo": lotNo,
-            "lotSeq": lotSeq,
+            "sequenceNo": sequenceNo,
             "suspendState": suspendState.rawValue,
             "finalizedDoses": finalizedDoses.map( { $0.rawValue }),
             "alerts": activeAlertSlots.rawValue,
@@ -480,7 +478,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             "* firmwareVersion: \(firmwareVersion)",
             "* bleFirmwareVersion: \(bleFirmwareVersion)",
             "* lotNo: \(lotNo)",
-            "* lotSeq: \(lotSeq)",
+            "* sequenceNo: \(sequenceNo)",
             "* suspendState: \(suspendState)",
             "* unfinalizedBolus: \(String(describing: unfinalizedBolus))",
             "* unfinalizedTempBasal: \(String(describing: unfinalizedTempBasal))",

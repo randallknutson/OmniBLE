@@ -10,6 +10,7 @@ import HealthKit
 import LoopKit
 import UserNotifications
 import os.log
+import CoreBluetooth
 
 fileprivate let tempBasalConfirmationBeeps: Bool = false // whether to emit temp basal confirmation beeps (for testing use)
 
@@ -68,12 +69,10 @@ public class OmnipodPumpManager: DeviceManager {
 
     public init(state: OmnipodPumpManagerState) {
         self.lockedState = Locked(state)
-        self.omnipod = Omnipod(state.podState)
-        
-        self.omnipod.delegate = self
-
-        self.podComms.delegate = self
-        self.podComms.messageLogger = self
+//        self.omnipod = Omnipod(state.podState)
+//
+//        self.omnipod.delegate = self
+        self.bluetoothManager.delegate = self
     }
 
     public required convenience init?(rawState: PumpManager.RawStateValue) {
@@ -85,16 +84,27 @@ public class OmnipodPumpManager: DeviceManager {
         self.init(state: state)
     }
 
-    private var podComms: PodComms {
+    private let bluetoothManager = BluetoothManager()
+
+    private var podComms: PodComms? {
         get {
-            return omnipod.podComms
+            guard let podComms = omnipod?.podComms else { return nil }
+            return podComms
         }
         set {
-            omnipod.podComms = newValue
+            guard let omnipod = omnipod, let podComms = newValue else {
+                omnipod?.podComms = nil
+                return
+            }
+            omnipod.podComms = podComms
+            omnipod.podComms!.delegate = self
+            omnipod.podComms!.messageLogger = self
+
         }
     }
     
-    private let omnipod: Omnipod
+    private var omnipod: Omnipod?
+    private var unpairedOmnipod: Omnipod?
 
     private let podStateObservers = WeakSynchronizedSet<PodStateObserver>()
 
@@ -390,9 +400,9 @@ extension OmnipodPumpManager {
     // Does not support concurrent callers. Not thread-safe.
     private func forgetPod(completion: @escaping () -> Void) {
         let resetPodState = { (_ state: inout OmnipodPumpManagerState) in
-            self.podComms = PodComms(podState: nil, lotNo: nil, lotSeq: nil)
-            self.podComms.delegate = self
-            self.podComms.messageLogger = self
+            self.podComms = PodComms(podState: nil)
+            self.podComms!.delegate = self
+            self.podComms!.messageLogger = self
 
             state.podState = nil
             state.expirationReminderDate = nil
@@ -429,7 +439,7 @@ extension OmnipodPumpManager {
     #if targetEnvironment(simulator)
     private func jumpStartPod(address: UInt32, lot: UInt32, tid: UInt32, fault: DetailedStatus? = nil, startDate: Date? = nil, mockFault: Bool) {
         let start = startDate ?? Date()
-        var podState = PodState(address: address, piVersion: "jumpstarted", pmVersion: "jumpstarted", lot: lot, tid: tid)
+        var podState = PodState(address: address, ltk: Data(), firmwareVersion: "jumpstarted", bleFirmwareVersion: "jumpstarted")
         podState.setupProgress = .podPaired
         podState.activatedAt = start
         podState.expiresAt = start + .hours(72)
@@ -605,7 +615,8 @@ extension OmnipodPumpManager {
     }
 
     public func checkCannulaInsertionFinished(completion: @escaping (Error?) -> Void) {
-        self.podComms.runSession(withName: "Check cannula insertion finished") { (result) in
+        guard let podComms = self.podComms else { return completion(OmnipodPumpManagerError.noPodPaired)}
+        podComms.runSession(withName: "Check cannula insertion finished") { (result) in
             switch result {
             case .success(let session):
                 do {
@@ -638,6 +649,10 @@ extension OmnipodPumpManager {
             return
         }
         
+        guard let podComms = self.podComms else {
+            completion?(.failure(PodCommsError.noPodPaired))
+            return
+        }
         podComms.runSession(withName: "Get pod status") { (result) in
             do {
                 switch result {
@@ -669,7 +684,11 @@ extension OmnipodPumpManager {
             return
         }
 
-        self.podComms.runSession(withName: "Acknowledge Alarms") { (result) in
+        guard let podComms = self.podComms else {
+            completion(nil)
+            return
+        }
+        podComms.runSession(withName: "Acknowledge Alarms") { (result) in
             let session: PodCommsSession
             switch result {
             case .success(let s):
@@ -702,7 +721,11 @@ extension OmnipodPumpManager {
         }
 
         let timeZone = TimeZone.currentFixed
-        self.podComms.runSession(withName: "Set time zone") { (result) in
+        guard let podComms = self.podComms else {
+            completion(OmnipodPumpManagerError.noPodPaired)
+            return
+        }
+        podComms.runSession(withName: "Set time zone") { (result) in
             switch result {
             case .success(let session):
                 do {
@@ -749,7 +772,11 @@ extension OmnipodPumpManager {
 
         let timeZone = self.state.timeZone
 
-        self.podComms.runSession(withName: "Save Basal Profile") { (result) in
+        guard let podComms = self.podComms else {
+            completion(OmnipodPumpManagerError.noPodPaired)
+            return
+        }
+        podComms.runSession(withName: "Save Basal Profile") { (result) in
             do {
                 switch result {
                 case .success(let session):
@@ -841,6 +868,10 @@ extension OmnipodPumpManager {
             return
         }
 
+        guard let podComms = self.podComms else {
+            completion(.failure(OmnipodPumpManagerError.noPodPaired))
+            return
+        }
         podComms.runSession(withName: "Read pod status") { (result) in
             do {
                 switch result {
@@ -867,7 +898,11 @@ extension OmnipodPumpManager {
             return
         }
 
-        self.podComms.runSession(withName: "Testing Commands") { (result) in
+        guard let podComms = self.podComms else {
+            completion(OmnipodPumpManagerError.noPodPaired)
+            return
+        }
+        podComms.runSession(withName: "Testing Commands") { (result) in
             switch result {
             case .success(let session):
                 do {
@@ -894,7 +929,11 @@ extension OmnipodPumpManager {
             return
         }
 
-        self.podComms.runSession(withName: "Play Test Beeps") { (result) in
+        guard let podComms = self.podComms else {
+            completion(OmnipodPumpManagerError.noPodPaired)
+            return
+        }
+        podComms.runSession(withName: "Play Test Beeps") { (result) in
             switch result {
             case .success(let session):
                 let basalCompletionBeep = self.confirmationBeeps
@@ -927,7 +966,11 @@ extension OmnipodPumpManager {
             return
         }
 
-        self.podComms.runSession(withName: "Read Pulse Log") { (result) in
+        guard let podComms = self.podComms else {
+            completion(.failure(OmnipodPumpManagerError.noPodPaired))
+            return
+        }
+        podComms.runSession(withName: "Read Pulse Log") { (result) in
             switch result {
             case .success(let session):
                 do {
@@ -960,7 +1003,11 @@ extension OmnipodPumpManager {
         }
 
         let name: String = enabled ? "Enable Confirmation Beeps" : "Disable Confirmation Beeps"
-        self.podComms.runSession(withName: name) { (result) in
+        guard let podComms = self.podComms else {
+            completion(OmnipodPumpManagerError.noPodPaired)
+            return
+        }
+        podComms.runSession(withName: name) { (result) in
             switch result {
             case .success(let session):
                 let beepConfigType: BeepConfigType = enabled ? .bipBip : .noBeep
@@ -1075,7 +1122,11 @@ extension OmnipodPumpManager: PumpManager {
             return
         }
 
-        self.podComms.runSession(withName: "Suspend") { (result) in
+        guard let podComms = self.podComms else {
+            completion(OmnipodPumpManagerError.noPodPaired)
+            return
+        }
+        podComms.runSession(withName: "Suspend") { (result) in
 
             let session: PodCommsSession
             switch result {
@@ -1118,7 +1169,11 @@ extension OmnipodPumpManager: PumpManager {
             return
         }
 
-        self.podComms.runSession(withName: "Resume") { (result) in
+        guard let podComms = self.podComms else {
+            completion(OmnipodPumpManagerError.noPodPaired)
+            return
+        }
+        podComms.runSession(withName: "Resume") { (result) in
 
             let session: PodCommsSession
             switch result {
@@ -1218,7 +1273,11 @@ extension OmnipodPumpManager: PumpManager {
         // Round to nearest supported volume
         let enactUnits = roundToSupportedBolusVolume(units: units)
 
-        self.podComms.runSession(withName: "Bolus") { (result) in
+        guard let podComms = self.podComms else {
+            completion(.failure(OmnipodPumpManagerError.noPodPaired))
+            return
+        }
+        podComms.runSession(withName: "Bolus") { (result) in
             let session: PodCommsSession
             switch result {
             case .success(let s):
@@ -1291,7 +1350,11 @@ extension OmnipodPumpManager: PumpManager {
             return
         }
 
-        self.podComms.runSession(withName: "Cancel Bolus") { (result) in
+        guard let podComms = self.podComms else {
+            completion(.failure(OmnipodPumpManagerError.noPodPaired))
+            return
+        }
+        podComms.runSession(withName: "Cancel Bolus") { (result) in
 
             let session: PodCommsSession
             switch result {
@@ -1352,7 +1415,11 @@ extension OmnipodPumpManager: PumpManager {
         // Round to nearest supported rate
         let rate = roundToSupportedBasalRate(unitsPerHour: unitsPerHour)
 
-        self.podComms.runSession(withName: "Enact Temp Basal") { (result) in
+        guard let podComms = self.podComms else {
+            completion(.failure(OmnipodPumpManagerError.noPodPaired))
+            return
+        }
+        podComms.runSession(withName: "Enact Temp Basal") { (result) in
             self.log.info("Enact temp basal %.03fU/hr for %ds", rate, Int(duration))
             let session: PodCommsSession
             switch result {
@@ -1509,15 +1576,15 @@ extension OmnipodPumpManager: MessageLogger {
     }
 }
 
-extension OmnipodPumpManager: OmnipodDelegate {
-    public func omnipod(_ omnipod: Omnipod) {
-        
-    }
-    
-    public func omnipod(_ omnipod: Omnipod, didError error: Error) {
-        
-    }
-}
+//extension OmnipodPumpManager: OmnipodDelegate {
+//    public func omnipod(_ omnipod: Omnipod) {
+//        
+//    }
+//
+//    public func omnipod(_ omnipod: Omnipod, didError error: Error) {
+//
+//    }
+//}
 
 extension OmnipodPumpManager: PodCommsDelegate {
     func podComms(_ podComms: PodComms, didChange podState: PodState) {
@@ -1533,5 +1600,96 @@ extension OmnipodPumpManager: PodCommsDelegate {
             state.podState = podState
         }
     }
+}
+
+// MARK: - BluetoothManagerDelegate
+
+extension OmnipodPumpManager: BluetoothManagerDelegate {
+    public func resumeScanning() {
+        if stayConnected {
+            bluetoothManager.scanForPeripheral()
+        }
+    }
+
+    public func stopScanning() {
+        bluetoothManager.disconnect()
+    }
+
+    public var isScanning: Bool {
+        return bluetoothManager.isScanning
+    }
+
+    public var peripheralIdentifier: UUID? {
+        get {
+            return bluetoothManager.peripheralIdentifier
+        }
+        set {
+            bluetoothManager.peripheralIdentifier = newValue
+        }
+    }
+
+    public var stayConnected: Bool {
+        get {
+            return bluetoothManager.stayConnected
+        }
+        set {
+            bluetoothManager.stayConnected = newValue
+
+            if newValue {
+                bluetoothManager.scanForPeripheral()
+            }
+        }
+    }
+
+    func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, isReadyWithError error: Error?) {
+        if (error == nil && podComms != nil) {
+            podComms!.manager = peripheralManager
+        }
+    }
+    
+    func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral, advertisementData: [String : Any]?) -> Bool {
+        if (advertisementData == nil) {
+            return true
+        }
+        do {
+            let pod = try Omnipod(peripheral: peripheral, advertisementData: advertisementData)
+            if (pod.status == .Unpaired) {
+                self.unpairedOmnipod = omnipod
+                return false // Don't try to connect until starting the pair process.
+            }
+            else if (state.podState?.address == pod.podId) {
+                self.omnipod = pod
+                self.omnipod!.connect(state: state.podState)
+                return true
+            }
+            return false
+        }
+        catch {
+            return false
+        }
+    }
+    
+    func bluetoothManager(_ manager: BluetoothManager, didCompleteConfiguration peripheralManager: PeripheralManager) {
+        peripheralManager.perform { [weak podComms] manager in
+            guard let podComms = podComms else { return }
+            if (podComms.isPaired) {
+                try? manager.sendHello(Ids.controllerId().address)
+                try? podComms.establishSession(msgSeq: 1)
+            }
+        }
+    }
+
+    func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, didReceiveControlResponse response: Data) {
+        
+    }
+    
+    func bluetoothManager(_ manager: BluetoothManager, didReceiveBackfillResponse response: Data) {
+        
+    }
+    
+    func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, didReceiveAuthenticationResponse response: Data) {
+        
+    }
+    
 }
 

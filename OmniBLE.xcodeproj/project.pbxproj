@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		100868202769064800B91790 /* CryptoSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 1008681F2769064800B91790 /* CryptoSwift */; };
 		1016324D27137B1E007A3BC2 /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1016324C27137B1E007A3BC2 /* BluetoothManager.swift */; };
 		1016324F2715354C007A3BC2 /* Omnipod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1016324E2715354C007A3BC2 /* Omnipod.swift */; };
 		1016325927185EE4007A3BC2 /* BeepType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1016325127185EE4007A3BC2 /* BeepType.swift */; };
@@ -88,7 +89,6 @@
 		84752EE626ED13F5009FD801 /* LTKExchanger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752ED326ED13F5009FD801 /* LTKExchanger.swift */; };
 		84752EE726ED13F5009FD801 /* PairResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752ED426ED13F5009FD801 /* PairResult.swift */; };
 		84752EE826ED13F5009FD801 /* PairMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752ED526ED13F5009FD801 /* PairMessage.swift */; };
-		8475306E26ED15DE009FD801 /* CryptoSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 8475306D26ED15DE009FD801 /* CryptoSwift */; };
 		847530F626ED65DD009FD801 /* LoopKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 847530F426ED65DD009FD801 /* LoopKit.framework */; };
 		847530F726ED65DD009FD801 /* LoopKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 847530F426ED65DD009FD801 /* LoopKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		847530F826ED65DD009FD801 /* LoopKitUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 847530F526ED65DD009FD801 /* LoopKitUI.framework */; };
@@ -270,8 +270,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				84752E9E26ED10A0009FD801 /* CoreBluetooth.framework in Frameworks */,
+				100868202769064800B91790 /* CryptoSwift in Frameworks */,
 				847530F626ED65DD009FD801 /* LoopKit.framework in Frameworks */,
-				8475306E26ED15DE009FD801 /* CryptoSwift in Frameworks */,
 				847530F826ED65DD009FD801 /* LoopKitUI.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -572,7 +572,7 @@
 			);
 			name = OmniBLE;
 			packageProductDependencies = (
-				8475306D26ED15DE009FD801 /* CryptoSwift */,
+				1008681F2769064800B91790 /* CryptoSwift */,
 			);
 			productName = OmniBLE;
 			productReference = 84752E8226ED0FFE009FD801 /* OmniBLE.framework */;
@@ -640,7 +640,7 @@
 			);
 			mainGroup = 84752E7826ED0FFE009FD801;
 			packageReferences = (
-				8475306C26ED15DE009FD801 /* XCRemoteSwiftPackageReference "CryptoSwift" */,
+				1008681E2769064800B91790 /* XCRemoteSwiftPackageReference "CryptoSwift" */,
 			);
 			productRefGroup = 84752E8326ED0FFE009FD801 /* Products */;
 			projectDirPath = "";
@@ -1038,20 +1038,20 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		8475306C26ED15DE009FD801 /* XCRemoteSwiftPackageReference "CryptoSwift" */ = {
+		1008681E2769064800B91790 /* XCRemoteSwiftPackageReference "CryptoSwift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/krzyzanowskim/CryptoSwift";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.4.1;
+				minimumVersion = 1.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		8475306D26ED15DE009FD801 /* CryptoSwift */ = {
+		1008681F2769064800B91790 /* CryptoSwift */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 8475306C26ED15DE009FD801 /* XCRemoteSwiftPackageReference "CryptoSwift" */;
+			package = 1008681E2769064800B91790 /* XCRemoteSwiftPackageReference "CryptoSwift" */;
 			productName = CryptoSwift;
 		};
 /* End XCSwiftPackageProductDependency section */

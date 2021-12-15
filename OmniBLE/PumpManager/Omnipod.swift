@@ -16,22 +16,43 @@ public protocol OmnipodDelegate: AnyObject {
     func omnipod(_ omnipod: Omnipod, didError error: Error)
 }
 
+public enum OmnipodStatus {
+    case Unpaired
+    case Paired
+    case LumpOfCoal
+}
+
 public class Omnipod {
     let MAIN_SERVICE_UUID = "4024"
     let UNKNOWN_THIRD_SERVICE_UUID = "000A"
     var manager: PeripheralManager?
+    var peripheral: CBPeripheral
     var sequenceNo: UInt32?
     var lotNo: UInt64?
     var podId: UInt32? = nil
+    var status: OmnipodStatus = .Unpaired
     
     private var serviceUUIDs: [CBUUID]
+    
+    public init(peripheral: CBPeripheral, advertisementData: [String: Any]?) throws {
+        self.peripheral = peripheral
+        
+        if (advertisementData != nil) {
+            serviceUUIDs = advertisementData!["kCBAdvDataServiceUUIDs"] as! [CBUUID]
+            try validateServiceUUIDs()
+            podId = self.parsePodId()
+            lotNo = self.parseLotNo()
+            sequenceNo = self.parseSeqNo()
+            status = podId == Ids.notActivated().toUInt32() ? .Unpaired : .Paired
+        }
+        else {
+            status = .Paired
+            serviceUUIDs = []
+        }
+    }
 
     private let log = OSLog(category: "Omnipod")
 
-//    private let manager: PeripheralManager
-
-    private let bluetoothManager = BluetoothManager()
-    
     private let delegateQueue = DispatchQueue(label: "com.randallknutson.OmnipodKit.delegateQueue", qos: .unspecified)
 
     private var sessionQueueOperationCountObserver: NSKeyValueObservation!
@@ -48,13 +69,19 @@ public class Omnipod {
         return queue
     }()
 
-    init(_ state: PodState?) {
-        self.state = state
-        self.serviceUUIDs = []
-
-//        self.bluetoothManager.peripheralIdentifier = peripheralIdentifier
-        self.podComms = PodComms(podState: state, lotNo: lotNo, lotSeq: sequenceNo)
-        self.bluetoothManager.delegate = self
+//    init(_ state: PodState?) {
+//        self.state = state
+//    }
+    
+    func connect(state: PodState?) {
+        var newState = state
+        if (lotNo != nil) {
+            newState?.lotNo = lotNo
+        }
+        if (sequenceNo != nil) {
+            newState?.sequenceNo = sequenceNo
+        }
+        self.podComms = PodComms(podState: newState)
     }
     
     // Only valid to access on the session serial queue
@@ -69,58 +96,13 @@ public class Omnipod {
     
     public weak var delegate: OmnipodDelegate?
     
-    public var podComms: PodComms
+    public var podComms: PodComms?
 
-    public func resumeScanning() {
-        if stayConnected {
-            bluetoothManager.scanForPeripheral()
-        }
-    }
-
-    public func stopScanning() {
-        bluetoothManager.disconnect()
-    }
-
-    public var isScanning: Bool {
-        return bluetoothManager.isScanning
-    }
-
-    public var peripheralIdentifier: UUID? {
-        get {
-            return bluetoothManager.peripheralIdentifier
-        }
-        set {
-            bluetoothManager.peripheralIdentifier = newValue
-        }
-    }
-
-    public var stayConnected: Bool {
-        get {
-            return bluetoothManager.stayConnected
-        }
-        set {
-            bluetoothManager.stayConnected = newValue
-
-            if newValue {
-                bluetoothManager.scanForPeripheral()
-            }
-        }
-    }
-    
 }
 
 // MARK: - Reading pump data
 
 extension Omnipod {
-    private func discoverData(advertisementData: [String: Any]) throws {
-        serviceUUIDs = advertisementData["kCBAdvDataServiceUUIDs"] as! [CBUUID]
-
-        try validateServiceUUIDs()
-        try validatePodId()
-        lotNo = parseLotNo()
-        sequenceNo = parseSeqNo()
-    }
-    
     private func validateServiceUUIDs() throws {
         // For some reason the pod simulator doesn't have two values.
         if (serviceUUIDs.count == 7) {
@@ -146,15 +128,8 @@ extension Omnipod {
         }
     }
     
-    private func validatePodId() throws {
-        let hexPodId = serviceUUIDs[3].uuidString + serviceUUIDs[4].uuidString
-        let foundPodId = UInt32(hexPodId, radix: 16)
-        if (podId != foundPodId) {
-            throw BluetoothErrors.DiscoveredInvalidPodException(
-                "This is not the POD we are looking for: \(String(describing: self.state?.address)) . Found: \(podId ?? 0)/\(hexPodId)",
-                serviceUUIDs
-            )
-        }
+    private func parsePodId() -> UInt32? {
+        return UInt32(serviceUUIDs[3].uuidString + serviceUUIDs[4].uuidString, radix: 16)
     }
     
     private func parseLotNo() -> UInt64? {
@@ -164,8 +139,8 @@ extension Omnipod {
     }
 
     private func parseSeqNo() -> UInt32? {
-        let lotSeq: String = serviceUUIDs[7].uuidString + serviceUUIDs[8].uuidString
-        return UInt32(lotSeq[lotSeq.index(lotSeq.startIndex, offsetBy: 2)..<lotSeq.endIndex], radix: 16)
+        let sequenceNo: String = serviceUUIDs[7].uuidString + serviceUUIDs[8].uuidString
+        return UInt32(sequenceNo[sequenceNo.index(sequenceNo.startIndex, offsetBy: 2)..<sequenceNo.endIndex], radix: 16)
     }
 
 }
@@ -183,52 +158,4 @@ extension Omnipod {
             self?.log.default("------------------------ %{public}@ ---------------------------", name)
         }))
     }
-}
-
-
-// MARK: - BluetoothManagerDelegate
-
-extension Omnipod: BluetoothManagerDelegate {
-    func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, isReadyWithError error: Error?) {
-        if (error == nil) {
-            podComms.manager = peripheralManager
-        }
-    }
-    
-    func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral, advertisementData: [String : Any]?) -> Bool {
-        if (advertisementData == nil) {
-            return true
-        }
-        do {
-            podId = state?.address ?? Ids.notActivated().toUInt32()
-            try discoverData(advertisementData: advertisementData!)
-            return true
-        }
-        catch {
-            return false
-        }
-    }
-    
-    func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, didReceiveControlResponse response: Data) {
-        
-    }
-    
-    func bluetoothManager(_ manager: BluetoothManager, didReceiveBackfillResponse response: Data) {
-        
-    }
-    
-    func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, didReceiveAuthenticationResponse response: Data) {
-        
-    }
-    
-    func bluetoothManager(_ manager: BluetoothManager, didCompleteConfiguration peripheralManager: PeripheralManager) {
-        peripheralManager.perform { [weak podComms] manager in
-            guard let podComms = podComms else { return }
-            if (podComms.isPaired) {
-                try? manager.sendHello(Ids.controllerId().address)
-                try? podComms.establishSession(msgSeq: 1)
-            }
-        }
-    }
-
 }
