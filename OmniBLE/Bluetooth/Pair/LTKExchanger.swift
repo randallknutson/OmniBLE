@@ -48,7 +48,7 @@ class LTKExchanger {
         let sps1 = PairMessage(
             sequenceNumber: seq,
             source: ids.myId,
-            destination: ids.podId,
+            destination: podAddress,
             keys: [LTKExchanger.SPS1],
             payloads: [keyExchange.pdmPublic + keyExchange.pdmNonce]
         )
@@ -67,7 +67,7 @@ class LTKExchanger {
         let sps2 = PairMessage(
             sequenceNumber: seq,
             source: ids.myId,
-            destination: ids.podId,
+            destination: podAddress,
             keys: [LTKExchanger.SPS2],
             payloads: [keyExchange.pdmConf]
         )
@@ -85,7 +85,7 @@ class LTKExchanger {
         let sp0gp0 = PairMessage(
             sequenceNumber: seq,
             source: ids.myId,
-            destination: ids.podId,
+            destination: podAddress,
             keys: [LTKExchanger.SP0GP0],
             payloads: [Data()]
         )
