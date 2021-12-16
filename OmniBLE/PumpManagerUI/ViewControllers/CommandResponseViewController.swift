@@ -163,7 +163,7 @@ extension CommandResponseViewController {
         }
     }
 
-    static func displayState(pumpManager: OmnipodPumpManager, omnipod: Omnipod) -> T {
+    static func displayState(pumpManager: OmnipodPumpManager, omnipod: Omnipod?) -> T {
         return T { (completionHander) -> String in
             return String(reflecting: omnipod) + "\n\n\n" + String(reflecting: pumpManager)
         }

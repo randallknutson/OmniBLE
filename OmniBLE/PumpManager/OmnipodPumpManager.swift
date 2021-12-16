@@ -103,7 +103,7 @@ public class OmnipodPumpManager: DeviceManager {
         }
     }
     
-    private var omnipod: Omnipod?
+    public var omnipod: Omnipod?
     private var unpairedOmnipod: Omnipod?
 
     private let podStateObservers = WeakSynchronizedSet<PodStateObserver>()
@@ -396,6 +396,18 @@ extension OmnipodPumpManager {
     }
 
     // MARK: - Pod comms
+    
+    private func connect() {
+        log.default("Starting Connect")
+        guard let unpairedOmnipod = unpairedOmnipod else { return }
+        omnipod = unpairedOmnipod
+        self.unpairedOmnipod = nil
+        omnipod!.status = .Paired
+        log.default("Continuing Connect")
+        try? omnipod!.connect(state: state.podState)
+        try? bluetoothManager.connect(peripheral: omnipod!.peripheral)
+        log.default("Finished Connect")
+    }
 
     // Does not support concurrent callers. Not thread-safe.
     private func forgetPod(completion: @escaping () -> Void) {
@@ -516,11 +528,10 @@ extension OmnipodPumpManager {
             return podState.setupProgress.isPaired == false
         })
 
-        guard let podComms = self.podComms else {
-            completion(.failure(OmnipodPumpManagerError.noPodPaired))
-            return
-        }
         if needsPairing {
+            self.log.default("Connecting to unpaired pod")
+            self.connect()
+            
             self.log.default("Pairing pod before priming")
             
             // Create random address with 20 bits to match PDM, could easily use 24 bits instead
@@ -530,6 +541,10 @@ extension OmnipodPumpManager {
                 }
             }
 
+            guard let podComms = self.podComms else {
+                completion(.failure(OmnipodPumpManagerError.noPodPaired))
+                return
+            }
             podComms.pairAndSetupPod(address: self.state.pairingAttemptAddress!, timeZone: .currentFixed, messageLogger: self) { (result) in
                 
                 if case .success = result {
@@ -544,6 +559,10 @@ extension OmnipodPumpManager {
         } else {
             self.log.default("Pod already paired. Continuing.")
 
+            guard let podComms = self.podComms else {
+                completion(.failure(OmnipodPumpManagerError.noPodPaired))
+                return
+            }
             podComms.runSession(withName: "Prime pod") { (result) in
                 // Calls completion
                 primeSession(result)
@@ -1666,12 +1685,12 @@ extension OmnipodPumpManager: BluetoothManagerDelegate {
         do {
             let pod = try Omnipod(peripheral: peripheral, advertisementData: advertisementData)
             if (pod.status == .Unpaired) {
-                self.unpairedOmnipod = omnipod
+                self.unpairedOmnipod = pod
                 return false // Don't try to connect until starting the pair process.
             }
             else if (state.podState?.address == pod.podId) {
                 self.omnipod = pod
-                self.omnipod!.connect(state: state.podState)
+                try? self.omnipod!.connect(state: state.podState)
                 return true
             }
             return false

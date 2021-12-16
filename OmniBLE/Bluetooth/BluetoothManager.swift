@@ -126,6 +126,8 @@ class BluetoothManager: NSObject {
             peripheralIdentifier = peripheralManager?.peripheral.identifier
         }
     }
+    
+    let connectLock = NSCondition()
 
     // MARK: - Synchronization
     private let managerQueue = DispatchQueue(label: "com.randallknutson.OmniBLE.bluetoothManagerQueue", qos: .unspecified)
@@ -145,6 +147,21 @@ class BluetoothManager: NSObject {
 
         managerQueue.sync {
             self.managerQueue_scanForPeripheral()
+        }
+    }
+    
+    func connect(peripheral: CBPeripheral) throws {
+        connectLock.lock()
+
+        defer {
+            connectLock.unlock()
+        }
+
+        manager.connect(peripheral, options: nil)
+        let signaled = connectLock.wait(until: Date(timeIntervalSinceNow: 2))
+        
+        guard signaled else {
+            throw PeripheralManagerError.notReady
         }
     }
 
@@ -332,6 +349,9 @@ extension BluetoothManager: PeripheralManagerDelegate {
     }
 
     func completeConfiguration(for manager: PeripheralManager) throws {
+        connectLock.lock()
+        connectLock.broadcast()
+        connectLock.unlock()
         self.delegate?.bluetoothManager(self, didCompleteConfiguration: manager)
     }
 

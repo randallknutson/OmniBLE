@@ -73,7 +73,8 @@ public class Omnipod {
 //        self.state = state
 //    }
     
-    func connect(state: PodState?) {
+    func connect(state: PodState?) throws {
+        log.debug("Starting Connect")
         var newState = state
         if (lotNo != nil) {
             newState?.lotNo = lotNo
@@ -81,7 +82,8 @@ public class Omnipod {
         if (sequenceNo != nil) {
             newState?.sequenceNo = sequenceNo
         }
-        self.podComms = PodComms(podState: newState)
+        podComms = PodComms(podState: newState)
+        podComms!.manager = manager
     }
     
     // Only valid to access on the session serial queue
@@ -132,7 +134,6 @@ extension Omnipod {
     }
     
     private func parseLotNo() -> UInt64? {
-        print(serviceUUIDs[5].uuidString + serviceUUIDs[6].uuidString)
         let lotNo: String = serviceUUIDs[5].uuidString + serviceUUIDs[6].uuidString + serviceUUIDs[7].uuidString
         return UInt64(lotNo[lotNo.startIndex..<lotNo.index(lotNo.startIndex, offsetBy: 10)], radix: 16)
     }
