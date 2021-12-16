@@ -516,6 +516,10 @@ extension OmnipodPumpManager {
             return podState.setupProgress.isPaired == false
         })
 
+        guard let podComms = self.podComms else {
+            completion(.failure(OmnipodPumpManagerError.noPodPaired))
+            return
+        }
         if needsPairing {
             self.log.default("Pairing pod before priming")
             
@@ -526,7 +530,7 @@ extension OmnipodPumpManager {
                 }
             }
 
-            self.podComms.pairAndSetupPod(address: self.state.pairingAttemptAddress!, timeZone: .currentFixed, messageLogger: self) { (result) in
+            podComms.pairAndSetupPod(address: self.state.pairingAttemptAddress!, timeZone: .currentFixed, messageLogger: self) { (result) in
                 
                 if case .success = result {
                     self.lockedState.mutate { (state) in
@@ -540,7 +544,7 @@ extension OmnipodPumpManager {
         } else {
             self.log.default("Pod already paired. Continuing.")
 
-            self.podComms.runSession(withName: "Prime pod") { (result) in
+            podComms.runSession(withName: "Prime pod") { (result) in
                 // Calls completion
                 primeSession(result)
             }
@@ -589,7 +593,11 @@ extension OmnipodPumpManager {
 
         let timeZone = self.state.timeZone
 
-        self.podComms.runSession(withName: "Insert cannula") { (result) in
+        guard let podComms = self.podComms else {
+            completion(.failure(OmnipodPumpManagerError.noPodPaired))
+            return
+        }
+        podComms.runSession(withName: "Insert cannula") { (result) in
             switch result {
             case .success(let session):
                 do {
@@ -830,7 +838,11 @@ extension OmnipodPumpManager {
             return
         }
 
-        self.podComms.runSession(withName: "Deactivate pod") { (result) in
+        guard let podComms = self.podComms else {
+            completion(OmnipodPumpManagerError.noPodPaired)
+            return
+        }
+        podComms.runSession(withName: "Deactivate pod") { (result) in
             switch result {
             case .success(let session):
                 do {

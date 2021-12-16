@@ -92,7 +92,7 @@ public class PodComms: CustomDebugStringConvertible {
             throw PodCommsError.invalidAddress(address: response.address, expectedAddress: address)
         }
 
-        // XXX need to rework things so that we don't have to create a temp PodState to set up the LTK
+        // XXX need to rework things so that we don't have to create this temp PodState with the LTK to set up the encrypted transport
         if self.podState == nil {
             log.debug("pairPod: creating a temp podState for LTK using response %@", String(describing: response))
             self.podState = PodState(
@@ -119,6 +119,27 @@ public class PodComms: CustomDebugStringConvertible {
         let message = Message(address: 0xffffffff, messageBlocks: [assignAddress], sequenceNum: transport.messageNumber)
 
         let versionResponse = try sendPairMessage(transport: transport, message: message)
+
+        // Information checks comparing the version response values to the earlier values
+
+        // N.B., The pod simulator always returns 0xFFFFFFFF regardless of the address used in the AssignAddressCommand command
+        if versionResponse.address != 0xFFFFFFFF && versionResponse.address != response.address {
+            log.debug("pairPod: versionResponse.address 0x%08X (%d) doesn't match response.address of 0x%08x (%d)", versionResponse.address, versionResponse.address, response.address, response.address)
+        }
+        if let lotSeq = self.podState?.sequenceNo {
+            if versionResponse.tid != lotSeq {
+                log.debug("pairPod: versionResponse.tid %d doesn't match lotSeq of %d", versionResponse.tid, lotSeq)
+            }
+        } else {
+            log.debug("pairPod: got versionResponse.tid of %d with no previous lotSeq", versionResponse.tid)
+        }
+        if let lotNo = self.podState?.lotNo {
+            if versionResponse.lot != lotNo {
+                log.debug("pairPod: versionResponse.lot %d doesn't match lotNo of %d", versionResponse.lot, lotNo)
+            }
+        } else {
+            log.debug("pairPod: got versionResponse.lot of %d with no previous lotNo", versionResponse.lot)
+        }
 
         // Now create the real PodState using the versionResponse info
         log.debug("pairPod: creating PodState for versionResponse %{public}@", String(describing: versionResponse))

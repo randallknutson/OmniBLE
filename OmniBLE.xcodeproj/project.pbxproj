@@ -301,6 +301,7 @@
 				1016325327185EE4007A3BC2 /* Pod.swift */,
 				102111432709462300784F13 /* PodDoseProgressEstimator.swift */,
 				102111412709462300784F13 /* PodInsulinMeasurements.swift */,
+				1016325627185EE4007A3BC2 /* PodProgressStatus.swift */,
 				1016325827185EE4007A3BC2 /* UnfinalizedDose.swift */,
 			);
 			path = OmnipodCommon;
@@ -423,7 +424,6 @@
 				1029AE4727094D0E00B7F5B6 /* OmnipodPumpManagerState.swift */,
 				102111422709462300784F13 /* PodCommsSession.swift */,
 				1021114C2709467400784F13 /* PodComms.swift */,
-				1016325627185EE4007A3BC2 /* PodProgressStatus.swift */,
 				102111402709462300784F13 /* PodState.swift */,
 			);
 			path = PumpManager;
@@ -515,13 +515,13 @@
 		8475311E26ED838A009FD801 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				8475311F26ED838A009FD801 /* PodLifeHUDView.swift */,
-				8475312026ED838A009FD801 /* HUDAssets.xcassets */,
 				8475312126ED838A009FD801 /* ExpirationReminderDateTableViewCell.swift */,
 				8475312226ED838A009FD801 /* ExpirationReminderDateTableViewCell.xib */,
-				8475312326ED838A009FD801 /* OmnipodReservoirView.xib */,
-				8475312426ED838A009FD801 /* PodLifeHUDView.xib */,
+				8475312026ED838A009FD801 /* HUDAssets.xcassets */,
 				8475312526ED838A009FD801 /* OmnipodReservoirView.swift */,
+				8475312326ED838A009FD801 /* OmnipodReservoirView.xib */,
+				8475311F26ED838A009FD801 /* PodLifeHUDView.swift */,
+				8475312426ED838A009FD801 /* PodLifeHUDView.xib */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -529,15 +529,15 @@
 		8475312626ED838A009FD801 /* ViewControllers */ = {
 			isa = PBXGroup;
 			children = (
-				8475312726ED838A009FD801 /* OmnipodSettingsViewController.swift */,
-				8475312826ED838A009FD801 /* PodSetupCompleteViewController.swift */,
-				8475312926ED838A009FD801 /* PodSettingsSetupViewController.swift */,
-				8475312A26ED838A009FD801 /* ReplacePodViewController.swift */,
-				8475312B26ED838A009FD801 /* InsertCannulaSetupViewController.swift */,
-				8475312C26ED838A009FD801 /* PodReplacementNavigationController.swift */,
 				8475312D26ED838A009FD801 /* CommandResponseViewController.swift */,
+				8475312B26ED838A009FD801 /* InsertCannulaSetupViewController.swift */,
 				8475312E26ED838A009FD801 /* OmnipodPumpManagerSetupViewController.swift */,
+				8475312726ED838A009FD801 /* OmnipodSettingsViewController.swift */,
 				8475312F26ED838A009FD801 /* PairPodSetupViewController.swift */,
+				8475312C26ED838A009FD801 /* PodReplacementNavigationController.swift */,
+				8475312926ED838A009FD801 /* PodSettingsSetupViewController.swift */,
+				8475312826ED838A009FD801 /* PodSetupCompleteViewController.swift */,
+				8475312A26ED838A009FD801 /* ReplacePodViewController.swift */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
