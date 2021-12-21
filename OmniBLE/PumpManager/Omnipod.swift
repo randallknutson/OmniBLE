@@ -212,19 +212,22 @@ extension Omnipod: BluetoothManagerDelegate {
     func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral, advertisementData: [String : Any]?) -> Bool {
         do {
             if (advertisementData == nil) {
+                log.debug("Auto - Attempting connect")
                 return true
             }
             try discoverData(advertisementData: advertisementData!)
-            log.debug("IDs: %d - %d", Id.fromInt(Int(podId!)).address.hexadecimalString, Ids.notActivated().address.hexadecimalString)
             if (
                 (pairNew && podId == Ids.notActivated().toUInt32()) ||
                 (state?.address != nil && state?.address == podId)
             ) {
+                log.debug("Attempting connect")
                 return true
             }
+            log.debug("Skipping connect")
             return false
         }
         catch {
+            log.debug("Error - Skipping connect")
             return false
         }
     }

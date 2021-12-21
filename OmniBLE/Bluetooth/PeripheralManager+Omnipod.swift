@@ -168,7 +168,7 @@ extension PeripheralManager {
         
         log.debug("Writing Data Value %@", value.hexadecimalString)
         
-        try writeValue(value, for: characteristic, type: .withResponse, timeout: timeout)
+        try writeValue(value, for: characteristic, type: .withoutResponse, timeout: timeout)
     }
 
     /// - Throws: PeripheralManagerError
