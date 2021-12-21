@@ -8,7 +8,8 @@
 import Foundation
 
 class Id {
-    static private let PERIPHERAL_NODE_INDEX = 1
+    
+    static private let PERIPHERAL_NODE_INDEX: UInt8 = 1
 
     static func fromInt(_ v: Int) -> Id {
         return Id(Data(bigEndian: v).subdata(in: 4..<8))
@@ -37,6 +38,23 @@ class Id {
      * controllerID+1, controllerID+2 and controllerID+3
      */
     func increment() -> Id {
+        var nodeId = address
+        
+        //Zero out last 2 bits on right which would round down in sequence of {4, 8, 12, 16, 20, ...}
+        nodeId[3] = UInt8(Int(nodeId[3]) & -4)
+        
+        //Increment by adding 1
+        nodeId[3] = nodeId[3] | Id.PERIPHERAL_NODE_INDEX
+        return Id(nodeId)
+    }
+    
+    /*
+     TODO: the above implementation is ported from AndroidAPS while we implemented the version below.
+     It is not clear if skipping every 4 numbers above is intentional or a bug. It would be preferred to use the
+     AndroidAPS version though until we can successfully pair so we can send identical data payloads.
+     */
+    /*
+    func increment() -> Id {
         var val = address.toBigEndian(Int.self)
         val += 1
         if (val >= 4246) {
@@ -44,7 +62,8 @@ class Id {
         }
         return Id.fromInt(val)
     }
-
+     */
+     
     // TODO:
 //    override func toString(): String {
 //        val asInt = ByteBuffer.wrap(address).int
