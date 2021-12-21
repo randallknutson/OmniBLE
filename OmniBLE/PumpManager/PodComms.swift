@@ -82,9 +82,8 @@ public class PodComms: CustomDebugStringConvertible {
         return versionResponse
     }
 
-    private func pairPod(ids: Ids) throws {
+    public func pairPod(ids: Ids) throws {
         guard let manager = manager else { throw PodCommsError.noPodAvailable }
-        try manager.sendHello(ids.myId.address)
         let address = ids.podId.toUInt32()
 
         let ltkExchanger = LTKExchanger(manager: manager, ids: ids)
@@ -289,11 +288,6 @@ public class PodComms: CustomDebugStringConvertible {
             do {
                 guard let self = self else { fatalError() }
 
-                if self.podState == nil {
-                    let ids = Ids(podState: self.podState)
-                    try self.pairPod(ids: ids)
-                }
-                
                 guard self.podState != nil else {
                     block(.failure(PodCommsError.noPodPaired))
                     return

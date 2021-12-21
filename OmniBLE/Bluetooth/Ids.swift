@@ -10,7 +10,7 @@ import Foundation
 let CONTROLLER_ID: Int = 4242
 let POD_ID_NOT_ACTIVATED = Data(hexadecimalString: "FFFFFFFE")!
 
-class Ids {
+public class Ids {
     static func notActivated() -> Id {
         return Id(POD_ID_NOT_ACTIVATED)
     }

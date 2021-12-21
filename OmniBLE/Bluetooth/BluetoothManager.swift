@@ -30,30 +30,7 @@ protocol BluetoothManagerDelegate: AnyObject {
 
      - returns: True if the peripheral should connect
      */
-    func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral, advertisementData advertisementData: [String : Any]?) -> Bool
-
-    /// Informs the delegate that the bluetooth manager received new data in the control characteristic
-    ///
-    /// - Parameters:
-    ///   - manager: The bluetooth manager
-    ///   - peripheralManager: The peripheral manager
-    ///   - response: The data received on the control characteristic
-    func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, didReceiveControlResponse response: Data)
-
-    /// Informs the delegate that the bluetooth manager received new data in the backfill characteristic
-    ///
-    /// - Parameters:
-    ///   - manager: The bluetooth manager
-    ///   - response: The data received on the backfill characteristic
-    func bluetoothManager(_ manager: BluetoothManager, didReceiveBackfillResponse response: Data)
-
-    /// Informs the delegate that the bluetooth manager received new data in the authentication characteristic
-    ///
-    /// - Parameters:
-    ///   - manager: The bluetooth manager
-    ///   - peripheralManager: The peripheral manager
-    ///   - response: The data received on the authentication characteristic
-    func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, didReceiveAuthenticationResponse response: Data)
+    func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral, advertisementData: [String : Any]?) -> Bool
 
     /// Informs the delegate that the bluetooth device has completed configuration
     ///

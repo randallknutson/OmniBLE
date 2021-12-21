@@ -209,6 +209,13 @@ class PairPodSetupViewController: SetupTableViewController {
     
     private func pair() {
         self.continueState = .pairing
+        
+        do {
+            try pumpManager.omnipod.connectNew()
+        }
+        catch (let error) {
+            log.debug("Error %@", String(describing: error))
+        }
 
         pumpManager.pairAndPrime() { (result) in
             DispatchQueue.main.async {
@@ -230,6 +237,7 @@ class PairPodSetupViewController: SetupTableViewController {
             }
         }
     }
+
 }
 
 private extension PodCommsError {
