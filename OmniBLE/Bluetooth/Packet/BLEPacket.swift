@@ -125,6 +125,7 @@ struct LastBlePacket: BlePacket {
         bb.append(size)
         bb.append(crc32)
         bb.append(payload)
+        bb.append(Data(count: MAX_SIZE - payload.count - LastBlePacket.HEADER_SIZE))
         return bb
     }
     
