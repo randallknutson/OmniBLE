@@ -233,6 +233,7 @@ extension Omnipod: BluetoothManagerDelegate {
             do {
                 guard let self = self else { return }
                 try peripheralManager.sendHello(Ids.controllerId().address)
+                try peripheralManager.enableNotifications()
                 if (!self.podComms.isPaired) {
                     let ids = Ids(podState: self.state)
                     try self.podComms.pairPod(ids: ids)
