@@ -115,12 +115,13 @@ public class PodComms: CustomDebugStringConvertible {
         log.debug("pairPod: LTK and encrypted transport now ready, podState messageTransportState: %@", String(reflecting: podState!.messageTransportState))
 
         // If we get here, we have the LTK all set up and we should be able use encrypted pod messages
-        let transport = PodMessageTransport(manager: manager, address: 0xffffffff, state: podState!.messageTransportState)
+        let transport = PodMessageTransport(manager: manager, address: response.address, state: podState!.messageTransportState)
         transport.messageLogger = messageLogger
 
-        // Create the Assign Address command message
-        // XXX - use the ids.podId here or use the generated 0x1F0xxxxx address?
-        let assignAddress = AssignAddressCommand(address: address)
+        // For Dash this command is vestigal and doesn't actually assign the address (ID)
+        // any more as this is done earlier when the LTK is setup. But this Omnipod comamnd is still
+        // needed albiet using 0xffffffff for the address while the Eros sets the 0x1f0xxxxx ID.
+        let assignAddress = AssignAddressCommand(address: 0xffffffff)
         let message = Message(address: 0xffffffff, messageBlocks: [assignAddress], sequenceNum: transport.messageNumber)
 
         let versionResponse = try sendPairMessage(transport: transport, message: message)
@@ -220,7 +221,7 @@ public class PodComms: CustomDebugStringConvertible {
     private func setupPod(podState: PodState, timeZone: TimeZone) throws {
         guard let manager = manager else { throw PodCommsError.noPodAvailable }
 
-        let transport = PodMessageTransport(manager: manager, address: 0xffffffff, state: podState.messageTransportState)
+        let transport = PodMessageTransport(manager: manager, address: podState.address, state: podState.messageTransportState)
         transport.messageLogger = messageLogger
         log.debug("setupPod: created transport %@ using podState %@ with messageTransportState %@", String(reflecting: transport), String(reflecting: podState), String(reflecting: podState.messageTransportState))
 
