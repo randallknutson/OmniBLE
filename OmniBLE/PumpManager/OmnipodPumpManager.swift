@@ -424,52 +424,13 @@ extension OmnipodPumpManager {
             completion()
         }
     }
-    
-    // MARK: Testing
-    #if targetEnvironment(simulator)
-    private func jumpStartPod(address: UInt32, lot: UInt32, tid: UInt32, fault: DetailedStatus? = nil, startDate: Date? = nil, mockFault: Bool) {
-        let start = startDate ?? Date()
-        var podState = PodState(address: address, piVersion: "jumpstarted", pmVersion: "jumpstarted", lot: lot, tid: tid)
-        podState.setupProgress = .podPaired
-        podState.activatedAt = start
-        podState.expiresAt = start + .hours(72)
-        
-        let fault = mockFault ? try? DetailedStatus(encodedData: Data(hexadecimalString: "020d0000000e00c36a020703ff020900002899080082")!) : nil
-        podState.fault = fault
 
-        self.podComms = PodComms(podState: podState)
-
-        setState({ (state) in
-            state.podState = podState
-            state.expirationReminderDate = start + .hours(70)
-        })
-    }
-    #endif
     
     // MARK: - Pairing
 
     // Called on the main thread
     public func pairAndPrime(completion: @escaping (PumpManagerResult<TimeInterval>) -> Void) {
-        #if targetEnvironment(simulator)
-        // If we're in the simulator, create a mock PodState
-        let mockFaultDuringPairing = false
-        let mockCommsErrorDuringPairing = false
-        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + .seconds(2)) {
-            self.jumpStartPod(address: 0x1f0b3557, lot: 40505, tid: 6439, mockFault: mockFaultDuringPairing)
-            let fault: DetailedStatus? = self.setStateWithResult({ (state) in
-                state.podState?.setupProgress = .priming
-                return state.podState?.fault
-            })
-            if mockFaultDuringPairing {
-                completion(.failure(PodCommsError.podFault(fault: fault!)))
-            } else if mockCommsErrorDuringPairing {
-                completion(.failure(PodCommsError.noResponse))
-            } else {
-                let mockPrimeDuration = TimeInterval(.seconds(3))
-                completion(.success(mockPrimeDuration))
-            }
-        }
-        #else
+
         let primeSession = { (result: PodComms.SessionRunResult) in
             switch result {
             case .success(let session):
@@ -535,7 +496,6 @@ extension OmnipodPumpManager {
                 primeSession(result)
             }
         }
-        #endif
     }
 
     // Called on the main thread

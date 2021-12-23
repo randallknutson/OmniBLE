@@ -7,8 +7,8 @@
 
 import Foundation
 
-class Id {
-    
+class Id: Equatable {
+
     static private let PERIPHERAL_NODE_INDEX: UInt8 = 1
 
     static func fromInt(_ v: Int) -> Id {
@@ -77,5 +77,12 @@ class Id {
     
     func toUInt32() -> UInt32 {
         return address.toBigEndian(UInt32.self)
+    }
+    
+    
+    //MARK: Comparable
+    
+    static func == (lhs: Id, rhs: Id) -> Bool {
+        return lhs.address == rhs.address
     }
 }

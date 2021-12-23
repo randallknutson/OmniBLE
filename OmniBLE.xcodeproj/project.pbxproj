@@ -76,7 +76,7 @@
 		84752E9E26ED10A0009FD801 /* CoreBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84752E9D26ED10A0009FD801 /* CoreBluetooth.framework */; };
 		84752ED626ED13F5009FD801 /* Id.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752EBF26ED13F5009FD801 /* Id.swift */; };
 		84752ED726ED13F5009FD801 /* X25519KeyGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752EC126ED13F5009FD801 /* X25519KeyGenerator.swift */; };
-		84752ED826ED13F5009FD801 /* RandomByteGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752EC226ED13F5009FD801 /* RandomByteGenerator.swift */; };
+		84752ED826ED13F5009FD801 /* OmniRandomByteGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752EC226ED13F5009FD801 /* OmniRandomByteGenerator.swift */; };
 		84752EDD26ED13F5009FD801 /* Ids.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752EC826ED13F5009FD801 /* Ids.swift */; };
 		84752EDE26ED13F5009FD801 /* PeripheralManagerError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752EC926ED13F5009FD801 /* PeripheralManagerError.swift */; };
 		84752EDF26ED13F5009FD801 /* PeripheralManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752ECA26ED13F5009FD801 /* PeripheralManager.swift */; };
@@ -90,9 +90,7 @@
 		84752EE826ED13F5009FD801 /* PairMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84752ED526ED13F5009FD801 /* PairMessage.swift */; };
 		8475306E26ED15DE009FD801 /* CryptoSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 8475306D26ED15DE009FD801 /* CryptoSwift */; };
 		847530F626ED65DD009FD801 /* LoopKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 847530F426ED65DD009FD801 /* LoopKit.framework */; };
-		847530F726ED65DD009FD801 /* LoopKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 847530F426ED65DD009FD801 /* LoopKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		847530F826ED65DD009FD801 /* LoopKitUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 847530F526ED65DD009FD801 /* LoopKitUI.framework */; };
-		847530F926ED65DD009FD801 /* LoopKitUI.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 847530F526ED65DD009FD801 /* LoopKitUI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		8475311526ED7422009FD801 /* OmnipodPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475311226ED7422009FD801 /* OmnipodPlugin.swift */; };
 		8475313226ED838B009FD801 /* PodLifeHUDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475311F26ED838A009FD801 /* PodLifeHUDView.swift */; };
 		8475313326ED838B009FD801 /* HUDAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8475312026ED838A009FD801 /* HUDAssets.xcassets */; };
@@ -119,6 +117,19 @@
 		8475315B26EDA193009FD801 /* NibLoadable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475314E26EDA193009FD801 /* NibLoadable.swift */; };
 		8475315C26EDA193009FD801 /* TimeZone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475314F26EDA193009FD801 /* TimeZone.swift */; };
 		8475315D26EDA193009FD801 /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8475315026EDA193009FD801 /* Data.swift */; };
+		A91B2DE9276E114C001B0E95 /* OmniKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A91B2DE8276E114C001B0E95 /* OmniKit.framework */; };
+		A91B2DEC276E1E5E001B0E95 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = A91B2DEB276E1E5E001B0E95 /* README.md */; };
+		A9793B3C276E0264005354B3 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = A9793B3B276E0264005354B3 /* README.md */; };
+		A9A5BCEF276C1E2D00B02C86 /* TestUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D054D427651D2400FAFEFB /* TestUtilities.swift */; };
+		A9A5BCF0276C1E2D00B02C86 /* HexConversionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D054CA2764FC8200FAFEFB /* HexConversionTests.swift */; };
+		A9A5BCF1276C1E5F00B02C86 /* EnDecryptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D3492F2764F5780037F77C /* EnDecryptTests.swift */; };
+		A9A5BCF2276C1E6D00B02C86 /* PayloadSplitterTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D054D22765135900FAFEFB /* PayloadSplitterTest.swift */; };
+		A9A5BCF3276C1E6D00B02C86 /* StringLengthPrefixEncodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D054D827651FDE00FAFEFB /* StringLengthPrefixEncodingTests.swift */; };
+		A9A5BCF4276C1E6D00B02C86 /* PayloadJoinerTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D349312764F5D30037F77C /* PayloadJoinerTest.swift */; };
+		A9A5BCF5276C1E6D00B02C86 /* PayloadSplitJoinTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D054D627651D4F00FAFEFB /* PayloadSplitJoinTests.swift */; };
+		A9A5BCF6276C1E6D00B02C86 /* MessagePacketTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D054CC2764FDB700FAFEFB /* MessagePacketTests.swift */; };
+		A9A5BCF7276C1E7000B02C86 /* KeyExchangeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D054DB27655F9C00FAFEFB /* KeyExchangeTests.swift */; };
+		A9A5BCF9276C23B600B02C86 /* MKRingProgressView.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A9A5BCF8276C23B600B02C86 /* MKRingProgressView.framework */; };
 		D895BF5B275DE64000D51FC7 /* StringLengthPrefixEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D895BF5A275DE64000D51FC7 /* StringLengthPrefixEncoding.swift */; };
 /* End PBXBuildFile section */
 
@@ -131,21 +142,6 @@
 			remoteInfo = OmniBLE;
 		};
 /* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		847530FA26ED65DD009FD801 /* Embed Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				847530F726ED65DD009FD801 /* LoopKit.framework in Embed Frameworks */,
-				847530F926ED65DD009FD801 /* LoopKitUI.framework in Embed Frameworks */,
-			);
-			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		1016324C27137B1E007A3BC2 /* BluetoothManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothManager.swift; sourceTree = "<group>"; };
@@ -221,7 +217,7 @@
 		84752E9D26ED10A0009FD801 /* CoreBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreBluetooth.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.3.sdk/System/Library/Frameworks/CoreBluetooth.framework; sourceTree = DEVELOPER_DIR; };
 		84752EBF26ED13F5009FD801 /* Id.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Id.swift; sourceTree = "<group>"; };
 		84752EC126ED13F5009FD801 /* X25519KeyGenerator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = X25519KeyGenerator.swift; sourceTree = "<group>"; };
-		84752EC226ED13F5009FD801 /* RandomByteGenerator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RandomByteGenerator.swift; sourceTree = "<group>"; };
+		84752EC226ED13F5009FD801 /* OmniRandomByteGenerator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OmniRandomByteGenerator.swift; sourceTree = "<group>"; };
 		84752EC826ED13F5009FD801 /* Ids.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Ids.swift; sourceTree = "<group>"; };
 		84752EC926ED13F5009FD801 /* PeripheralManagerError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PeripheralManagerError.swift; sourceTree = "<group>"; };
 		84752ECA26ED13F5009FD801 /* PeripheralManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PeripheralManager.swift; sourceTree = "<group>"; };
@@ -261,6 +257,19 @@
 		8475314E26EDA193009FD801 /* NibLoadable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NibLoadable.swift; sourceTree = "<group>"; };
 		8475314F26EDA193009FD801 /* TimeZone.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimeZone.swift; sourceTree = "<group>"; };
 		8475315026EDA193009FD801 /* Data.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Data.swift; sourceTree = "<group>"; };
+		A91B2DE8276E114C001B0E95 /* OmniKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OmniKit.framework; path = "../../LoopWorkspace-11-12-dash/OmniBLE/Carthage/Build/iOS/OmniKit.framework"; sourceTree = "<group>"; };
+		A91B2DEB276E1E5E001B0E95 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		A9793B3B276E0264005354B3 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
+		A9A5BCF8276C23B600B02C86 /* MKRingProgressView.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MKRingProgressView.framework; path = Carthage/Build/iOS/MKRingProgressView.framework; sourceTree = "<group>"; };
+		A9D054CA2764FC8200FAFEFB /* HexConversionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HexConversionTests.swift; sourceTree = "<group>"; };
+		A9D054CC2764FDB700FAFEFB /* MessagePacketTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagePacketTests.swift; sourceTree = "<group>"; };
+		A9D054D22765135900FAFEFB /* PayloadSplitterTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayloadSplitterTest.swift; sourceTree = "<group>"; };
+		A9D054D427651D2400FAFEFB /* TestUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestUtilities.swift; sourceTree = "<group>"; };
+		A9D054D627651D4F00FAFEFB /* PayloadSplitJoinTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayloadSplitJoinTests.swift; sourceTree = "<group>"; };
+		A9D054D827651FDE00FAFEFB /* StringLengthPrefixEncodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringLengthPrefixEncodingTests.swift; sourceTree = "<group>"; };
+		A9D054DB27655F9C00FAFEFB /* KeyExchangeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyExchangeTests.swift; sourceTree = "<group>"; };
+		A9D3492F2764F5780037F77C /* EnDecryptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnDecryptTests.swift; sourceTree = "<group>"; };
+		A9D349312764F5D30037F77C /* PayloadJoinerTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayloadJoinerTest.swift; sourceTree = "<group>"; };
 		D895BF5A275DE64000D51FC7 /* StringLengthPrefixEncoding.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StringLengthPrefixEncoding.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -273,6 +282,8 @@
 				847530F626ED65DD009FD801 /* LoopKit.framework in Frameworks */,
 				8475306E26ED15DE009FD801 /* CryptoSwift in Frameworks */,
 				847530F826ED65DD009FD801 /* LoopKitUI.framework in Frameworks */,
+				A91B2DE9276E114C001B0E95 /* OmniKit.framework in Frameworks */,
+				A9A5BCF9276C23B600B02C86 /* MKRingProgressView.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -365,9 +376,10 @@
 		84752E7826ED0FFE009FD801 = {
 			isa = PBXGroup;
 			children = (
+				A91B2DEB276E1E5E001B0E95 /* README.md */,
 				84752EE926ED1402009FD801 /* Common */,
 				84752E8426ED0FFE009FD801 /* OmniBLE */,
-				84752E8F26ED0FFE009FD801 /* OmnipodTests */,
+				84752E8F26ED0FFE009FD801 /* OmniBLETests */,
 				84752E8326ED0FFE009FD801 /* Products */,
 				84752E9C26ED10A0009FD801 /* Frameworks */,
 			);
@@ -385,6 +397,7 @@
 		84752E8426ED0FFE009FD801 /* OmniBLE */ = {
 			isa = PBXGroup;
 			children = (
+				A9793B3B276E0264005354B3 /* README.md */,
 				84752EBE26ED13F5009FD801 /* Bluetooth */,
 				1016325027185EE4007A3BC2 /* OmnipodCommon */,
 				84752EAD26ED11A4009FD801 /* PumpManager */,
@@ -396,21 +409,26 @@
 			path = OmniBLE;
 			sourceTree = "<group>";
 		};
-		84752E8F26ED0FFE009FD801 /* OmnipodTests */ = {
+		84752E8F26ED0FFE009FD801 /* OmniBLETests */ = {
 			isa = PBXGroup;
 			children = (
+				A9D054CE2765131300FAFEFB /* Driver */,
+				A9D054CA2764FC8200FAFEFB /* HexConversionTests.swift */,
+				A9D054D427651D2400FAFEFB /* TestUtilities.swift */,
 				84752E9026ED0FFE009FD801 /* OmnipodTests.swift */,
 				84752E9226ED0FFE009FD801 /* Info.plist */,
 			);
-			path = OmnipodTests;
+			path = OmniBLETests;
 			sourceTree = "<group>";
 		};
 		84752E9C26ED10A0009FD801 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A91B2DE8276E114C001B0E95 /* OmniKit.framework */,
 				847530F426ED65DD009FD801 /* LoopKit.framework */,
 				847530F526ED65DD009FD801 /* LoopKitUI.framework */,
 				84752E9D26ED10A0009FD801 /* CoreBluetooth.framework */,
+				A9A5BCF8276C23B600B02C86 /* MKRingProgressView.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -455,7 +473,7 @@
 		84752EC026ED13F5009FD801 /* Util */ = {
 			isa = PBXGroup;
 			children = (
-				84752EC226ED13F5009FD801 /* RandomByteGenerator.swift */,
+				84752EC226ED13F5009FD801 /* OmniRandomByteGenerator.swift */,
 				84752EC126ED13F5009FD801 /* X25519KeyGenerator.swift */,
 			);
 			path = Util;
@@ -542,6 +560,52 @@
 			path = ViewControllers;
 			sourceTree = "<group>";
 		};
+		A9D054CE2765131300FAFEFB /* Driver */ = {
+			isa = PBXGroup;
+			children = (
+				A9D054CF2765132000FAFEFB /* Comm */,
+			);
+			path = Driver;
+			sourceTree = "<group>";
+		};
+		A9D054CF2765132000FAFEFB /* Comm */ = {
+			isa = PBXGroup;
+			children = (
+				A9D054D02765132800FAFEFB /* endecrypt */,
+				A9D054D12765133E00FAFEFB /* message */,
+				A9D054DA27655F8B00FAFEFB /* pair */,
+			);
+			path = Comm;
+			sourceTree = "<group>";
+		};
+		A9D054D02765132800FAFEFB /* endecrypt */ = {
+			isa = PBXGroup;
+			children = (
+				A9D3492F2764F5780037F77C /* EnDecryptTests.swift */,
+			);
+			path = endecrypt;
+			sourceTree = "<group>";
+		};
+		A9D054D12765133E00FAFEFB /* message */ = {
+			isa = PBXGroup;
+			children = (
+				A9D054CC2764FDB700FAFEFB /* MessagePacketTests.swift */,
+				A9D349312764F5D30037F77C /* PayloadJoinerTest.swift */,
+				A9D054D627651D4F00FAFEFB /* PayloadSplitJoinTests.swift */,
+				A9D054D22765135900FAFEFB /* PayloadSplitterTest.swift */,
+				A9D054D827651FDE00FAFEFB /* StringLengthPrefixEncodingTests.swift */,
+			);
+			path = message;
+			sourceTree = "<group>";
+		};
+		A9D054DA27655F8B00FAFEFB /* pair */ = {
+			isa = PBXGroup;
+			children = (
+				A9D054DB27655F9C00FAFEFB /* KeyExchangeTests.swift */,
+			);
+			path = pair;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -564,7 +628,7 @@
 				84752E7E26ED0FFE009FD801 /* Sources */,
 				84752E7F26ED0FFE009FD801 /* Frameworks */,
 				84752E8026ED0FFE009FD801 /* Resources */,
-				847530FA26ED65DD009FD801 /* Embed Frameworks */,
+				A92B429F276AC90A00A70B1F /* Copy Frameworks with Carthage */,
 			);
 			buildRules = (
 			);
@@ -660,8 +724,10 @@
 				8475313526ED838B009FD801 /* ExpirationReminderDateTableViewCell.xib in Resources */,
 				8475313626ED838B009FD801 /* OmnipodReservoirView.xib in Resources */,
 				1029AE4F27094E1900B7F5B6 /* OmnipodUI.xcassets in Resources */,
+				A9793B3C276E0264005354B3 /* README.md in Resources */,
 				8475313726ED838B009FD801 /* PodLifeHUDView.xib in Resources */,
 				8475313326ED838B009FD801 /* HUDAssets.xcassets in Resources */,
+				A91B2DEC276E1E5E001B0E95 /* README.md in Resources */,
 				8475314526ED83D2009FD801 /* OmnipodPumpManager.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -675,6 +741,41 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		A92B429F276AC90A00A70B1F /* Copy Frameworks with Carthage */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Carthage/Build/iOS/LoopKit.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/OmniKit.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/LoopKitUI.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/MKRingProgressView.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/RileyLinkBLEKit.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/OmniKitUI.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/RileyLinkKit.framework",
+			);
+			name = "Copy Frameworks with Carthage";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/LoopKit.framework",
+				"$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/LoopKitUI.framework",
+				"$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/OmniKit.framework",
+				"$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/MKRingProgressView.framework",
+				"$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/RileyLinkBLEKit.framework",
+				"$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/OmniKitUI.framework",
+				"$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/RileyLinkKit.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "#From root of project, run\n#`./carthage.sh update --platform iOS` from root\n\n#Then uncomment this to run OmniBLE tests without a Loop Workspace.\n#./carthage.sh copy-frameworks\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		84752E7E26ED0FFE009FD801 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -686,7 +787,7 @@
 				10389A3426FF7841002115E9 /* AssignAddressCommand.swift in Sources */,
 				10289E812739F8E4000339E6 /* SessionKeys.swift in Sources */,
 				84752EDD26ED13F5009FD801 /* Ids.swift in Sources */,
-				84752ED826ED13F5009FD801 /* RandomByteGenerator.swift in Sources */,
+				84752ED826ED13F5009FD801 /* OmniRandomByteGenerator.swift in Sources */,
 				1016324D27137B1E007A3BC2 /* BluetoothManager.swift in Sources */,
 				84752EE026ED13F5009FD801 /* BluetoothErrors.swift in Sources */,
 				10289E7F2739F8A1000339E6 /* EapAkaAttribute.swift in Sources */,
@@ -786,7 +887,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A9A5BCF6276C1E6D00B02C86 /* MessagePacketTests.swift in Sources */,
+				A9A5BCF1276C1E5F00B02C86 /* EnDecryptTests.swift in Sources */,
+				A9A5BCF2276C1E6D00B02C86 /* PayloadSplitterTest.swift in Sources */,
+				A9A5BCEF276C1E2D00B02C86 /* TestUtilities.swift in Sources */,
+				A9A5BCF0276C1E2D00B02C86 /* HexConversionTests.swift in Sources */,
+				A9A5BCF4276C1E6D00B02C86 /* PayloadJoinerTest.swift in Sources */,
 				84752E9126ED0FFE009FD801 /* OmnipodTests.swift in Sources */,
+				A9A5BCF3276C1E6D00B02C86 /* StringLengthPrefixEncodingTests.swift in Sources */,
+				A9A5BCF7276C1E7000B02C86 /* KeyExchangeTests.swift in Sources */,
+				A9A5BCF5276C1E6D00B02C86 /* PayloadSplitJoinTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -931,6 +1041,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)/Carthage/Build/iOS";
 				INFOPLIST_FILE = OmniBLE/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -954,6 +1065,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)/Carthage/Build/iOS";
 				INFOPLIST_FILE = OmniBLE/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -974,6 +1086,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
+				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)/Carthage/Build/iOS";
 				INFOPLIST_FILE = OmniBLETests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -992,6 +1105,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
+				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)/Carthage/Build/iOS";
 				INFOPLIST_FILE = OmniBLETests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
