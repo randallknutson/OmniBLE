@@ -33,6 +33,19 @@ extension PeripheralManager {
         try writeValue(Data([PodCommand.HELLO.rawValue, 0x01, 0x04]) + controllerId, for: characteristic, type: .withResponse, timeout: 5)
     }
     
+    
+    func enableNotifications() throws {
+        dispatchPrecondition(condition: .onQueue(queue))
+        guard let cmdChar = peripheral.getCommandCharacteristic() else {
+            throw PeripheralManagerError.notReady
+        }
+        guard let dataChar = peripheral.getDataCharacteristic() else {
+            throw PeripheralManagerError.notReady
+        }
+        try setNotifyValue(true, for: cmdChar, timeout: .seconds(2))
+        try setNotifyValue(true, for: dataChar, timeout: .seconds(2))
+    }
+
     /// - Throws: PeripheralManagerError
     func sendMessage(_ message: MessagePacket, _ forEncryption: Bool = false) throws -> MessageResult {
         dispatchPrecondition(condition: .onQueue(queue))

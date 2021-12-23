@@ -35,7 +35,7 @@ struct MessagePacket {
         let priority = f2.get(1) != 0
         let lastMessage = f2.get(2) != 0
         let gateway = f2.get(3) != 0
-        let type: MessageType = MessageType(rawValue: UInt8(f1.get(7) | (f1.get(6) << 1) | (f1.get(5) << 2) | (f1.get(4) << 3))) ?? .CLEAR
+        let type: MessageType = MessageType(rawValue: UInt8(f2.get(7) | (f2.get(6) << 1) | (f2.get(5) << 2) | (f2.get(4) << 3))) ?? .CLEAR
         if (version != 0) {
             throw BluetoothErrors.CouldNotParseMessageException("Wrong version")
         }

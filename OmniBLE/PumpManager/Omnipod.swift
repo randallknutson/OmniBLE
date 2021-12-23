@@ -215,7 +215,6 @@ extension Omnipod: BluetoothManagerDelegate {
                 return true
             }
             try discoverData(advertisementData: advertisementData!)
-            log.debug("IDs: %d - %d", Id.fromInt(Int(podId!)).address.hexadecimalString, Ids.notActivated().address.hexadecimalString)
             if (
                 (pairNew && podId == Ids.notActivated().toUInt32()) ||
                 (state?.address != nil && state?.address == podId)
@@ -234,6 +233,7 @@ extension Omnipod: BluetoothManagerDelegate {
             do {
                 guard let self = self else { return }
                 try peripheralManager.sendHello(Ids.controllerId().address)
+                try peripheralManager.enableNotifications()
                 if (!self.podComms.isPaired) {
                     let ids = Ids(podState: self.state)
                     try self.podComms.pairPod(ids: ids)

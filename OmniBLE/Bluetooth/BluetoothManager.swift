@@ -151,11 +151,12 @@ class BluetoothManager: NSObject {
             return
         }
 
-        if let peripheralID = peripheralIdentifier, let peripheral = manager.retrievePeripherals(withIdentifiers: [peripheralID]).first {
-            log.debug("Re-connecting to known peripheral %{public}@", peripheral.identifier.uuidString)
-            self.peripheral = peripheral
-            self.manager.connect(peripheral)
-        } else if let peripheral = manager.retrieveConnectedPeripherals(withServices: [
+//        if let peripheralID = peripheralIdentifier, let peripheral = manager.retrievePeripherals(withIdentifiers: [peripheralID]).first {
+//            log.debug("Re-connecting to known peripheral %{public}@", peripheral.identifier.uuidString)
+//            self.peripheral = peripheral
+//            self.manager.connect(peripheral)
+//        } else
+        if let peripheral = manager.retrieveConnectedPeripherals(withServices: [
             OmnipodServiceUUID.advertisement.cbUUID,
             OmnipodServiceUUID.service.cbUUID
         ]).first,
