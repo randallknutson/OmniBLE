@@ -159,7 +159,7 @@ class PodMessageTransport: MessageTransport {
     weak var messageLogger: MessageLogger?
     weak var delegate: MessageTransportDelegate?
 
-    init(manager: PeripheralManager, address: UInt32 = 0xffffffff,  state: MessageTransportState) {
+    init(manager: PeripheralManager, address: UInt32, state: MessageTransportState) {
         self.manager = manager
         self.address = address
         self.state = state
@@ -249,7 +249,7 @@ class PodMessageTransport: MessageTransport {
 
         let msg = MessagePacket(
             type: MessageType.ENCRYPTED,
-            destination: cmd.address,
+            destination: self.address,
             payload: wrapped,
             sequenceNumber: UInt8(msgSeq),
             eqos: 1
