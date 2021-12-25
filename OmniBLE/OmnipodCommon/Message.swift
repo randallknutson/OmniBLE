@@ -46,9 +46,15 @@ struct Message {
         self.sequenceNum = Int((b9 >> 2) & 0b1111)
         let crc = (UInt16(encodedData[encodedData.count-2]) << 8) + UInt16(encodedData[encodedData.count-1])
         let msgWithoutCrc = encodedData.prefix(encodedData.count - 2)
-        let computedCrc: UInt16 = UInt16(msgWithoutCrc.crc16())
+        let computedCrc = UInt16(msgWithoutCrc.crc16())
+
         let acceptZeroCRC16 = true // needed for pod simulator which doesn't compute a CRC16
-        guard computedCrc == crc || (acceptZeroCRC16 && crc == 0) else {
+        let ignoreDecodeCRCErrors = true // temp hack to continue running
+        if computedCrc != crc && !(acceptZeroCRC16 && crc == 0) {
+            if (ignoreDecodeCRCErrors) {
+                self.messageBlocks = try Message.decodeBlocks(data: Data(msgWithoutCrc.suffix(from: 6)))
+                return // set breakpoint on this line to catch a CRC mismatch
+            }
             throw MessageError.invalidCrc
         }
         self.messageBlocks = try Message.decodeBlocks(data: Data(msgWithoutCrc.suffix(from: 6)))

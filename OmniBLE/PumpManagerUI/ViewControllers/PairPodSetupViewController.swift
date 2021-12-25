@@ -214,7 +214,11 @@ class PairPodSetupViewController: SetupTableViewController {
             try pumpManager.omnipod.connectNew()
         }
         catch (let error) {
-            log.debug("Error %@", String(describing: error))
+            log.debug("Connection setup error %{public}@", String(describing: error))
+            // Might have problems setting lastError in this thread because of UI threading.
+            // Probably need to move the connectNew() functionality within pairAndPrime().
+            self.lastError = error
+            return
         }
 
         pumpManager.pairAndPrime() { (result) in
