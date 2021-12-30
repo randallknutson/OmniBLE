@@ -26,7 +26,7 @@ class EapSqn {
     }
     
     func toInt() -> Int {
-        return data.withUnsafeBytes {
+        return (Data([0x00, 0x00]) + data).withUnsafeBytes {
             $0.load(as: Int.self).bigEndian
         }
     }
