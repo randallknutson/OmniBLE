@@ -170,7 +170,7 @@ public class PodComms: CustomDebugStringConvertible {
         log.debug("pairPod: self.PodState messageTransportState now: %@", String(reflecting: self.podState?.messageTransportState))
     }
     
-    private func syncSession(_ ltk: Data, _ eapSqn: Int, _ address: UInt32, _ msgSeq: Int) throws -> Int? {
+    private func syncSession(_ ltk: Data, _ msgSeq: Int, _ address: UInt32, _ eapSqn: Int) throws -> Int? {
         guard let manager = manager else { throw PodCommsError.noPodPaired }
         let eapAkaExchanger = try SessionEstablisher(manager: manager, ltk: ltk, eapSqn: eapSqn, address: address, msgSeq: msgSeq)
 
@@ -206,10 +206,10 @@ public class PodComms: CustomDebugStringConvertible {
         guard self.podState!.address == podState.address else {
             throw PodCommsError.invalidData
         }
-        var newSqn = try self.syncSession(podState.ltk, eapSqn, podState.address, msgSeq)
+        var newSqn = try self.syncSession(podState.ltk, msgSeq, podState.address, eapSqn)
         
         if (newSqn != nil) {
-            log.debug("Updating EAP SQN to: %@", String(newSqn!))
+            log.debug("Updating EAP SQN to: %d", newSqn!)
             podState.eapAkaSequenceNumber = newSqn!
             newSqn = try self.syncSession(podState.ltk, msgSeq, podState.address, podState.increaseEapAkaSequenceNumber())
             if (newSqn != nil) {
