@@ -99,7 +99,7 @@ public class Omnipod {
         }
     }
 
-    public func stopScanning() {
+    public func disconnect() {
         bluetoothManager.disconnect()
     }
 
