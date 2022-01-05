@@ -195,7 +195,7 @@ extension PeripheralManager {
         // Prelude
         dispatchPrecondition(condition: .onQueue(queue))
         guard central?.state == .poweredOn && peripheral.state == .connected else {
-            self.log("runCommand guard failed - bluetooth not running or peripheral not connected: peripheral %@", peripheral)
+            self.log.error("runCommand guard failed - bluetooth not running or peripheral not connected: peripheral %@", peripheral)
             throw PeripheralManagerError.notReady
         }
 
@@ -226,7 +226,7 @@ extension PeripheralManager {
         }
 
         guard signaled else {
-            self.log("runCommand lock timeout reached - not signalled")
+            self.log.error("runCommand lock timeout reached - not signalled")
             throw PeripheralManagerError.notReady
         }
 
