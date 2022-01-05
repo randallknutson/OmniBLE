@@ -32,13 +32,13 @@ class PeripheralManager: NSObject {
             }
         }
     }
-    
+
     var dataQueue: [Data] = []
     var dataEvent: (() -> Void)?
     var cmdQueue: [Data] = []
     var cmdEvent: (() -> Void)?
     let queueLock = NSCondition()
-    
+
     /// The dispatch queue used to serialize operations on the peripheral
     let queue = DispatchQueue(label: "com.loopkit.PeripheralManager.queue", qos: .unspecified)
 
@@ -128,7 +128,7 @@ extension PeripheralManager {
                 do {
                     try self.applyConfiguration()
                     self.needsConfiguration = false
-                    
+
                     if let delegate = self.delegate {
                         try delegate.completeConfiguration(for: self)
                         self.log.default("Delegate configuration notified")
@@ -195,6 +195,7 @@ extension PeripheralManager {
         // Prelude
         dispatchPrecondition(condition: .onQueue(queue))
         guard central?.state == .poweredOn && peripheral.state == .connected else {
+            self.log("runCommand guard failed - bluetooth not running or peripheral not connected: peripheral %@", peripheral)
             throw PeripheralManagerError.notReady
         }
 
@@ -225,6 +226,7 @@ extension PeripheralManager {
         }
 
         guard signaled else {
+            self.log("runCommand lock timeout reached - not signalled")
             throw PeripheralManagerError.notReady
         }
 
@@ -416,13 +418,13 @@ extension PeripheralManager: CBPeripheralDelegate {
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         commandLock.lock()
-        
+
         var notifyDelegate = false
 
         if let macro = configuration.valueUpdateMacros[characteristic.uuid] {
             macro(self)
         }
-        
+
         if let index = commandConditions.firstIndex(where: { (condition) -> Bool in
             if case .valueUpdate(characteristic: characteristic, matching: let matching) = condition {
                 return matching?(characteristic.value) ?? true
@@ -486,7 +488,7 @@ extension CBPeripheral {
 
         return service.characteristics?.itemWithUUID(OmnipodCharacteristicUUID.command.cbUUID)
     }
-    
+
     func getDataCharacteristic() -> CBCharacteristic? {
         guard let service = services?.itemWithUUID(OmnipodServiceUUID.service.cbUUID) else {
             return nil
