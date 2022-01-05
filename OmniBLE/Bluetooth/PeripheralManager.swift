@@ -113,6 +113,8 @@ protocol PeripheralManagerDelegate: AnyObject {
     func peripheralManagerDidUpdateName(_ manager: PeripheralManager)
 
     func completeConfiguration(for manager: PeripheralManager) throws
+
+    func reconnectLatestPeripheral()
 }
 
 
@@ -122,6 +124,15 @@ extension PeripheralManager {
         return {
             if !self.needsConfiguration && self.peripheral.services == nil {
                 self.log.error("Configured peripheral has no services. Reconfiguring…")
+            }
+
+            // TODO: Reconnect the peripheral
+            if self.peripheral.state == .disconnected {
+              self.log.info("Peripheral is not connected - connecting...")
+              // TODO: This might throw... Also - thread-safety?
+              if let delegate = self.delegate {
+                  delegate.reconnectLatestPeripheral()
+              }
             }
 
             if self.needsConfiguration || self.peripheral.services == nil {
@@ -195,7 +206,7 @@ extension PeripheralManager {
         // Prelude
         dispatchPrecondition(condition: .onQueue(queue))
         guard central?.state == .poweredOn && peripheral.state == .connected else {
-            self.log.error("runCommand guard failed - bluetooth not running or peripheral not connected: peripheral %@", peripheral)
+            self.log.info("runCommand guard failed - bluetooth not running or peripheral not connected: peripheral %@", peripheral)
             throw PeripheralManagerError.notReady
         }
 
@@ -226,7 +237,7 @@ extension PeripheralManager {
         }
 
         guard signaled else {
-            self.log.error("runCommand lock timeout reached - not signalled")
+            self.log.info("runCommand lock timeout reached - not signalled")
             throw PeripheralManagerError.notReady
         }
 

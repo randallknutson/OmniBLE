@@ -235,12 +235,14 @@ extension BluetoothManager: CBCentralManagerDelegate {
 
     func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
         dispatchPrecondition(condition: .onQueue(managerQueue))
+        log.info("%{public}@: %{public}@", #function, dict)
 
         if let peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
             for peripheral in peripherals {
                 if delegate == nil || delegate!.bluetoothManager(self, shouldConnectPeripheral: peripheral, advertisementData: nil) {
                     log.default("Restoring peripheral from state: %{public}@", peripheral.identifier.uuidString)
                     self.peripheral = peripheral
+                    // TODO: Maybe connect to peripheral if its state is disconnected?
                 }
             }
         }
@@ -315,6 +317,12 @@ extension BluetoothManager: PeripheralManagerDelegate {
     func completeConfiguration(for manager: PeripheralManager) throws {
         self.delegate?.bluetoothManager(self, didCompleteConfiguration: manager)
     }
+
+    // throws?
+    func reconnectLatestPeripheral() {
+        scanForPeripheral()
+    }
+
 
     func peripheralManager(_ manager: PeripheralManager, didUpdateNotificationStateFor characteristic: CBCharacteristic) {
 

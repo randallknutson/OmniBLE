@@ -190,7 +190,7 @@ public class OmnipodPumpManager: DeviceManager {
 
     private let pumpDelegate = WeakSynchronizedDelegate<PumpManagerDelegate>()
 
-    public let log = OSLog(category: "OmniBLEPumpManager")
+    public let log = OSLog(category: "OmnipodPumpManagerBLE")
 
     private var lastLoopRecommendation: Date?
 
@@ -598,6 +598,10 @@ extension OmnipodPumpManager {
             completion?(.failure(PodCommsError.unfinalizedBolus))
             return
         }
+
+        // scanForPeripheral->managerQueue_scanForPeripheral has a guard so it only does actual work/connecting if current peripheral state is not connected
+        // so we *should* be fine if it is called in multiple places
+        omnipod.stayConnected = true
 
         podComms.runSession(withName: "Get pod status") { (result) in
             do {

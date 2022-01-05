@@ -122,8 +122,11 @@ public class Omnipod {
         }
         set {
             bluetoothManager.stayConnected = newValue
+            
+            self.log.info("stayConnected %@", newValue)
 
             if newValue {
+                self.log.info("stayConnected triggering scanForPeripheral")
                 bluetoothManager.scanForPeripheral()
             }
         }
