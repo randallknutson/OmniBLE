@@ -113,6 +113,8 @@ protocol PeripheralManagerDelegate: AnyObject {
     func peripheralManagerDidUpdateName(_ manager: PeripheralManager)
 
     func completeConfiguration(for manager: PeripheralManager) throws
+    
+    func reconnectLatestPeripheral()
 }
 
 
@@ -122,6 +124,15 @@ extension PeripheralManager {
         return {
             if !self.needsConfiguration && self.peripheral.services == nil {
                 self.log.error("Configured peripheral has no services. Reconfiguring…")
+            }
+
+            // TODO: Reconnect the peripheral
+            if self.peripheral.state == .disconnected {
+              self.log.info("Peripheral is not connected - connecting...")
+              // TODO: This might throw... Also - thread-safety?
+              if let delegate = self.delegate {
+                  delegate.reconnectLatestPeripheral()
+              }
             }
 
             if self.needsConfiguration || self.peripheral.services == nil {

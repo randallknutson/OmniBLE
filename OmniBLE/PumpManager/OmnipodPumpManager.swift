@@ -190,7 +190,7 @@ public class OmnipodPumpManager: DeviceManager {
 
     private let pumpDelegate = WeakSynchronizedDelegate<PumpManagerDelegate>()
 
-    public let log = OSLog(category: "OmniBLEPumpManager")
+    public let log = OSLog(category: "OmnipodPumpManagerBLE")
 
     private var lastLoopRecommendation: Date?
 
@@ -389,6 +389,7 @@ extension OmnipodPumpManager {
 
     // Does not support concurrent callers. Not thread-safe.
     private func forgetPod(completion: @escaping () -> Void) {
+        omnipod.disconnect()
         let resetPodState = { (_ state: inout OmnipodPumpManagerState) in
             self.podComms = PodComms(podState: nil, lotNo: nil, lotSeq: nil)
             self.podComms.delegate = self
@@ -597,6 +598,10 @@ extension OmnipodPumpManager {
             completion?(.failure(PodCommsError.unfinalizedBolus))
             return
         }
+
+        // scanForPeripheral->managerQueue_scanForPeripheral has a guard so it only does actual work/connecting if current peripheral state is not connected
+        // so we *should* be fine if it is called in multiple places
+        omnipod.stayConnected = true
 
         podComms.runSession(withName: "Get pod status") { (result) in
             do {
@@ -1169,7 +1174,7 @@ extension OmnipodPumpManager: PumpManager {
         }
     }
 
-    public func enactBolus(units: Double, at startDate: Date, willRequest: @escaping (DoseEntry) -> Void, completion: @escaping (PumpManagerResult<DoseEntry>) -> Void) {
+    public func enactBolus(units: Double, at startDate: Date, automatic: Bool, willRequest: @escaping (DoseEntry) -> Void, completion: @escaping (PumpManagerResult<DoseEntry>) -> Void) {
         guard self.hasActivePod else {
             completion(.failure(SetBolusError.certain(OmnipodPumpManagerError.noPodPaired)))
             return
