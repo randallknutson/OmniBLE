@@ -56,10 +56,10 @@ class LTKExchanger {
 
         log.debug("Reading sps1")
         let podSps1 = try manager.readMessage(true)
-        guard let podSps1 = podSps1 else {
+        guard let _ = podSps1 else {
             throw BluetoothErrors.PairingException("Could not read SPS1")
         }
-        try processSps1FromPod(podSps1)
+        try processSps1FromPod(podSps1!)
         // now we have all the data to generate: confPod, confPdm, ltk and noncePrefix
 
         log.debug("Sending sps2")
@@ -74,10 +74,10 @@ class LTKExchanger {
         try throwOnSendError(sps2.message, LTKExchanger.SPS2)
 
         let podSps2 = try manager.readMessage()
-        guard let podSps2 = podSps2 else {
+        guard let _ = podSps2 else {
             throw BluetoothErrors.PairingException("Could not read SPS2")
         }
-        try validatePodSps2(podSps2)
+        try validatePodSps2(podSps2!)
         // No exception throwing after this point. It is possible that the pod saved the LTK
 
         seq += 1
@@ -95,10 +95,10 @@ class LTKExchanger {
         }
 
         let p0 = try manager.readMessage()
-        guard let p0 = p0 else {
+        guard let _ = p0 else {
             throw BluetoothErrors.PairingException("Could not read P0")
         }
-        try validateP0(p0)
+        try validateP0(p0!)
         
         guard keyExchange.ltk.count == 16 else {
             throw BluetoothErrors.InvalidLTKKey("Invalid Key, got \(String(data: keyExchange.ltk, encoding: .utf8) ?? "")")

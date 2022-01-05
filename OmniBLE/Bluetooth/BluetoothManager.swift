@@ -151,11 +151,6 @@ class BluetoothManager: NSObject {
             return
         }
 
-//        if let peripheralID = peripheralIdentifier, let peripheral = manager.retrievePeripherals(withIdentifiers: [peripheralID]).first {
-//            log.debug("Re-connecting to known peripheral %{public}@", peripheral.identifier.uuidString)
-//            self.peripheral = peripheral
-//            self.manager.connect(peripheral)
-//        } else
         if let peripheral = manager.retrieveConnectedPeripherals(withServices: [
             OmnipodServiceUUID.advertisement.cbUUID,
             OmnipodServiceUUID.service.cbUUID
@@ -166,18 +161,27 @@ class BluetoothManager: NSObject {
             self.peripheral = peripheral
             self.manager.connect(peripheral)
         } else {
-            log.debug("Scanning for peripherals")
-            manager.scanForPeripherals(withServices: [OmnipodServiceUUID.advertisement.cbUUID],
+            // TEST: There might be a race condition where PeripheralManager considers the device already connected, although it isn't
+            // TODO: Investigate more
+            // Related https://github.com/randallknutson/OmniBLE/pull/10#pullrequestreview-837692407
+            if let peripheralID = peripheralIdentifier, let peripheral = manager.retrievePeripherals(withIdentifiers: [peripheralID]).first {
+                log.debug("Re-connecting to known peripheral %{public}@", peripheral.identifier.uuidString)
+                self.peripheral = peripheral
+                self.manager.connect(peripheral)
+            } else {
+                log.debug("Scanning for peripherals")
+                manager.scanForPeripherals(withServices: [OmnipodServiceUUID.advertisement.cbUUID],
                 options: nil
-            )
+                )
+            }
         }
     }
 
     /**
-    
+
      Persistent connections don't seem to work with the transmitter shutoff: The OS won't re-wake the
      app unless it's scanning.
-     
+
      The sleep gives the transmitter time to shut down, but keeps the app running.
 
      */
@@ -301,7 +305,7 @@ extension BluetoothManager: CBCentralManagerDelegate {
 
 extension BluetoothManager: PeripheralManagerDelegate {
     func peripheralManager(_ manager: PeripheralManager, didReadRSSI RSSI: NSNumber, error: Error?) {
-        
+
     }
 
     func peripheralManagerDidUpdateName(_ manager: PeripheralManager) {
@@ -313,9 +317,9 @@ extension BluetoothManager: PeripheralManagerDelegate {
     }
 
     func peripheralManager(_ manager: PeripheralManager, didUpdateNotificationStateFor characteristic: CBCharacteristic) {
-        
+
     }
-    
+
     func peripheralManager(_ manager: PeripheralManager, didUpdateValueFor characteristic: CBCharacteristic) {
 
     }
