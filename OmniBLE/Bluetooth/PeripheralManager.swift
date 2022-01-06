@@ -115,8 +115,6 @@ protocol PeripheralManagerDelegate: AnyObject {
     func completeConfiguration(for manager: PeripheralManager) throws
 
     func reconnectLatestPeripheral()
-
-    func waitForPeripheral()
 }
 
 
@@ -132,18 +130,8 @@ extension PeripheralManager {
               self.log.error("PeripheralManager delegate is nil")
             }
 
-            // TODO: Reconnect the peripheral
-            if self.peripheral.state == .connecting {
-              self.log.info("Peripheral is still connecting - waiting...")
-              // TODO: This might throw... Also - thread-safety?
-              if let delegate = self.delegate {
-                  delegate.waitForPeripheral()
-              }
-            }
-
-            // TODO: Reconnect the peripheral
-            if self.peripheral.state == .disconnected {
-              self.log.info("Peripheral is not connected - connecting...")
+            if self.peripheral.state == .disconnected || self.peripheral.state == .connecting {
+              self.log.info("Peripheral is not connected - triggering reconnectLatestPeripheral...")
               // TODO: This might throw... Also - thread-safety?
               if let delegate = self.delegate {
                   delegate.reconnectLatestPeripheral()

@@ -60,6 +60,8 @@ class BluetoothManager: NSObject {
 
     private let connectionSemaphore = DispatchSemaphore(value: 0)
 
+    private let concurrentReconnectSemaphore = DispatchSemaphore(value: 1)
+
     /// Isolated to `managerQueue`
     private var manager: CBCentralManager! = nil
 
@@ -144,32 +146,34 @@ class BluetoothManager: NSObject {
     func reconnectPeripheral() {
         dispatchPrecondition(condition: .notOnQueue(managerQueue))
 
-        // Reset the semaphore because of the implementation
-        connectionSemaphore = DispatchSemaphore(value: 0)
+        // Make sure only one reconnect loop is happening concurrently
+        log.debug("reconnectPeripheral concurrency semaphore check")
+        concurrentReconnectSemaphore.wait()
+        log.debug("reconnectPeripheral concurrency semaphore check - is free, continuing")
 
-        managerQueue.sync {
-            self.managerQueue_scanForPeripheral()
-            // connectionSemaphore.wait()
+        let currentState = peripheral?.state ?? .disconnected
+        guard currentState != .connected else {
+          return
         }
 
-        log.info("Waiting for peripheral reconnect semaphore")
-        connectionSemaphore.wait()
-        log.info("Peripheral reconnect semaphore finished")
-    }
-
-    func waitForPeripheralConnection() {
-        dispatchPrecondition(condition: .notOnQueue(managerQueue))
-
-        // Reset the semaphore because of the implementation
+        // Reset the peripheral readiness semaphore before starting a new run
         connectionSemaphore = DispatchSemaphore(value: 0)
 
-        // managerQueue.sync {
-             // connectionSemaphore.wait()
-        // }
+        // Possible states are disconnected, disconnecting, connected and connecting
+        // We guard against connected earlier and in case of connecting we only need to wait for the semaphore
+        if currentState == .disconnected || currentState == .disconnecting {
+            managerQueue.sync {
+                self.managerQueue_scanForPeripheral()
+            }
+        }
 
-        log.info("Waiting for peripheral reconnect semaphore")
+        log.debug("Waiting for peripheral reconnect semaphore to be signalled (peripheral is connected)")
         connectionSemaphore.wait()
-        log.info("Peripheral reconnect semaphore finished")
+        log.debug("Peripheral reconnect semaphore finished")
+
+        // Release reconnect loop for other callers
+        log.debug("reconnectPeripheral concurrency semaphore signaling")
+        concurrentReconnectSemaphore.signal()
     }
 
     private func managerQueue_scanForPeripheral() {
@@ -181,6 +185,10 @@ class BluetoothManager: NSObject {
 
         let currentState = peripheral?.state ?? .disconnected
         guard currentState != .connected else {
+            return
+        }
+
+        guard currentState != .connecting else {
             return
         }
 
@@ -306,6 +314,7 @@ extension BluetoothManager: CBCentralManagerDelegate {
             self.delegate?.bluetoothManager(self, peripheralManager: peripheralManager, isReadyWithError: nil)
         }
 
+        log.debug("Signaling connectionSemaphore - didConnect")
         connectionSemaphore.signal()
     }
 
@@ -337,7 +346,8 @@ extension BluetoothManager: CBCentralManagerDelegate {
             scanAfterDelay()
         }
 
-        // Don't freeze the thread
+        // Don't freeze the thread if connection fails
+        log.debug("Signaling connectionSemaphore - didFailToConnect")
         connectionSemaphore.signal()
     }
 }
@@ -360,11 +370,6 @@ extension BluetoothManager: PeripheralManagerDelegate {
     func reconnectLatestPeripheral() {
         reconnectPeripheral()
     }
-
-    func waitForPeripheral() {
-        waitForPeripheralConnection()
-    }
-
 
     func peripheralManager(_ manager: PeripheralManager, didUpdateNotificationStateFor characteristic: CBCharacteristic) {
 
