@@ -161,7 +161,7 @@ class BluetoothManager: NSObject {
             // connectionSemaphore.wait()
        // }
 
-       log.info("Waiting for peripheral reconnect semaphore")
+        log.info("Waiting for peripheral reconnect semaphore")
         connectionSemaphore.wait()
         log.info("Peripheral reconnect semaphore finished")
     }
@@ -356,7 +356,7 @@ extension BluetoothManager: PeripheralManagerDelegate {
     }
 
     func waitForPeripheral() {
-        waitForPeripheral()
+        waitForPeripheralConnection()
     }
 
 
