@@ -142,7 +142,10 @@ class BluetoothManager: NSObject {
     }
 
     func reconnectPeripheral() {
-       dispatchPrecondition(condition: .notOnQueue(managerQueue))
+        dispatchPrecondition(condition: .notOnQueue(managerQueue))
+
+        // Reset the semaphore because of the implementation
+        connectionSemaphore = DispatchSemaphore(value: 0)
 
         managerQueue.sync {
             self.managerQueue_scanForPeripheral()
@@ -155,11 +158,14 @@ class BluetoothManager: NSObject {
     }
 
     func waitForPeripheralConnection() {
-       dispatchPrecondition(condition: .notOnQueue(managerQueue))
+        dispatchPrecondition(condition: .notOnQueue(managerQueue))
 
-       // managerQueue.sync {
-            // connectionSemaphore.wait()
-       // }
+        // Reset the semaphore because of the implementation
+        connectionSemaphore = DispatchSemaphore(value: 0)
+
+        // managerQueue.sync {
+             // connectionSemaphore.wait()
+        // }
 
         log.info("Waiting for peripheral reconnect semaphore")
         connectionSemaphore.wait()
