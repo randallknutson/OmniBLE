@@ -23,9 +23,9 @@ public class Omnipod {
     var sequenceNo: UInt32?
     var lotNo: UInt64?
     var podId: UInt32? = nil
-    
+
     private var pairNew = false
-    
+
     private var serviceUUIDs: [CBUUID]
 
     private let log = OSLog(category: "Omnipod")
@@ -33,16 +33,16 @@ public class Omnipod {
 //    private let manager: PeripheralManager
 
     private let bluetoothManager = BluetoothManager()
-    
+
     private let delegateQueue = DispatchQueue(label: "com.randallknutson.OmnipodKit.delegateQueue", qos: .unspecified)
 
     private var sessionQueueOperationCountObserver: NSKeyValueObservation!
 
     /// Serializes access to device state
     private var lock = os_unfair_lock()
-    
+
     private let connectLock = NSCondition()
-    
+
     /// The queue used to serialize sessions and observe when they've drained
     private let sessionQueue: OperationQueue = {
         let queue = OperationQueue()
@@ -60,7 +60,7 @@ public class Omnipod {
         self.podComms = PodComms(podState: state, lotNo: lotNo, lotSeq: sequenceNo)
         self.bluetoothManager.delegate = self
     }
-    
+
     // Only valid to access on the session serial queue
     private var state: PodState? {
         didSet {
@@ -70,9 +70,9 @@ public class Omnipod {
             }
         }
     }
-    
+
     public weak var delegate: OmnipodDelegate?
-    
+
     public var podComms: PodComms
 
     func connectNew() throws {
@@ -87,7 +87,7 @@ public class Omnipod {
         bluetoothManager.scanForPeripheral()
 
         let signaled = connectLock.wait(until: Date(timeIntervalSinceNow: 10))
-        
+
         guard signaled else {
             throw PeripheralManagerError.notReady
         }
@@ -128,7 +128,7 @@ public class Omnipod {
             }
         }
     }
-    
+
 }
 
 // MARK: - Reading pump data
@@ -142,7 +142,7 @@ extension Omnipod {
         lotNo = parseLotNo()
         sequenceNo = parseSeqNo()
     }
-    
+
     private func validateServiceUUIDs() throws {
         // For some reason the pod simulator doesn't have two values.
         if (serviceUUIDs.count == 7) {
@@ -166,11 +166,11 @@ extension Omnipod {
             )
         }
     }
-    
+
     private func parsePodId() {
         podId = UInt32(serviceUUIDs[3].uuidString + serviceUUIDs[4].uuidString, radix: 16)
     }
-    
+
     private func parseLotNo() -> UInt64? {
         print(serviceUUIDs[5].uuidString + serviceUUIDs[6].uuidString)
         let lotNo: String = serviceUUIDs[5].uuidString + serviceUUIDs[6].uuidString + serviceUUIDs[7].uuidString
@@ -208,7 +208,7 @@ extension Omnipod: BluetoothManagerDelegate {
             podComms.manager = peripheralManager
         }
     }
-    
+
     func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral, advertisementData: [String : Any]?) -> Bool {
         do {
             if (advertisementData == nil) {
@@ -227,7 +227,7 @@ extension Omnipod: BluetoothManagerDelegate {
             return false
         }
     }
-    
+
     func bluetoothManager(_ manager: BluetoothManager, didCompleteConfiguration peripheralManager: PeripheralManager) {
         peripheralManager.runSession(withName: "Complete pod configuration") { [weak self] in
             do {

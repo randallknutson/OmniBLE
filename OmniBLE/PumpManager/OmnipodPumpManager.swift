@@ -599,10 +599,6 @@ extension OmnipodPumpManager {
             return
         }
 
-        // scanForPeripheral->managerQueue_scanForPeripheral has a guard so it only does actual work/connecting if current peripheral state is not connected
-        // so we *should* be fine if it is called in multiple places
-        omnipod.stayConnected = true
-
         podComms.runSession(withName: "Get pod status") { (result) in
             do {
                 switch result {
