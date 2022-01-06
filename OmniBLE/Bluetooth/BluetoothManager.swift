@@ -58,7 +58,7 @@ class BluetoothManager: NSObject {
 
     private let log = OSLog(category: "BluetoothManager")
 
-    private let connectionSemaphore = DispatchSemaphore(value: 0)
+    private var connectionSemaphore = DispatchSemaphore(value: 0)
 
     private let concurrentReconnectSemaphore = DispatchSemaphore(value: 1)
 
