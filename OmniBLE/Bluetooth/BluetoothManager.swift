@@ -58,6 +58,8 @@ class BluetoothManager: NSObject {
 
     private let log = OSLog(category: "BluetoothManager")
 
+    private let connectionSemaphore = DispatchSemaphore(value: 0)
+
     /// Isolated to `managerQueue`
     private var manager: CBCentralManager! = nil
 
@@ -137,6 +139,31 @@ class BluetoothManager: NSObject {
                 manager.cancelPeripheralConnection(peripheral)
             }
         }
+    }
+
+    func reconnectPeripheral() {
+       dispatchPrecondition(condition: .notOnQueue(managerQueue))
+
+        managerQueue.sync {
+            self.managerQueue_scanForPeripheral()
+            // connectionSemaphore.wait()
+        }
+
+        log.info("Waiting for peripheral reconnect semaphore")
+        connectionSemaphore.wait()
+        log.info("Peripheral reconnect semaphore finished")
+    }
+
+    func waitForPeripheralConnection() {
+       dispatchPrecondition(condition: .notOnQueue(managerQueue))
+
+       // managerQueue.sync {
+            // connectionSemaphore.wait()
+       // }
+
+       log.info("Waiting for peripheral reconnect semaphore")
+        connectionSemaphore.wait()
+        log.info("Peripheral reconnect semaphore finished")
     }
 
     private func managerQueue_scanForPeripheral() {
@@ -272,6 +299,8 @@ extension BluetoothManager: CBCentralManagerDelegate {
         if case .poweredOn = manager.state, case .connected = peripheral.state, let peripheralManager = peripheralManager {
             self.delegate?.bluetoothManager(self, peripheralManager: peripheralManager, isReadyWithError: nil)
         }
+
+        connectionSemaphore.signal()
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
@@ -301,6 +330,9 @@ extension BluetoothManager: CBCentralManagerDelegate {
         if stayConnected {
             scanAfterDelay()
         }
+
+        // Don't freeze the thread
+        connectionSemaphore.signal()
     }
 }
 
@@ -320,7 +352,11 @@ extension BluetoothManager: PeripheralManagerDelegate {
 
     // throws?
     func reconnectLatestPeripheral() {
-        scanForPeripheral()
+        reconnectPeripheral()
+    }
+
+    func waitForPeripheral() {
+        waitForPeripheral()
     }
 
 
