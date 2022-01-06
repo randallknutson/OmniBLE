@@ -476,8 +476,10 @@ extension PeripheralManager: CBPeripheralDelegate {
 
 extension PeripheralManager: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        self.log.debug("PeripheralManager - centralManagerDidUpdateState: %@", central)
         switch central.state {
         case .poweredOn:
+            self.log.debug("PeripheralManager - centralManagerDidUpdateState - running assertConfiguration")
             assertConfiguration()
         default:
             break
@@ -485,8 +487,10 @@ extension PeripheralManager: CBCentralManagerDelegate {
     }
 
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        self.log.debug("PeripheralManager - didConnect: %@", peripheral)
         switch peripheral.state {
         case .connected:
+            self.log.debug("PeripheralManager - didConnect - running assertConfiguration")
             assertConfiguration()
         default:
             break
