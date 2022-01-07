@@ -83,7 +83,8 @@ class PeripheralManager: NSObject {
 
         peripheral.delegate = self
 
-        assertConfiguration()
+        // TODO: Commenting out temporarily
+        // assertConfiguration()
     }
 }
 
@@ -130,13 +131,13 @@ extension PeripheralManager {
               self.log.error("PeripheralManager delegate is nil")
             }
 
-            if self.peripheral.state == .disconnected || self.peripheral.state == .connecting {
+            /*if self.peripheral.state == .disconnected || self.peripheral.state == .connecting {
               self.log.info("Peripheral is not connected - triggering reconnectLatestPeripheral...")
               // TODO: This might throw... Also - thread-safety?
               if let delegate = self.delegate {
                   delegate.reconnectLatestPeripheral()
               }
-            }
+            }*/
 
             if self.needsConfiguration || self.peripheral.services == nil {
                 do {
@@ -163,8 +164,37 @@ extension PeripheralManager {
         queue.async(execute: configureAndRun(block))
     }
 
+    /*func perform(_ block: @escaping (_ manager: PeripheralManager) -> Void) {
+        // TODO: Add reconnection dispatch group here!
+        if peripheral.state == .disconnected || peripheral.state == .connecting {
+            log.info("Peripheral is not connected - triggering reconnectLatestPeripheral...")
+            let group = DispatchGroup()
+            // TODO: This might throw... Also - thread-safety?
+            if let delegate = self.delegate {
+                // reconnectLatestPeripheral also handle
+                delegate.reconnectLatestPeripheral()
+            }
+            // Wait for reconnection
+            group.enter()
+            Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
+                if self.peripheral.state == .connected {
+                    group.leave()
+                    timer.invalidate()
+                }
+            }
+            group.notify(queue: queue) {
+                self.queue.async(execute: self.configureAndRun(block))
+            }
+        } else {
+            queue.async(execute: configureAndRun(block))
+        }
+    }*/
+
     private func assertConfiguration() {
-        perform { (_) in
+        /*perform { (_) in
+            // Intentionally empty to trigger configuration if necessary
+        }*/
+        self.runSession(withName: "Assert peripheral configuration") { () in
             // Intentionally empty to trigger configuration if necessary
         }
     }
@@ -480,16 +510,26 @@ extension PeripheralManager: CBCentralManagerDelegate {
         switch central.state {
         case .poweredOn:
             self.log.debug("PeripheralManager - centralManagerDidUpdateState - running assertConfiguration")
-            assertConfiguration()
+            if peripheral.state == .connected {
+                sessionQueue.isSuspended = true
+                assertConfiguration()
+            }
         default:
             break
         }
+    }
+
+    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        // Clear the queue in case of connection error
+        sessionQueue.cancelAllOperations()
     }
 
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         self.log.debug("PeripheralManager - didConnect: %@", peripheral)
         switch peripheral.state {
         case .connected:
+            self.log.debug("PeripheralManager - didConnect - resuming sessionQueue")
+            sessionQueue.isSuspended = false
             self.log.debug("PeripheralManager - didConnect - running assertConfiguration")
             assertConfiguration()
         default:
@@ -520,6 +560,19 @@ extension CBPeripheral {
 extension PeripheralManager {
     public func runSession(withName name: String , _ block: @escaping () -> Void) {
         self.log.default("Scheduling session %{public}@", name)
+
+        // TODO: What about .disconnecting?
+        if self.peripheral.state == .disconnected || self.peripheral.state == .connecting {
+            sessionQueue.isSuspended = true
+            self.log.info("runSession - Peripheral is not connected...")
+            if self.peripheral.state == .disconnected {
+                if let delegate = self.delegate {
+                    self.log.debug("runSession - Peripheral is not connected - triggering reconnectLatestPeripheral...")
+                    delegate.reconnectLatestPeripheral()
+                }
+            }
+        }
+
         sessionQueue.addOperation({ [weak self] in
             self?.perform { (manager) in
                 manager.log.default("======================== %{public}@ ===========================", name)

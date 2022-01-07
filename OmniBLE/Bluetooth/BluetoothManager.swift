@@ -58,8 +58,6 @@ class BluetoothManager: NSObject {
 
     private let log = OSLog(category: "BluetoothManager")
 
-    private var connectionSemaphore = DispatchSemaphore(value: 0)
-
     private let concurrentReconnectSemaphore = DispatchSemaphore(value: 1)
 
     /// Isolated to `managerQueue`
@@ -153,6 +151,7 @@ class BluetoothManager: NSObject {
 
         guard manager.state == .poweredOn else {
             log.debug("reconnectPeripheral error - manager.state != .poweredOn")
+            concurrentReconnectSemaphore.signal()
             return
         }
 
@@ -161,11 +160,9 @@ class BluetoothManager: NSObject {
             if let _ = peripheral {
                 log.debug("reconnectPeripheral error - peripheral is already connected %@", peripheral!)
             }
+            concurrentReconnectSemaphore.signal()
             return
         }
-
-        // Reset the peripheral readiness semaphore before starting a new run
-        connectionSemaphore = DispatchSemaphore(value: 0)
 
         // Possible states are disconnected, disconnecting, connected and connecting
         // We guard against connected earlier and in case of connecting we only need to wait for the semaphore
@@ -179,10 +176,6 @@ class BluetoothManager: NSObject {
                 log.debug("reconnectPeripheral - finished managerQueue.sync")
             }
         }
-
-        log.debug("Waiting for peripheral reconnect semaphore to be signalled (peripheral is connected)")
-        connectionSemaphore.wait()
-        log.debug("Peripheral reconnect semaphore finished")
 
         // Release reconnect loop for other callers
         log.debug("reconnectPeripheral concurrency semaphore signaling")
@@ -327,9 +320,6 @@ extension BluetoothManager: CBCentralManagerDelegate {
         if case .poweredOn = manager.state, case .connected = peripheral.state, let peripheralManager = peripheralManager {
             self.delegate?.bluetoothManager(self, peripheralManager: peripheralManager, isReadyWithError: nil)
         }
-
-        log.debug("Signaling connectionSemaphore - didConnect")
-        connectionSemaphore.signal()
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
@@ -351,6 +341,8 @@ extension BluetoothManager: CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         dispatchPrecondition(condition: .onQueue(managerQueue))
 
+        peripheralManager?.centralManager(central, didFailToConnect: peripheral, error: error)
+
         log.error("%{public}@: %{public}@", #function, String(describing: error))
         if let error = error, let peripheralManager = peripheralManager {
             self.delegate?.bluetoothManager(self, peripheralManager: peripheralManager, isReadyWithError: error)
@@ -359,10 +351,6 @@ extension BluetoothManager: CBCentralManagerDelegate {
         if stayConnected {
             scanAfterDelay()
         }
-
-        // Don't freeze the thread if connection fails
-        log.debug("Signaling connectionSemaphore - didFailToConnect")
-        connectionSemaphore.signal()
     }
 }
 
