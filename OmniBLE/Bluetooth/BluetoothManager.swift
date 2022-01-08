@@ -54,6 +54,8 @@ class BluetoothManager: NSObject {
     }
     private let lockedStayConnected: Locked<Bool> = Locked(true)
 
+    private var isPermanentlyDisconnecting: Bool = false
+
     weak var delegate: BluetoothManagerDelegate?
 
     private let log = OSLog(category: "BluetoothManager")
@@ -127,15 +129,22 @@ class BluetoothManager: NSObject {
         }
     }
 
-    func disconnect() {
+    // This is a actually `permanentDisconnect` - we do not plan on connecting to this device anymore
+    func permanentDisconnect() {
         dispatchPrecondition(condition: .notOnQueue(managerQueue))
 
+        log.debug("permanentDisconnect called")
+
+        // TODO: This could also be async?
         managerQueue.sync {
             if manager.isScanning {
+                log.debug("permanentDisconnect - running stopScan")
                 manager.stopScan()
             }
 
             if let peripheral = peripheral {
+                isPermanentlyDisconnecting = true
+                log.debug("permanentDisconnect - running cancelPeripheralConnection")
                 manager.cancelPeripheralConnection(peripheral)
             }
         }
@@ -331,6 +340,17 @@ extension BluetoothManager: CBCentralManagerDelegate {
             if let peripheralManager = peripheralManager {
                 self.delegate?.bluetoothManager(self, peripheralManager: peripheralManager, isReadyWithError: error)
             }
+        }
+
+        // Make sure if permanent disconnect is requested, we are actually permanently clearing the peripheral
+        if isPermanentlyDisconnecting {
+            log.debug("isPermanentlyDisconnecting is true - nullifying peripheral")
+            // nullify the peripheral if we don't want it anymore
+            // TODO: check why stayConnected is never set?
+            self.stayConnected = false
+            self.peripheral = nil // this should also nullify peripheralManager and peripheralIdentifier
+            log.debug("isPermanentlyDisconnecting done - setting isPermanentlyDisconnecting to false")
+            self.isPermanentlyDisconnecting = false
         }
 
         if stayConnected {
