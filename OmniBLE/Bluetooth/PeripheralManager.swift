@@ -510,8 +510,11 @@ extension PeripheralManager: CBCentralManagerDelegate {
         switch central.state {
         case .poweredOn:
             self.log.debug("PeripheralManager - centralManagerDidUpdateState - running assertConfiguration")
-            if peripheral.state == .connected {
+            if peripheral.state != .connected {
                 sessionQueue.isSuspended = true
+            }
+            if peripheral.state == .connected {
+                sessionQueue.isSuspended = false
                 assertConfiguration()
             }
         default:
