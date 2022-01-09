@@ -99,8 +99,8 @@ public class Omnipod {
         }
     }
 
-    public func disconnect() {
-        bluetoothManager.disconnect()
+    public func permanentDisconnect() {
+        bluetoothManager.permanentDisconnect()
     }
 
     public var isScanning: Bool {
