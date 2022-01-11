@@ -55,7 +55,7 @@ extension PodCommsError: LocalizedError {
         case .invalidAddress(address: let address, expectedAddress: let expectedAddress):
             return String(format: LocalizedString("Invalid address 0x%x. Expected 0x%x", comment: "Error message for when unexpected address is received (1: received address) (2: expected address)"), address, expectedAddress)
         case .noPodAvailable:
-            return LocalizedString("No Pod available", comment: "Error message shown when no response from pod was received")
+            return LocalizedString("Pod is not currently connected", comment: "Error message shown when pod is not currently connected")
         case .unfinalizedBolus:
             return LocalizedString("Bolus in progress", comment: "Error message shown when operation could not be completed due to existing bolus in progress")
         case .unfinalizedTempBasal:
@@ -109,7 +109,7 @@ extension PodCommsError: LocalizedError {
         case .invalidAddress:
             return LocalizedString("Crosstalk possible. Please move to a new location", comment: "Recovery suggestion when unexpected address received")
         case .noPodAvailable:
-            return LocalizedString("Make sure your pod is filled and nearby", comment: "Recovery suggestion when no pod is available")
+            return LocalizedString("Make sure activated pod is nearby", comment: "Recovery suggestion when pod is not currently connected")
         case .unfinalizedBolus:
             return LocalizedString("Wait for existing bolus to finish, or cancel bolus", comment: "Recovery suggestion when operation could not be completed due to existing bolus in progress")
         case .unfinalizedTempBasal:
@@ -220,9 +220,9 @@ public class PodCommsSession {
             blocksToSend += [confirmationBeepBlock]
         }
 
-//        if blocksToSend.contains(where: { $0 as? NonceResyncableMessageBlock != nil }) {
-//            podState.advanceToNextNonce()
-//        }
+        if blocksToSend.contains(where: { $0 as? NonceResyncableMessageBlock != nil }) {
+            podState.advanceToNextNonce() // NOP for Dash
+        }
         
         let messageNumber = transport.messageNumber
 
@@ -263,6 +263,7 @@ public class PodCommsSession {
 
             switch errorResponse.errorResponseType {
             case .badNonce(let nonceResyncKey):
+                // Should never occur for Dash
                 guard let sentNonce = sentNonce else {
                     log.error("Unexpected bad nonce response: %{public}@", String(describing: response.messageBlocks[0]))
                     throw PodCommsError.unexpectedResponse(response: responseType)

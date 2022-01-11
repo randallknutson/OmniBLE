@@ -63,6 +63,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
     public let bleFirmwareVersion: String
     public let lotNo: UInt64
     public let lotSeq: UInt32
+    public let productId: UInt8
     var activeAlertSlots: AlertSet
     public var lastInsulinMeasurements: PodInsulinMeasurements?
 
@@ -102,13 +103,15 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         return active
     }
     
-    public init(address: UInt32, ltk: Data, firmwareVersion: String, bleFirmwareVersion: String, lotNo: UInt64, lotSeq: UInt32, messageTransportState: MessageTransportState? = nil) {
+    public init(address: UInt32, ltk: Data, firmwareVersion: String, bleFirmwareVersion: String, lotNo: UInt64, lotSeq: UInt32, productId: UInt8, messageTransportState: MessageTransportState? = nil)
+    {
         self.address = address
         self.ltk = ltk
         self.firmwareVersion = firmwareVersion
         self.bleFirmwareVersion = bleFirmwareVersion
         self.lotNo = lotNo
         self.lotSeq = lotSeq
+        self.productId = productId
         self.lastInsulinMeasurements = nil
         self.finalizedDoses = []
         self.suspendState = .resumed(Date())
@@ -155,12 +158,12 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
     }
     
     public var currentNonce: UInt32 {
-        let fixedNonceValue: UInt32 = 0x494E532E // Dash uses a fixed value for pod nonce
-        return fixedNonceValue // not clear if the actual value even matters
+        let fixedNonceValue: UInt32 = 0x494E532E // Dash pods requires this particular fixed value
+        return fixedNonceValue
     }
     
     public mutating func resyncNonce(syncWord: UInt16, sentNonce: UInt32, messageSequenceNum: Int) {
-        assert(false) // XXX ?should never be called for Dash?
+        print("resyncNonce() called!") // Should never be called for Dash!
     }
     
     private mutating func updatePodTimes(timeActive: TimeInterval) -> Date {
@@ -286,6 +289,11 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         self.bleFirmwareVersion = bleFirmwareVersion
         self.lotNo = lotNo
         self.lotSeq = lotSeq
+        if let productId = rawValue["productId"] as? UInt8 {
+            self.productId = productId
+        } else {
+            self.productId = dashProductId
+        }
 
 
         if let activatedAt = rawValue["activatedAt"] as? Date {
@@ -410,6 +418,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             "bleFirmwareVersion": bleFirmwareVersion,
             "lotNo": lotNo,
             "lotSeq": lotSeq,
+            "productId": productId,
             "suspendState": suspendState.rawValue,
             "finalizedDoses": finalizedDoses.map( { $0.rawValue }),
             "alerts": activeAlertSlots.rawValue,
@@ -479,6 +488,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             "* setupUnitsDelivered: \(String(reflecting: setupUnitsDelivered))",
             "* firmwareVersion: \(firmwareVersion)",
             "* bleFirmwareVersion: \(bleFirmwareVersion)",
+            "* productId: \(productId)",
             "* lotNo: \(lotNo)",
             "* lotSeq: \(lotSeq)",
             "* suspendState: \(suspendState)",

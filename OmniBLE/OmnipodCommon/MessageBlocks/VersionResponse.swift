@@ -11,6 +11,9 @@ import Foundation
 fileprivate let assignAddressVersionLength: UInt8 = 0x15
 fileprivate let setupPodVersionLength: UInt8 = 0x1B
 
+let erosProductId: UInt8 = 2        // 2nd gen Eros Omnipod (PM=PI=2.x.y)
+let dashProductId: UInt8 = 4        // 4th gen Dash Omnipod (firmware version 4.x.y)
+
 public struct VersionResponse : MessageBlock {
     
     public struct FirmwareVersion : CustomStringConvertible {
@@ -31,15 +34,15 @@ public struct VersionResponse : MessageBlock {
     
     public let blockType: MessageBlockType = .versionResponse
 
-    public let pmVersion: FirmwareVersion
-    public let piVersion: FirmwareVersion
+    public let firmwareVersion: FirmwareVersion     // for Eros (PM) 2.x.y, for Dash 4.x.y, for Omnipod5 5.x.y?
+    public let iFirmwareVersion: FirmwareVersion    // for Eros (PI) same as PM, for Dash & Omnipod 5 BLE firmware version #
+    public let productId: UInt8                     // 02 for Eros 02, 04 for Dash, and guessing 05 for Omnipod 5
     public let lot: UInt32
     public let tid: UInt32
     public let address: UInt32
-    public let productID: UInt8                     // always 2 (for PM = PI = 2.7.0), 2nd gen Omnipod?
     public let podProgressStatus: PodProgressStatus
 
-    // These values only included in the shorter 0x15 VersionResponse for the AssignAddress command.
+    // These values only included in the shorter 0x15 VersionResponse for the AssignAddress command for Eros.
     public let gain: UInt8?                         // 2-bit value, max gain is at 0, min gain is at 2
     public let rssi: UInt8?                         // 6-bit value, max rssi seen 61
 
@@ -67,16 +70,16 @@ public struct VersionResponse : MessageBlock {
             // LL = 0x15 (assignAddressVersionLength)
             // PM MX.MY.MZ = 02.07.02 (for PM 2.7.0)
             // PI IX.IY.IZ = 02.07.02 (for PI 2.7.0)
-            // ID = Product ID (always 02 for PM = PI = 2.7.0)
-            // 0J = Pod progress state (typically 02, but could be 01, for this particular response)
+            // ID = Product Id (02 for Eros, 04 for Dash, and perhaps 05 for Omnnipod 5)
+            // 0J = Pod progress state (typically 02 for this particular response)
             // LLLLLLLL = Lot
             // TTTTTTTT = Tid
-            // GS = ggssssss (Gain/RSSI)
+            // GS = ggssssss (Gain/RSSI for Eros only)
             // IIIIIIII = connection ID address
 
-            pmVersion = FirmwareVersion(encodedData: encodedData.subdata(in: 2..<5))
-            piVersion = FirmwareVersion(encodedData: encodedData.subdata(in: 5..<8))
-            productID = encodedData[8]
+            firmwareVersion = FirmwareVersion(encodedData: encodedData.subdata(in: 2..<5))
+            iFirmwareVersion = FirmwareVersion(encodedData: encodedData.subdata(in: 5..<8))
+            productId = encodedData[8]
             guard let progressStatus = PodProgressStatus(rawValue: encodedData[9]) else {
                 throw MessageBlockError.parseError
             }
@@ -108,17 +111,17 @@ public struct VersionResponse : MessageBlock {
             // PP = 0x34 = 52, # of Prime Pulses (52 pulses x 0.05U/pulse = 2.6U)
             // CP = 0x0A = 10, # of Cannula insertion Pulses (10 pulses x 0.05U/pulse = 0.5U)
             // PL = 0x50 = 80, # of hours maximum Pod Life
-            // PM = MX.MY.MZ = 02.07.02 (for PM 2.7.0)
-            // PI = IX.IY.IZ = 02.07.02 (for PI 2.7.0)
-            // ID = Product ID (always 02 for PM = PI = 2.7.0)
+            // PM = MX.MY.MZ = 02.07.02 (for PM 2.7.0 for Eros)
+            // PI = IX.IY.IZ = 02.07.02 (for PI 2.7.0 for Eros)
+            // ID = Product Id (02 for Eros, 04 for Dash, and perhaps 05 for Omnnipod 5)
             // 0J = Pod progress state (should be 03 for this particular response)
             // LLLLLLLL = Lot
             // TTTTTTTT = Tid
             // IIIIIIII = connection ID address
 
-            pmVersion = FirmwareVersion(encodedData: encodedData.subdata(in: 9..<12))
-            piVersion = FirmwareVersion(encodedData: encodedData.subdata(in: 12..<15))
-            productID = encodedData[15]
+            firmwareVersion = FirmwareVersion(encodedData: encodedData.subdata(in: 9..<12))
+            iFirmwareVersion = FirmwareVersion(encodedData: encodedData.subdata(in: 12..<15))
+            productId = encodedData[15]
             guard let progressStatus = PodProgressStatus(rawValue: encodedData[16]) else {
                 throw MessageBlockError.parseError
             }
@@ -135,7 +138,7 @@ public struct VersionResponse : MessageBlock {
             cannulaInsertionUnits = Double(encodedData[7]) * Pod.pulseSize
             serviceDuration = TimeInterval.hours(Double(encodedData[8]))
 
-            // These values only included in the shorter 0x15 VersionResponse for the AssignAddress command.
+            // These values only included in the shorter 0x15 VersionResponse for the AssignAddress command for Eros.
             gain = nil
             rssi = nil
 
@@ -155,7 +158,7 @@ public struct VersionResponse : MessageBlock {
 
 extension VersionResponse: CustomDebugStringConvertible {
     public var debugDescription: String {
-        return "VersionResponse(lot:\(lot), tid:\(tid), address:\(Data(bigEndian: address).hexadecimalString), pmVersion:\(pmVersion), piVersion:\(piVersion), productID:\(productID), podProgressStatus:\(podProgressStatus), gain:\(gain?.description ?? "NA"), rssi:\(rssi?.description ?? "NA"), pulseSize:\(pulseSize?.description ?? "NA"), secondsPerBolusPulse:\(secondsPerBolusPulse?.description ?? "NA"), secondsPerPrimePulse:\(secondsPerPrimePulse?.description ?? "NA"), primeUnits:\(primeUnits?.description ?? "NA"), cannulaInsertionUnits:\(cannulaInsertionUnits?.description ?? "NA"), serviceDuration:\(serviceDuration?.description ?? "NA"), )"
+        return "VersionResponse(lot:\(lot), tid:\(tid), address:\(Data(bigEndian: address).hexadecimalString), firmwareVersion:\(firmwareVersion), iFirmwareVersion:\(iFirmwareVersion), productId:\(productId), podProgressStatus:\(podProgressStatus), gain:\(gain?.description ?? "NA"), rssi:\(rssi?.description ?? "NA"), pulseSize:\(pulseSize?.description ?? "NA"), secondsPerBolusPulse:\(secondsPerBolusPulse?.description ?? "NA"), secondsPerPrimePulse:\(secondsPerPrimePulse?.description ?? "NA"), primeUnits:\(primeUnits?.description ?? "NA"), cannulaInsertionUnits:\(cannulaInsertionUnits?.description ?? "NA"), serviceDuration:\(serviceDuration?.description ?? "NA"), )"
     }
 }
 

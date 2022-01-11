@@ -456,7 +456,6 @@ public struct FaultEventCode: CustomStringConvertible, Equatable {
     
     public var localizedDescription: String {
         if let faultType = faultType {
-            // XXX might want to adjust these local descriptions for Dash
             switch faultType {
             case .noFaults:
                 return LocalizedString("No faults", comment: "Description for Fault Event Code .noFaults")

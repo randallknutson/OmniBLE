@@ -190,7 +190,7 @@ public class OmnipodPumpManager: DeviceManager {
 
     private let pumpDelegate = WeakSynchronizedDelegate<PumpManagerDelegate>()
 
-    public let log = OSLog(category: "OmnipodPumpManagerBLE")
+    public let log = OSLog(category: "OmniBLEPumpManager")
 
     private var lastLoopRecommendation: Date?
 
@@ -236,8 +236,8 @@ extension OmnipodPumpManager {
                 name: type(of: self).managerIdentifier,
                 manufacturer: "Insulet",
                 model: "Dash",
-                hardwareVersion: nil,
-                firmwareVersion: "1",
+                hardwareVersion: String(podState.productId),
+                firmwareVersion: podState.firmwareVersion + " " + podState.bleFirmwareVersion,
                 softwareVersion: String(OmniBLEVersionNumber),
                 localIdentifier: String(format:"%04X", podState.address),
                 udiDeviceIdentifier: nil
@@ -961,8 +961,8 @@ extension OmnipodPumpManager: PumpManager {
 
     public var supportedBasalRates: [Double] {
         // 0.05 units for rates between 0.05-30U/hr
-        // 0 is not a supported scheduled basal rate
-        return (1...600).map { Double($0) / Double(Pod.pulsesPerUnit) }
+        // 0 U/hr is not a supported scheduled basal rate for Eros, but it is for Dash
+        return (0...600).map { Double($0) / Double(Pod.pulsesPerUnit) }
     }
 
     public func roundToSupportedBolusVolume(units: Double) -> Double {
@@ -1123,7 +1123,8 @@ extension OmnipodPumpManager: PumpManager {
     }
 
     public func setMustProvideBLEHeartbeat(_ mustProvideBLEHeartbeat: Bool) {
-        // do nothing here for Dash
+        // We can't implement this service for Dash (unless we can find some Dash hook for this).
+        // XXX PumpManager protocol probably should be updated to not to assume that this service is always available.
     }
 
     // Called only from pumpDelegate notify block

@@ -81,9 +81,11 @@ extension CommandResponseViewController {
         }
         result += String(format: LocalizedString("Alerts: %1$@\n", comment: "The format string for Alerts: (1: the alerts string)"), alertString)
 
-        result += String(format: LocalizedString("RSSI: %1$@\n", comment: "The format string for RSSI: (1: RSSI value)"), String(describing: status.radioRSSI))
+        if status.radioRSSI != 0 {
+            result += String(format: LocalizedString("RSSI: %1$@\n", comment: "The format string for RSSI: (1: RSSI value)"), String(describing: status.radioRSSI))
 
-        result += String(format: LocalizedString("Receiver Low Gain: %1$@\n", comment: "The format string for receiverLowGain: (1: receiverLowGain)"), String(describing: status.receiverLowGain))
+            result += String(format: LocalizedString("Receiver Low Gain: %1$@\n", comment: "The format string for receiverLowGain: (1: receiverLowGain)"), String(describing: status.receiverLowGain))
+        }
         
         if status.faultEventCode.faultType != .noFaults {
             result += "\n" // since we have a fault, report the additional fault related information in a separate section
@@ -96,6 +98,9 @@ extension CommandResponseViewController {
             }
             if let faultEventTimeSinceActivation = status.faultEventTimeSinceActivation, let faultTimeStr = formatter.string(from: faultEventTimeSinceActivation) {
                 result += String(format: LocalizedString("Fault time: %1$@\n", comment: "The format string for fault time: (1: fault time string)"), faultTimeStr)
+            }
+            if let faultCallingAddress = status.faultCallingAddress {
+                result += String(format: LocalizedString("Fault calling address: 0x%1$04x\n", comment: "The format string for fault calling address: (1: fault calling address)"), faultCallingAddress)
             }
         }
 
@@ -165,7 +170,14 @@ extension CommandResponseViewController {
 
     static func displayState(pumpManager: OmnipodPumpManager, omnipod: Omnipod) -> T {
         return T { (completionHander) -> String in
-            return String(reflecting: omnipod) + "\n\n\n" + String(reflecting: pumpManager)
+            var resultStr = ""
+            if let podId = omnipod.podId {
+                resultStr += String(format: "Pod UUID: 0x%0X\n\n", podId)
+            }
+            resultStr += String(reflecting: omnipod) + "\n\n\n"
+            resultStr += String(reflecting: pumpManager)
+
+            return resultStr
         }
     }
 

@@ -104,7 +104,8 @@ public class PodComms: CustomDebugStringConvertible {
                 firmwareVersion: "",
                 bleFirmwareVersion: "",
                 lotNo: 0,
-                lotSeq: 0
+                lotSeq: 0,
+                productId: dashProductId
             )
         }
 
@@ -134,28 +135,29 @@ public class PodComms: CustomDebugStringConvertible {
         }
         if let lotSeq = self.lotSeq {
             if versionResponse.tid != lotSeq {
-                log.debug("pairPod: versionResponse.tid %d doesn't match lotSeq of %d", versionResponse.tid, lotSeq)
+                log.debug("pairPod: versionResponse.tid 0x%08X doesn't match lotSeq of 0x%08X (%u)", versionResponse.tid, lotSeq, lotSeq)
             }
         } else {
-            log.debug("pairPod: got versionResponse.tid of %d with no previous lotSeq", versionResponse.tid)
+            log.debug("pairPod: got versionResponse.tid of 0x%08X (%u) with no previous lotSeq", versionResponse.tid, versionResponse.tid)
         }
         if let lotNo = self.lotNo {
             if versionResponse.lot != lotNo {
-                log.debug("pairPod: versionResponse.lot %d doesn't match lotNo of %d", versionResponse.lot, lotNo)
+                log.debug("pairPod: versionResponse.lot 0x%08X doesn't match lotNo of 0x%08X (%u)", versionResponse.lot, lotNo, lotNo)
             }
         } else {
-            log.debug("pairPod: got versionResponse.lot of %d with no previous lotNo", versionResponse.lot)
+            log.debug("pairPod: got versionResponse.lot of 0x%08X (%u) with no previous lotNo", versionResponse.lot, versionResponse.lot)
         }
 
         // Now create the real PodState using the versionResponse info
-        log.debug("pairPod: creating PodState for versionResponse %{public}@", String(describing: versionResponse))
+        log.debug("pairPod: creating PodState for versionResponse %{public}@ for %{public}@", String(describing: versionResponse), String(describing: self))
         self.podState = PodState(
             address: response.address,
             ltk: ltk,
-            firmwareVersion: String(describing: versionResponse.pmVersion),
-            bleFirmwareVersion: String(describing: versionResponse.piVersion),
-            lotNo: UInt64(versionResponse.lot), // or self.lotNo?
-            lotSeq: versionResponse.tid, // or self.lotSeq?
+            firmwareVersion: String(describing: versionResponse.firmwareVersion),
+            bleFirmwareVersion: String(describing: versionResponse.iFirmwareVersion),
+            lotNo: UInt64(versionResponse.lot), // XXX get 5-byte lotNo from attributes or use this 4-byte lotNo in versionResponse?
+            lotSeq: versionResponse.tid, // XXX get from attributes?
+            productId: versionResponse.productId,
             messageTransportState: podState!.messageTransportState
         )
         // podState setupProgress state should be addressAssigned
@@ -167,7 +169,7 @@ public class PodComms: CustomDebugStringConvertible {
             throw PodCommsError.activationTimeExceeded
         }
 
-        log.debug("pairPod: self.PodState messageTransportState now: %@", String(reflecting: self.podState?.messageTransportState))
+        log.debug("pairPod: self.PodState messageTransportState now: %{public}}@", String(reflecting: self.podState?.messageTransportState))
     }
     
     private func syncSession(_ ltk: Data, _ msgSeq: Int, _ address: UInt32, _ eapSqn: Int) throws -> Int? {
@@ -226,7 +228,8 @@ public class PodComms: CustomDebugStringConvertible {
         log.debug("setupPod: created transport %@ using podState %@ with messageTransportState %@", String(reflecting: transport), String(reflecting: podState), String(reflecting: podState.messageTransportState))
 
         let dateComponents = SetupPodCommand.dateComponents(date: Date(), timeZone: timeZone)
-        let setupPod = SetupPodCommand(address: podState.address, dateComponents: dateComponents, lot: UInt32(podState.lotNo), tid: podState.lotSeq)
+        // XXX Can only use a UInt32 versionResponse lotNo # here
+        let setupPod = SetupPodCommand(address: podState.address, dateComponents: dateComponents, lot: UInt32(podState.lotNo & 0xFFFFFFFF), tid: podState.lotSeq)
 
         let message = Message(address: 0xffffffff, messageBlocks: [setupPod], sequenceNum: transport.messageNumber)
 
