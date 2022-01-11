@@ -40,7 +40,7 @@ extension OmnipodPumpManagerError: LocalizedError {
             return LocalizedString("Pod is not in a state ready for cannula insertion.", comment: "Error message when cannula insertion fails because the pod is in an unexpected state")
         }
     }
-    
+
     public var failureReason: String? {
         switch self {
         case .noPodPaired:
@@ -51,7 +51,7 @@ extension OmnipodPumpManagerError: LocalizedError {
             return nil
         }
     }
-    
+
     public var recoverySuggestion: String? {
         switch self {
         case .noPodPaired:
@@ -69,7 +69,7 @@ public class OmnipodPumpManager: DeviceManager {
     public init(state: OmnipodPumpManagerState) {
         self.lockedState = Locked(state)
         self.omnipod = Omnipod(state.podState)
-        
+
         self.omnipod.delegate = self
 
         self.podComms.delegate = self
@@ -93,7 +93,7 @@ public class OmnipodPumpManager: DeviceManager {
             omnipod.podComms = newValue
         }
     }
-    
+
     public let omnipod: Omnipod // public for easier diagnostic display
 
     private let podStateObservers = WeakSynchronizedSet<PodStateObserver>()
@@ -163,7 +163,7 @@ public class OmnipodPumpManager: DeviceManager {
 
         return returnType
     }
-    
+
     private let lockedState: Locked<OmnipodPumpManagerState>
 
     private let statusObservers = WeakSynchronizedSet<PumpManagerStatusObserver>()
@@ -177,7 +177,7 @@ public class OmnipodPumpManager: DeviceManager {
             observer.pumpManager(self, didUpdate: status, oldStatus: oldStatus)
         }
     }
-    
+
     private func logDeviceCommunication(_ message: String, type: DeviceLogEntryType = .send) {
         var podAddress = "noPod"
         if let podState = self.state.podState {
@@ -190,15 +190,15 @@ public class OmnipodPumpManager: DeviceManager {
 
     private let pumpDelegate = WeakSynchronizedDelegate<PumpManagerDelegate>()
 
-    public let log = OSLog(category: "OmnipodPumpManager")
+    public let log = OSLog(category: "OmnipodPumpManagerBLE")
 
     private var lastLoopRecommendation: Date?
-    
+
     // MARK: - CustomDebugStringConvertible
 
     public var debugDescription: String {
         let lines = [
-            "## OmnipodPumpManager",
+            "## OmniBLEPumpManager",
             "podComms: \(String(reflecting: podComms))",
             "state: \(String(reflecting: state))",
             "status: \(String(describing: status))",
@@ -211,11 +211,11 @@ public class OmnipodPumpManager: DeviceManager {
 
 extension OmnipodPumpManager {
     // MARK: - PodStateObserver
-    
+
     public func addPodStateObserver(_ observer: PodStateObserver, queue: DispatchQueue) {
         podStateObservers.insert(observer, queue: queue)
     }
-    
+
     public func removePodStateObserver(_ observer: PodStateObserver) {
         podStateObservers.removeElement(observer)
     }
@@ -389,6 +389,7 @@ extension OmnipodPumpManager {
 
     // Does not support concurrent callers. Not thread-safe.
     private func forgetPod(completion: @escaping () -> Void) {
+        omnipod.permanentDisconnect()
         let resetPodState = { (_ state: inout OmnipodPumpManagerState) in
             self.podComms = PodComms(podState: nil, lotNo: nil, lotSeq: nil)
             self.podComms.delegate = self
@@ -425,7 +426,7 @@ extension OmnipodPumpManager {
         }
     }
 
-    
+
     // MARK: - Pairing
 
     // Called on the main thread
@@ -469,7 +470,7 @@ extension OmnipodPumpManager {
 
         if needsPairing {
             self.log.default("Pairing pod before priming")
-            
+
             // Create random address with 20 bits to match PDM, could easily use 24 bits instead
             if self.state.pairingAttemptAddress == nil {
                 self.lockedState.mutate { (state) in
@@ -478,13 +479,13 @@ extension OmnipodPumpManager {
             }
 
             self.podComms.pairAndSetupPod(address: self.state.pairingAttemptAddress!, timeZone: .currentFixed, messageLogger: self) { (result) in
-                
+
                 if case .success = result {
                     self.lockedState.mutate { (state) in
                         state.pairingAttemptAddress = nil
                     }
                 }
-                
+
                 // Calls completion
                 primeSession(result)
             }
@@ -597,7 +598,7 @@ extension OmnipodPumpManager {
             completion?(.failure(PodCommsError.unfinalizedBolus))
             return
         }
-        
+
         podComms.runSession(withName: "Get pod status") { (result) in
             do {
                 switch result {
@@ -650,7 +651,7 @@ extension OmnipodPumpManager {
     }
 
     public func setTime(completion: @escaping (Error?) -> Void) {
-        
+
         guard state.hasActivePod else {
             completion(OmnipodPumpManagerError.noPodPaired)
             return
@@ -861,7 +862,7 @@ extension OmnipodPumpManager {
                 let tempBasalCompletionBeep = self.confirmationBeeps && tempBasalConfirmationBeeps
                 let bolusCompletionBeep = self.confirmationBeeps
                 let result = session.beepConfig(beepConfigType: .bipBeepBipBeepBipBeepBipBeep, basalCompletionBeep: basalCompletionBeep, tempBasalCompletionBeep: tempBasalCompletionBeep, bolusCompletionBeep: bolusCompletionBeep)
-                
+
                 switch result {
                 case .success:
                     completion(nil)
@@ -1124,7 +1125,7 @@ extension OmnipodPumpManager: PumpManager {
     public func setMustProvideBLEHeartbeat(_ mustProvideBLEHeartbeat: Bool) {
         // do nothing here for Dash
     }
-    
+
     // Called only from pumpDelegate notify block
     private func recommendLoopIfNeeded(_ delegate: PumpManagerDelegate?) {
         if lastLoopRecommendation == nil || lastLoopRecommendation!.timeIntervalSinceNow < .minutes(-4.5) {
@@ -1142,7 +1143,7 @@ extension OmnipodPumpManager: PumpManager {
 
             return state.isPumpDataStale
         }
-        
+
         switch shouldFetchStatus {
         case .none:
             return // No active pod
@@ -1187,7 +1188,7 @@ extension OmnipodPumpManager: PumpManager {
                 completion(.failure(SetBolusError.certain(error)))
                 return
             }
-            
+
             defer {
                 self.setState({ (state) in
                     state.bolusEngageState = .stable
@@ -1271,10 +1272,10 @@ extension OmnipodPumpManager: PumpManager {
                 self.setState({ (state) in
                     state.bolusEngageState = .disengaging
                 })
-                
+
                 if let bolus = self.state.podState?.unfinalizedBolus, !bolus.isFinished, bolus.scheduledCertainty == .uncertain {
                     let status = try session.getStatus()
-                    
+
                     if !status.deliveryStatus.bolusing {
                         completion(.success(nil))
                         return
@@ -1471,11 +1472,11 @@ extension OmnipodPumpManager: MessageLogger {
 
 extension OmnipodPumpManager: OmnipodDelegate {
     public func omnipod(_ omnipod: Omnipod) {
-        
+
     }
-    
+
     public func omnipod(_ omnipod: Omnipod, didError error: Error) {
-        
+
     }
 }
 

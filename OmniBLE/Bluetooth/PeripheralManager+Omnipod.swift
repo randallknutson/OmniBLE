@@ -89,11 +89,11 @@ extension PeripheralManager {
             var expected: UInt8 = 0
             let firstPacket = try readData(sequence: expected, timeout: 5)
 
-            guard let firstPacket = firstPacket else {
+            guard let _ = firstPacket else {
                 return nil
             }
 
-            let joiner = try PayloadJoiner(firstPacket: firstPacket)
+            let joiner = try PayloadJoiner(firstPacket: firstPacket!)
 
             for _ in 1...joiner.fullFragments {
                 expected += 1
