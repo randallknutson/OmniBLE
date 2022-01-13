@@ -1,6 +1,6 @@
 //
 //  OmnipodReservoirView.swift
-//  OmnipodKit
+//  OmniKit
 //
 //  Created by Pete Schwamb on 10/22/18.
 //  Copyright © 2018 Pete Schwamb. All rights reserved.
@@ -63,18 +63,18 @@ public final class OmnipodReservoirView: LevelHUDView, NibLoadable {
     }
 
     
-    private func updateColor() {
+    private func updateAlertLabelColor() {
         switch reservoirAlertState {
         case .lowReservoir, .empty:
-            alertLabel.backgroundColor = stateColors?.warning
+            alertLabel?.backgroundColor = stateColors?.warning
         case .ok:
-            alertLabel.backgroundColor = stateColors?.normal
+            alertLabel?.backgroundColor = stateColors?.normal
         }
     }
 
     override public func stateColorsDidUpdate() {
         super.stateColorsDidUpdate()
-        updateColor()
+        updateAlertLabelColor()
     }
 
     
@@ -86,16 +86,16 @@ public final class OmnipodReservoirView: LevelHUDView, NibLoadable {
             case .ok:
                 alertLabelAlpha = 0
             case .lowReservoir, .empty:
-                alertLabel.text = "!"
+                alertLabel?.text = "!"
             }
             
             updateColor()
 
             if self.superview == nil {
-                self.alertLabel.alpha = alertLabelAlpha
+                self.alertLabel?.alpha = alertLabelAlpha
             } else {
                 UIView.animate(withDuration: 0.25, animations: {
-                    self.alertLabel.alpha = alertLabelAlpha
+                    self.alertLabel?.alpha = alertLabelAlpha
                 })
             }
         }

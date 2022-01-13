@@ -7,11 +7,10 @@
 
 import Foundation
 import LoopKitUI
-import OmniKit
-import OmniKitUI
+import OmniBLE
 import os.log
 
-class OmnipodPlugin: NSObject, LoopUIPlugin {
+class OmnipodPlugin: NSObject, PumpManagerUIPlugin {
     private let log = OSLog(category: "OmnipodPlugin")
     
     public var pumpManagerType: PumpManagerUI.Type? {

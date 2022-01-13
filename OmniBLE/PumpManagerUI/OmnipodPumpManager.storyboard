@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="18122" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="XLM-uO-pGZ">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="19529" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="XLM-uO-pGZ">
     <device id="retina5_9" orientation="portrait" appearance="dark"/>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18093"/>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19519"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -16,7 +17,7 @@
                         <autoresizingMask key="autoresizingMask"/>
                     </navigationBar>
                     <connections>
-                        <segue destination="6vo-Ov-UpE" kind="relationship" relationship="rootViewController" id="XRv-q9-JZ7"/>
+                        <segue destination="91O-Un-vKc" kind="relationship" relationship="rootViewController" id="dIp-tx-1ZU"/>
                     </connections>
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="DRM-7h-cnh" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -42,9 +43,9 @@
         <!--Pair Pod-->
         <scene sceneID="okF-JR-4y4">
             <objects>
-                <tableViewController title="Pump Setup" id="91O-Un-vKc" userLabel="Pair Pod" customClass="PairPodSetupViewController" customModule="OmniBLE" customModuleProvider="target" sceneMemberID="viewController">
+                <tableViewController storyboardIdentifier="PairPodSetup" title="Pump Setup" id="91O-Un-vKc" userLabel="Pair Pod" customClass="PairPodSetupViewController" customModule="OmniBLE" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" keyboardDismissMode="onDrag" dataMode="static" style="grouped" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="18" id="1wC-au-0ju">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="672"/>
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="724"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <sections>
@@ -329,15 +330,15 @@
                             </tableViewSection>
                             <tableViewSection id="TrW-Z2-rUk" userLabel="Replacement Alert Section">
                                 <cells>
-                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" misplaced="YES" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" textLabel="Eng-IY-fQ7" style="IBUITableViewCellStyleDefault" id="515-YZ-29R">
-                                        <rect key="frame" x="0.0" y="300.33333206176758" width="375" height="87"/>
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" textLabel="Eng-IY-fQ7" style="IBUITableViewCellStyleDefault" id="515-YZ-29R">
+                                        <rect key="frame" x="0.0" y="300.33333206176752" width="375" height="74"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="515-YZ-29R" id="Jqq-Jl-MTx">
-                                            <rect key="frame" x="0.0" y="0.0" width="375" height="87"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="375" height="74"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" insetsLayoutMarginsFromSafeArea="NO" text="Loop will remind you to change your pod before it expires. You can change this to a time convenient for you." textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="Eng-IY-fQ7">
-                                                    <rect key="frame" x="16" y="0.0" width="343" height="87"/>
+                                                    <rect key="frame" x="16" y="0.0" width="343" height="74"/>
                                                     <autoresizingMask key="autoresizingMask"/>
                                                     <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                                     <nil key="textColor"/>
@@ -348,7 +349,7 @@
                                         </tableViewCellContentView>
                                     </tableViewCell>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" rowHeight="244" id="Ga0-4g-gXh" customClass="ExpirationReminderDateTableViewCell" customModule="OmniBLE" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="387.33333206176758" width="375" height="244"/>
+                                        <rect key="frame" x="0.0" y="374.33333206176752" width="375" height="244.00000000000006"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="Ga0-4g-gXh" id="COc-lx-SrN">
                                             <rect key="frame" x="0.0" y="0.0" width="375" height="244"/>
@@ -425,50 +426,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="b4d-Ps-yhl" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="2589.5999999999999" y="230.54187192118226"/>
-        </scene>
-        <!--Pod Settings-->
-        <scene sceneID="qel-YT-3JK">
-            <objects>
-                <tableViewController title="Pod Settings" id="6vo-Ov-UpE" userLabel="Pod Settings" customClass="PodSettingsSetupViewController" customModule="OmniBLE" customModuleProvider="target" sceneMemberID="viewController">
-                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="grouped" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="18" sectionFooterHeight="18" id="ysS-MS-L3N">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="724"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" systemColor="groupTableViewBackgroundColor"/>
-                        <prototypes>
-                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="DescriptionCell" textLabel="kLL-SQ-K0a" rowHeight="103" style="IBUITableViewCellStyleDefault" id="cmX-ay-VFH">
-                                <rect key="frame" x="0.0" y="49" width="375" height="103"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="cmX-ay-VFH" id="RlG-Pl-jPJ">
-                                    <rect key="frame" x="0.0" y="0.0" width="375" height="103"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                    <subviews>
-                                        <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" insetsLayoutMarginsFromSafeArea="NO" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" id="kLL-SQ-K0a">
-                                            <rect key="frame" x="16" y="0.0" width="343" height="103"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <string key="text">Review your settings below. They will be programmed into the pod during pairing. You can change these settings at any time in Loopʼs Settings screen.</string>
-                                            <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
-                                            <nil key="textColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                    </subviews>
-                                    <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                        </prototypes>
-                        <sections/>
-                        <connections>
-                            <outlet property="dataSource" destination="6vo-Ov-UpE" id="Jxa-ej-I8v"/>
-                            <outlet property="delegate" destination="6vo-Ov-UpE" id="hev-WS-V5b"/>
-                        </connections>
-                    </tableView>
-                    <navigationItem key="navigationItem" id="zfg-zK-eeQ"/>
-                    <connections>
-                        <segue destination="91O-Un-vKc" kind="show" identifier="Continue" id="Qdq-yA-Ml0"/>
-                    </connections>
-                </tableViewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="xBZ-Ak-dDF" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-218.40000000000001" y="230.54187192118226"/>
         </scene>
         <!--New Pod Flow-->
         <scene sceneID="TQ9-7N-bzE">
@@ -651,14 +608,11 @@
     <inferredMetricsTieBreakers>
         <segue reference="IS8-xY-rnN"/>
         <segue reference="3Py-Xn-kuv"/>
-        <segue reference="Qdq-yA-Ml0"/>
+        <segue reference="dIp-tx-1ZU"/>
     </inferredMetricsTieBreakers>
     <resources>
         <image name="PodBottom" width="131.66667175292969" height="110"/>
         <image name="PodLarge" width="152.66667175292969" height="115.66666412353516"/>
-        <systemColor name="groupTableViewBackgroundColor">
-            <color red="0.94901960784313721" green="0.94901960784313721" blue="0.96862745098039216" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </systemColor>
         <systemColor name="secondaryLabelColor">
             <color red="0.23529411764705882" green="0.23529411764705882" blue="0.2627450980392157" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>

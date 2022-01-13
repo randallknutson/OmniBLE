@@ -675,6 +675,8 @@ class OmnipodSettingsViewController: UITableViewController {
                     }
                 }
             }
+        default:
+            break
         }
     }
 
