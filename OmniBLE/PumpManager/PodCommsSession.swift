@@ -781,7 +781,7 @@ public class PodCommsSession {
         }
     }
     
-    public func acknowledgeAlerts(alerts: AlertSet, confirmationBeepType: BeepConfigType? = nil) throws -> [AlertSlot: PodAlert] {
+    public func acknowledgePodAlerts(alerts: AlertSet, confirmationBeepType: BeepConfigType? = nil) throws -> [AlertSlot: PodAlert] {
         let cmd = AcknowledgeAlertCommand(nonce: podState.currentNonce, alerts: alerts)
         let status: StatusResponse = try send([cmd], confirmationBeepType: confirmationBeepType)
         podState.updateFromStatusResponse(status)
