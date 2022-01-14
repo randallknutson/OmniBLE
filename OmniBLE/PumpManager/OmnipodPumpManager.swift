@@ -962,7 +962,7 @@ extension OmnipodPumpManager: PumpManager {
     public var supportedBasalRates: [Double] {
         // 0.05 units for rates between 0.05-30U/hr
         // 0 U/hr is not a supported scheduled basal rate for Eros, but it is for Dash
-        return (0...600).map { Double($0) / Double(Pod.pulsesPerUnit) }
+        return (1...600).map { Double($0) / Double(Pod.pulsesPerUnit) }
     }
 
     public func roundToSupportedBolusVolume(units: Double) -> Double {

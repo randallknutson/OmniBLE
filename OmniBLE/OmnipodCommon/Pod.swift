@@ -55,7 +55,7 @@ public struct Pod {
     // Supported basal rates
     // Eros minimum scheduled basal rate is 0.05 U/H while for Dash supports 0 U/H.
     // XXX would to have this based on productID to be able to share this with Eros.
-    public static let supportedBasalRates: [Double] = (0...600).map { Double($0) / Double(pulsesPerUnit) }
+    public static let supportedBasalRates: [Double] = (1...600).map { Double($0) / Double(pulsesPerUnit) }
 
     // Maximum number of basal schedule entries supported
     public static let maximumBasalScheduleEntryCount: Int = 24
