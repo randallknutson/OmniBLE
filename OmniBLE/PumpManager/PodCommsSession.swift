@@ -33,6 +33,8 @@ public enum PodCommsError: Error {
     case rssiTooHigh
     case diagnosticMessage(str: String)
     case podIncompatible(str: String)
+    case noPodFound
+    case tooManyPodsFound
 }
 
 extension PodCommsError: LocalizedError {
@@ -83,6 +85,11 @@ extension PodCommsError: LocalizedError {
             return str
         case .podIncompatible(let str):
             return str
+        case .noPodFound:
+            return LocalizedString("No pod found", comment: "Error message for PodCommsError.noPodFound")
+        case .tooManyPodsFound:
+            return LocalizedString("Too many pods found", comment: "Error message for PodCommsError.tooManyPodsFound")
+
         }
     }
     
@@ -136,6 +143,10 @@ extension PodCommsError: LocalizedError {
             return nil
         case .podIncompatible:
             return nil
+        case .noPodFound:
+            return LocalizedString("No pod found", comment: "Error message for PodCommsError.noPodFound")
+        case .tooManyPodsFound:
+            return LocalizedString("Too many pods found", comment: "Error message for PodCommsError.tooManyPodsFound")
         }
     }
 

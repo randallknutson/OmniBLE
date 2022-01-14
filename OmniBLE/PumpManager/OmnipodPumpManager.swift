@@ -42,23 +42,14 @@ extension OmnipodPumpManagerError: LocalizedError {
     }
 
     public var failureReason: String? {
-        switch self {
-        case .noPodPaired:
-            return nil
-        case .podAlreadyPaired:
-            return nil
-        case .notReadyForCannulaInsertion:
-            return nil
-        }
+        return nil
     }
 
     public var recoverySuggestion: String? {
         switch self {
         case .noPodPaired:
-            return LocalizedString("Please pair a new pod", comment: "Recover suggestion shown when no pod is paired")
-        case .podAlreadyPaired:
-            return nil
-        case .notReadyForCannulaInsertion:
+            return LocalizedString("Please pair a new pod", comment: "Recovery suggestion shown when no pod is paired")
+        default:
             return nil
         }
     }
@@ -74,13 +65,13 @@ public class OmnipodPumpManager: DeviceManager {
 
     public init(state: OmnipodPumpManagerState) {
         self.lockedState = Locked(state)
-        self.omnipod = Omnipod(state.podState)
+        
+        let podComms = PodComms(podState: state.podState, lotNo: state.podState?.lotNo, lotSeq: state.podState?.lotSeq)
+        self.lockedPodComms = Locked(podComms)
 
         self.podExpirationNotificationIdentifier = Alert.Identifier(managerIdentifier: managerIdentifier,
                                                                alertIdentifier: LoopNotificationCategory.pumpExpired.rawValue)
         
-        self.omnipod.delegate = self
-
         self.podComms.delegate = self
         self.podComms.messageLogger = self
         
@@ -97,14 +88,13 @@ public class OmnipodPumpManager: DeviceManager {
 
     private var podComms: PodComms {
         get {
-            return omnipod.podComms
+            return lockedPodComms.value
         }
         set {
-            omnipod.podComms = newValue
+            lockedPodComms.value = newValue
         }
     }
-
-    public let omnipod: Omnipod // public for easier diagnostic display
+    private let lockedPodComms: Locked<PodComms>
 
     private let podStateObservers = WeakSynchronizedSet<PodStateObserver>()
 
@@ -391,7 +381,7 @@ extension OmnipodPumpManager {
 
     // Does not support concurrent callers. Not thread-safe.
     private func forgetPod(completion: @escaping () -> Void) {
-        omnipod.permanentDisconnect()
+        //omnipod.permanentDisconnect()
         let resetPodState = { (_ state: inout OmnipodPumpManagerState) in
             self.podComms = PodComms(podState: nil, lotNo: nil, lotSeq: nil)
             self.podComms.delegate = self
@@ -430,6 +420,10 @@ extension OmnipodPumpManager {
 
 
     // MARK: - Pairing
+    
+    func connectToNewPod(completion: @escaping (Result<Omnipod, Error>) -> Void) {
+        podComms.connectToNewPod(completion)
+    }
 
     // Called on the main thread
     public func pairAndPrime(completion: @escaping (PumpManagerResult<TimeInterval>) -> Void) {
@@ -471,26 +465,36 @@ extension OmnipodPumpManager {
         })
 
         if needsPairing {
+            
             self.log.default("Pairing pod before priming")
-
-            // Create random address with 20 bits to match PDM, could easily use 24 bits instead
-            if self.state.pairingAttemptAddress == nil {
-                self.lockedState.mutate { (state) in
-                    state.pairingAttemptAddress = 0x1f000000 | (arc4random() & 0x000fffff)
-                }
-            }
-
-            self.podComms.pairAndSetupPod(address: self.state.pairingAttemptAddress!, timeZone: .currentFixed, messageLogger: self) { (result) in
-
-                if case .success = result {
-                    self.lockedState.mutate { (state) in
-                        state.pairingAttemptAddress = nil
+            
+            connectToNewPod(completion: { result in
+                switch result {
+                case .failure(let error):
+                    completion(.failure(.communication(error as? LocalizedError)))
+                case .success(let omnipod): // TODO: connect to specific omnipod
+                    // Create random address with 20 bits to match PDM, could easily use 24 bits instead
+                    if self.state.pairingAttemptAddress == nil {
+                        self.lockedState.mutate { (state) in
+                            state.pairingAttemptAddress = 0x1f000000 | (arc4random() & 0x000fffff)
+                        }
                     }
-                }
 
-                // Calls completion
-                primeSession(result)
-            }
+                    self.podComms.pairAndSetupPod(address: self.state.pairingAttemptAddress!, timeZone: .currentFixed, messageLogger: self) { (result) in
+
+                        if case .success = result {
+                            self.lockedState.mutate { (state) in
+                                state.pairingAttemptAddress = nil
+                            }
+                        }
+
+                        // Calls completion
+                        primeSession(result)
+                    }
+
+                }
+                
+            })
         } else {
             self.log.default("Pod already paired. Continuing.")
 

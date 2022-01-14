@@ -9,6 +9,7 @@
 import Foundation
 import LoopKit
 import os.log
+import UIKit
 
 protocol PodCommsDelegate: AnyObject {
     func podComms(_ podComms: PodComms, didChange podState: PodState)
@@ -27,6 +28,9 @@ public class PodComms: CustomDebugStringConvertible {
     weak var messageLogger: MessageLogger?
 
     public let log = OSLog(category: "PodComms")
+    
+    /// The dispatch queue used to serialize PodComm operations
+    private let queue = DispatchQueue(label: "com.loopkit.PodComms.queue", qos: .unspecified)
 
     // Only valid to access on the session serial queue
     private var podState: PodState? {
@@ -43,6 +47,8 @@ public class PodComms: CustomDebugStringConvertible {
         }
     }
     
+    private let bluetoothManager = BluetoothManager()
+    
     init(podState: PodState?, lotNo: UInt64?, lotSeq: UInt32?) {
         self.podState = podState
         self.delegate = nil
@@ -50,7 +56,47 @@ public class PodComms: CustomDebugStringConvertible {
         self.lotNo = lotNo
         self.lotSeq = lotSeq
     }
+    
+    public func connectToNewPod(_ completion: @escaping (Result<Omnipod, Error>) -> Void) {
+        let discoveryStartTime = Date()
+        
+        bluetoothManager.discoverPods { error in
+            if let error = error {
+                completion(.failure(error))
+            } else {
+                Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
+                    let devices = self.bluetoothManager.getConnectedDevices()
 
+                    if devices.count > 1 {
+                        self.log.info("Multiple pods found while scanning")
+                        self.bluetoothManager.endPodDiscovery()
+                        completion(.failure(PodCommsError.tooManyPodsFound))
+                        timer.invalidate()
+                    }
+                        
+                    let elapsed = Date().timeIntervalSince(discoveryStartTime)
+                    
+                    // If we've found a pod by 2 seconds, let's go.
+                    if elapsed > TimeInterval(seconds: 2) && devices.count > 0 {
+                        self.log.debug("Found pod!")
+                        let targetPod = devices.first!
+                        self.bluetoothManager.connectToDevice(uuidString: targetPod.manager.peripheral.identifier.uuidString)
+                        self.bluetoothManager.endPodDiscovery()
+                        completion(.success(devices.first!))
+                        timer.invalidate()
+                    }
+                    
+                    if elapsed > TimeInterval(seconds: 10) {
+                        self.log.info("No pods found while scanning")
+                        self.bluetoothManager.endPodDiscovery()
+                        completion(.failure(PodCommsError.noPodAvailable))
+                        timer.invalidate()
+                    }
+                }
+            }
+        }
+    }
+    
     // Handles all the common work to send and verify the version response for the two pairing pod commands, AssignAddress and SetupPod.
     private func sendPairMessage(transport: PodMessageTransport, message: Message) throws -> VersionResponse {
 
