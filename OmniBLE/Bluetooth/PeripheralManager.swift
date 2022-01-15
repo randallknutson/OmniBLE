@@ -83,8 +83,7 @@ class PeripheralManager: NSObject {
 
         peripheral.delegate = self
 
-        // TODO: Commenting out temporarily
-        // assertConfiguration()
+        assertConfiguration()
     }
 }
 
@@ -141,6 +140,7 @@ extension PeripheralManager {
 
             if self.needsConfiguration || self.peripheral.services == nil {
                 do {
+                    self.log.debug("Applying configuration")
                     try self.applyConfiguration()
                     self.needsConfiguration = false
 
@@ -203,11 +203,11 @@ extension PeripheralManager {
         try discoverServices(configuration.serviceCharacteristics.keys.map { $0 }, timeout: discoveryTimeout)
 
         for service in peripheral.services ?? [] {
+            log.debug("Discovered service: %{publid}@", service)
             guard let characteristics = configuration.serviceCharacteristics[service.uuid] else {
                 // Not all services may have characteristics
                 continue
             }
-
             try discoverCharacteristics(characteristics, for: service, timeout: discoveryTimeout)
         }
 

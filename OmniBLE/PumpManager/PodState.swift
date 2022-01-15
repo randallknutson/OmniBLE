@@ -53,7 +53,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
     public let address: UInt32
     public let ltk: Data
     public var eapAkaSequenceNumber: Int
-
+    
     public var activatedAt: Date?
     public var expiresAt: Date?  // set based on StatusResponse timeActive and can change with Pod clock drift and/or system time change
 

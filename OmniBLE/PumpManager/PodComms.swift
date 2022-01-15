@@ -10,6 +10,7 @@ import Foundation
 import LoopKit
 import os.log
 import UIKit
+import CoreBluetooth
 
 protocol PodCommsDelegate: AnyObject {
     func podComms(_ podComms: PodComms, didChange podState: PodState)
@@ -81,6 +82,8 @@ public class PodComms: CustomDebugStringConvertible {
                         self.log.debug("Found pod!")
                         let targetPod = devices.first!
                         self.bluetoothManager.connectToDevice(uuidString: targetPod.manager.peripheral.identifier.uuidString)
+                        self.manager = targetPod.manager
+                        targetPod.manager.delegate = self
                         self.bluetoothManager.endPodDiscovery()
                         completion(.success(devices.first!))
                         timer.invalidate()
@@ -334,6 +337,16 @@ public class PodComms: CustomDebugStringConvertible {
         manager.runSession(withName: "Pair and setup pod") { [weak self] in
             do {
                 guard let self = self else { fatalError() }
+                
+                try manager.sendHello(Ids.controllerId().address)
+                try manager.enableNotifications()
+                if (!self.isPaired) {
+                    let ids = Ids(podState: self.podState)
+                    try self.pairPod(ids: ids)
+                }
+                else {
+                    try self.establishSession(msgSeq: 1)
+                }
 
                 guard self.podState != nil else {
                     block(.failure(PodCommsError.noPodPaired))
@@ -402,6 +415,32 @@ public class PodComms: CustomDebugStringConvertible {
         ].joined(separator: "\n")
     }
 
+}
+
+// MARK: - BluetoothManagerDelegate
+
+// MARK: - PeripheralManagerDelegate
+
+extension PodComms: PeripheralManagerDelegate {
+    func peripheralManager(_ manager: PeripheralManager, didUpdateValueFor characteristic: CBCharacteristic) {
+        log.debug("peripheralManager didUpdateValueFor")
+    }
+    
+    func peripheralManager(_ manager: PeripheralManager, didReadRSSI RSSI: NSNumber, error: Error?) {
+        log.debug("peripheralManager didReadRSSI")
+    }
+    
+    func peripheralManagerDidUpdateName(_ manager: PeripheralManager) {
+        log.debug("peripheralManagerDidUpdateName")
+    }
+    
+    func reconnectLatestPeripheral() {
+        log.debug("reconnectLatestPeripheral")
+    }
+    
+    func completeConfiguration(for manager: PeripheralManager) throws {
+        log.debug("completeConfiguration")
+    }
 }
 
 extension PodComms: PodCommsSessionDelegate {

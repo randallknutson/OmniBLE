@@ -1494,16 +1494,6 @@ extension OmnipodPumpManager: MessageLogger {
     }
 }
 
-extension OmnipodPumpManager: OmnipodDelegate {
-    public func omnipod(_ omnipod: Omnipod) {
-
-    }
-
-    public func omnipod(_ omnipod: Omnipod, didError error: Error) {
-
-    }
-}
-
 extension OmnipodPumpManager: PodCommsDelegate {
     func podComms(_ podComms: PodComms, didChange podState: PodState) {
         setState { (state) in

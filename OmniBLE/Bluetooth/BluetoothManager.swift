@@ -248,7 +248,9 @@ class BluetoothManager: NSObject {
 extension BluetoothManager: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         dispatchPrecondition(condition: .onQueue(managerQueue))
-        
+
+        log.default("%{public}@: %{public}@", #function, String(describing: central.state.rawValue))
+
         if case .poweredOn = central.state {
             updateConnections()
             
@@ -259,8 +261,9 @@ extension BluetoothManager: CBCentralManagerDelegate {
             }
         }
 
-        //peripheralManager?.centralManagerDidUpdateState(central)
-        log.default("%{public}@: %{public}@", #function, String(describing: central.state.rawValue))
+        for device in devices {
+            device.manager.centralManagerDidUpdateState(central)
+        }
     }
 
     func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
@@ -300,6 +303,12 @@ extension BluetoothManager: CBCentralManagerDelegate {
         dispatchPrecondition(condition: .onQueue(managerQueue))
 
         log.default("%{public}@: %{public}@", #function, peripheral)
+        
+        // Proxy connection events to peripheral manager
+        for device in devices where device.manager.peripheral.identifier == peripheral.identifier {
+            device.manager.centralManager(central, didConnect: peripheral)
+        }
+
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
