@@ -145,7 +145,7 @@ extension PeripheralManager {
     func readCommandType(_ command: PodCommand, timeout: TimeInterval = 5) throws {
         dispatchPrecondition(condition: .onQueue(queue))
 
-        log.debug("Checking Command %@", Data([command.rawValue]).hexadecimalString)
+        log.debug("Read Command %@", Data([command.rawValue]).hexadecimalString)
         
         // Wait for data to be read.
         queueLock.lock()

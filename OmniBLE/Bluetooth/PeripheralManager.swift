@@ -126,18 +126,6 @@ extension PeripheralManager {
                 self.log.error("Configured peripheral has no services. Reconfiguring…")
             }
 
-            if self.delegate == nil {
-              self.log.error("PeripheralManager delegate is nil")
-            }
-
-            /*if self.peripheral.state == .disconnected || self.peripheral.state == .connecting {
-              self.log.info("Peripheral is not connected - triggering reconnectLatestPeripheral...")
-              // TODO: This might throw... Also - thread-safety?
-              if let delegate = self.delegate {
-                  delegate.reconnectLatestPeripheral()
-              }
-            }*/
-
             if self.needsConfiguration || self.peripheral.services == nil {
                 do {
                     self.log.debug("Applying configuration")
@@ -328,6 +316,7 @@ extension PeripheralManager {
                 addCondition(.write(characteristic: characteristic))
             }
 
+            log.debug("Writing value: %{public}@ for characteristic %{public}@ type:%{public}@", String(describing: value), characteristic, String(describing: type))
             peripheral.writeValue(value, for: characteristic, type: type)
         }
     }
@@ -414,6 +403,8 @@ extension PeripheralManager: CBPeripheralDelegate {
 
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
         commandLock.lock()
+        
+        log.debug("didWriteValueFor: %{public}@", characteristic)
 
         if let index = commandConditions.firstIndex(where: { (condition) -> Bool in
             if case .write(characteristic: characteristic) = condition {
