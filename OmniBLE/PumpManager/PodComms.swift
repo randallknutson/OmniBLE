@@ -56,6 +56,10 @@ public class PodComms: CustomDebugStringConvertible {
         self.messageLogger = nil
         self.lotNo = lotNo
         self.lotSeq = lotSeq
+        bluetoothManager.connectionDelegate = self
+        if let podState = podState {
+            bluetoothManager.connectToDevice(uuidString: podState.bleIdentifier)
+        }
     }
     
     public func connectToNewPod(_ completion: @escaping (Result<Omnipod, Error>) -> Void) {
@@ -145,15 +149,16 @@ public class PodComms: CustomDebugStringConvertible {
         }
 
         // XXX need to rework things so that we don't have to create this temp PodState with the LTK to set up the encrypted transport
-        if self.podState == nil {
+        if podState == nil {
             log.debug("pairPod: creating a temp podState for LTK using response %@", String(describing: response))
-            self.podState = PodState(
+            podState = PodState(
                 address: response.address,
                 ltk: ltk,
                 firmwareVersion: "",
                 bleFirmwareVersion: "",
                 lotNo: 0,
-                lotSeq: 0
+                lotSeq: 0,
+                bleIdentifier: manager.peripheral.identifier.uuidString
             )
         }
 
@@ -205,7 +210,8 @@ public class PodComms: CustomDebugStringConvertible {
             bleFirmwareVersion: String(describing: versionResponse.piVersion),
             lotNo: UInt64(versionResponse.lot), // or self.lotNo?
             lotSeq: versionResponse.tid, // or self.lotSeq?
-            messageTransportState: podState!.messageTransportState
+            messageTransportState: podState!.messageTransportState,
+            bleIdentifier: manager.peripheral.identifier.uuidString
         )
         // podState setupProgress state should be addressAssigned
 
@@ -417,7 +423,21 @@ public class PodComms: CustomDebugStringConvertible {
 
 }
 
-// MARK: - BluetoothManagerDelegate
+// MARK: - OmnipodConnectionDelegate
+
+extension PodComms: OmnipodConnectionDelegate {
+    func omnipodPeripheralDidConnect(manager: PeripheralManager) {
+        if let podState = podState, manager.peripheral.identifier.uuidString == podState.bleIdentifier {
+            self.manager = manager
+            manager.delegate = self
+        }
+    }
+    
+    func omnipodPeripheralDidDisconnect(peripheral: CBPeripheral) {
+        log.debug("omnipodPeripheralDidDisconnect... should auto-reconnect")
+    }
+    
+}
 
 // MARK: - PeripheralManagerDelegate
 

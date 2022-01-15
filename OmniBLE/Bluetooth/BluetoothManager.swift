@@ -59,9 +59,9 @@ protocol OmnipodConnectionDelegate: AnyObject {
     /**
      Tells the delegate that a peripheral has been connected to
 
-     - parameter peripheral: The peripheral that was connected
+     - parameter manager: The manager for the peripheral that was connected
      */
-    func omnipodPeripheralDidConnect(peripheral: CBPeripheral)
+    func omnipodPeripheralDidConnect(manager: PeripheralManager)
 
     /**
      Tells the delegate that a peripheral was disconnected
@@ -121,9 +121,14 @@ class BluetoothManager: NSObject {
             device = Omnipod(peripheralManager: PeripheralManager(peripheral: peripheral, configuration: .omnipod, centralManager: manager), advertisement: podAdvertisement)
             
             devices.append(device)
+            
+            if autoConnectIDs.contains(peripheral.identifier.uuidString) && peripheral.state == .connected {
+                connectionDelegate?.omnipodPeripheralDidConnect(manager: device.manager)
+            }
 
             log.info("Created device")
         }
+        
     }
     
     // MARK: - Actions
@@ -167,16 +172,20 @@ class BluetoothManager: NSObject {
     }
     
     private func updateConnections() {
+        guard manager.state == .poweredOn else {
+            return
+        }
+        
         for device in devices {
             let peripheral = device.manager.peripheral
             if autoConnectIDs.contains(peripheral.identifier.uuidString) {
                 if peripheral.state == .disconnected || peripheral.state == .disconnecting {
-                    log.info("Connecting to peripheral: %{public}@", peripheral)
+                    log.info("updateConnections: Connecting to peripheral: %{public}@", peripheral)
                     manager.connect(peripheral, options: nil)
                 }
             } else {
                 if peripheral.state == .connected || peripheral.state == .connecting {
-                    log.info("Disconnecting from peripheral: %{public}@", peripheral)
+                    log.info("updateConnections: Disconnecting from peripheral: %{public}@", peripheral)
                     manager.cancelPeripheralConnection(peripheral)
                 }
             }
@@ -199,7 +208,7 @@ class BluetoothManager: NSObject {
         for device in devices {
             let peripheral = device.manager.peripheral
             if peripheral.state == .disconnected || peripheral.state == .disconnecting {
-                log.info("Connecting to peripheral: %{public}@", peripheral)
+                log.info("discoverPods: Connecting to peripheral: %{public}@", peripheral)
                 manager.connect(peripheral, options: nil)
             }
         }
@@ -273,11 +282,6 @@ extension BluetoothManager: CBCentralManagerDelegate {
         if let peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
             for peripheral in peripherals {
                 addPeripheral(peripheral, podAdvertisement: nil)
-                
-                if autoConnectIDs.contains(peripheral.identifier.uuidString) {
-                    log.info("Connecting to peripheral: %{public}@", peripheral)
-                    central.connect(peripheral, options: nil)
-                }
             }
         }
     }
@@ -304,9 +308,13 @@ extension BluetoothManager: CBCentralManagerDelegate {
 
         log.default("%{public}@: %{public}@", #function, peripheral)
         
+        for device in devices where device.manager.peripheral.identifier == peripheral.identifier {
+        }
+        
         // Proxy connection events to peripheral manager
         for device in devices where device.manager.peripheral.identifier == peripheral.identifier {
             device.manager.centralManager(central, didConnect: peripheral)
+            connectionDelegate?.omnipodPeripheralDidConnect(manager: device.manager)
         }
 
     }
@@ -314,6 +322,8 @@ extension BluetoothManager: CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         dispatchPrecondition(condition: .onQueue(managerQueue))
         log.default("%{public}@: %{public}@", #function, peripheral)
+        
+        connectionDelegate?.omnipodPeripheralDidDisconnect(peripheral: peripheral)
         
         if autoConnectIDs.contains(peripheral.identifier.uuidString) {
             log.debug("Reconnecting disconnected autoconnect peripheral")

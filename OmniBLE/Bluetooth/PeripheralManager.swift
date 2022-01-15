@@ -164,38 +164,11 @@ extension PeripheralManager {
         queue.async(execute: configureAndRun(block))
     }
 
-    /*func perform(_ block: @escaping (_ manager: PeripheralManager) -> Void) {
-        // TODO: Add reconnection dispatch group here!
-        if peripheral.state == .disconnected || peripheral.state == .connecting {
-            log.info("Peripheral is not connected - triggering reconnectLatestPeripheral...")
-            let group = DispatchGroup()
-            // TODO: This might throw... Also - thread-safety?
-            if let delegate = self.delegate {
-                // reconnectLatestPeripheral also handle
-                delegate.reconnectLatestPeripheral()
-            }
-            // Wait for reconnection
-            group.enter()
-            Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
-                if self.peripheral.state == .connected {
-                    group.leave()
-                    timer.invalidate()
-                }
-            }
-            group.notify(queue: queue) {
-                self.queue.async(execute: self.configureAndRun(block))
-            }
-        } else {
-            queue.async(execute: configureAndRun(block))
-        }
-    }*/
-
     private func assertConfiguration() {
-        /*perform { (_) in
-            // Intentionally empty to trigger configuration if necessary
-        }*/
-        self.runSession(withName: "Assert peripheral configuration") { () in
-            // Intentionally empty to trigger configuration if necessary
+        if peripheral.state == .connected && central?.state == .poweredOn {
+            perform { (_) in
+                // Intentionally empty to trigger configuration if necessary
+            }
         }
     }
 

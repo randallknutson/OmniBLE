@@ -54,6 +54,8 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
     public let ltk: Data
     public var eapAkaSequenceNumber: Int
     
+    public var bleIdentifier: String
+    
     public var activatedAt: Date?
     public var expiresAt: Date?  // set based on StatusResponse timeActive and can change with Pod clock drift and/or system time change
 
@@ -102,7 +104,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         return active
     }
     
-    public init(address: UInt32, ltk: Data, firmwareVersion: String, bleFirmwareVersion: String, lotNo: UInt64, lotSeq: UInt32, messageTransportState: MessageTransportState? = nil) {
+    public init(address: UInt32, ltk: Data, firmwareVersion: String, bleFirmwareVersion: String, lotNo: UInt64, lotSeq: UInt32, messageTransportState: MessageTransportState? = nil, bleIdentifier: String) {
         self.address = address
         self.ltk = ltk
         self.firmwareVersion = firmwareVersion
@@ -119,6 +121,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         self.setupProgress = .addressAssigned
         self.configuredAlerts = [.slot7: .waitingForPairingReminder]
         self.eapAkaSequenceNumber = 1
+        self.bleIdentifier = bleIdentifier
     }
     
     public var unfinishedSetup: Bool {
@@ -273,6 +276,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             let eapAkaSequenceNumber = rawValue["eapAkaSequenceNumber"] as? Int,
             let firmwareVersion = rawValue["firmwareVersion"] as? String,
             let bleFirmwareVersion = rawValue["bleFirmwareVersion"] as? String,
+            let bleIdentifier = rawValue["bleIdentifier"] as? String,
             let lotNo = rawValue["lotNo"] as? UInt64,
             let lotSeq = rawValue["lotSeq"] as? UInt32
             else {
@@ -286,6 +290,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
         self.bleFirmwareVersion = bleFirmwareVersion
         self.lotNo = lotNo
         self.lotSeq = lotSeq
+        self.bleIdentifier = bleIdentifier
 
 
         if let activatedAt = rawValue["activatedAt"] as? Date {
@@ -414,7 +419,8 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             "finalizedDoses": finalizedDoses.map( { $0.rawValue }),
             "alerts": activeAlertSlots.rawValue,
             "messageTransportState": messageTransportState.rawValue,
-            "setupProgress": setupProgress.rawValue
+            "setupProgress": setupProgress.rawValue,
+            "bleIdentifier": bleIdentifier
             ]
         
         if let unfinalizedBolus = self.unfinalizedBolus {
@@ -474,6 +480,7 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
             "* address: \(String(format: "%04X", address))",
             "* ltk: \(ltk.hexadecimalString)",
             "* eapAkaSequenceNumber: \(eapAkaSequenceNumber)",
+            "* bleIdentifier: \(bleIdentifier)",
             "* activatedAt: \(String(reflecting: activatedAt))",
             "* expiresAt: \(String(reflecting: expiresAt))",
             "* setupUnitsDelivered: \(String(reflecting: setupUnitsDelivered))",
