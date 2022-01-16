@@ -62,6 +62,14 @@ protocol OmnipodConnectionDelegate: AnyObject {
      - parameter manager: The manager for the peripheral that was connected
      */
     func omnipodPeripheralDidConnect(manager: PeripheralManager)
+    
+    /**
+     Tells the delegate that a connected peripheral has been restored from session restoration
+
+     - parameter manager: The manager for the peripheral that was connected
+     */
+    func omnipodPeripheralWasRestored(manager: PeripheralManager)
+
 
     /**
      Tells the delegate that a peripheral was disconnected
@@ -94,6 +102,13 @@ class BluetoothManager: NSObject {
         }
     }
     
+    /// Isolated to `managerQueue`
+    private var hasDiscoveredAllAutoConnectDevices: Bool {
+        dispatchPrecondition(condition: .onQueue(managerQueue))
+
+        return autoConnectIDs.isSubset(of: devices.map { $0.manager.peripheral.identifier.uuidString })
+    }
+
     // MARK: - Synchronization
     private let managerQueue = DispatchQueue(label: "com.randallknutson.OmniBLE.bluetoothManagerQueue", qos: .unspecified)
 
@@ -105,7 +120,8 @@ class BluetoothManager: NSObject {
         }
     }
     
-    private func addPeripheral(_ peripheral: CBPeripheral, podAdvertisement: PodAdvertisement?) {
+    @discardableResult
+    private func addPeripheral(_ peripheral: CBPeripheral, podAdvertisement: PodAdvertisement?) -> Omnipod {
         dispatchPrecondition(condition: .onQueue(managerQueue))
 
         var device: Omnipod! = devices.first(where: { $0.manager.peripheral.identifier == peripheral.identifier })
@@ -117,18 +133,11 @@ class BluetoothManager: NSObject {
                 device.advertisement = podAdvertisement
             }
         } else {
-            
             device = Omnipod(peripheralManager: PeripheralManager(peripheral: peripheral, configuration: .omnipod, centralManager: manager), advertisement: podAdvertisement)
-            
             devices.append(device)
-            
-            if autoConnectIDs.contains(peripheral.identifier.uuidString) && peripheral.state == .connected {
-                connectionDelegate?.omnipodPeripheralDidConnect(manager: device.manager)
-            }
-
             log.info("Created device")
         }
-        
+        return device
     }
     
     // MARK: - Actions
@@ -173,6 +182,7 @@ class BluetoothManager: NSObject {
     
     private func updateConnections() {
         guard manager.state == .poweredOn else {
+            log.debug("Skipping updateConnections until state is poweredOn")
             return
         }
         
@@ -263,7 +273,7 @@ extension BluetoothManager: CBCentralManagerDelegate {
         if case .poweredOn = central.state {
             updateConnections()
             
-            if discoveryModeEnabled && !manager.isScanning {
+            if (discoveryModeEnabled || !hasDiscoveredAllAutoConnectDevices) && !manager.isScanning {
                 startScanning()
             } else if !discoveryModeEnabled && manager.isScanning {
                 stopScanning()
@@ -281,7 +291,11 @@ extension BluetoothManager: CBCentralManagerDelegate {
 
         if let peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
             for peripheral in peripherals {
-                addPeripheral(peripheral, podAdvertisement: nil)
+                let device = addPeripheral(peripheral, podAdvertisement: nil)
+                
+                if autoConnectIDs.contains(peripheral.identifier.uuidString) && peripheral.state == .connected {
+                    connectionDelegate?.omnipodPeripheralWasRestored(manager: device.manager)
+                }
             }
         }
     }
@@ -293,13 +307,22 @@ extension BluetoothManager: CBCentralManagerDelegate {
         
         if let podAdvertisement = PodAdvertisement(advertisementData) {
             addPeripheral(peripheral, podAdvertisement: podAdvertisement)
+            
             if discoveryModeEnabled && peripheral.state == .disconnected {
                 // Auto-connect to any available, during discovery
                 log.debug("Connecting to device in discovery mode")
                 manager.connect(peripheral, options: nil)
+            } else if autoConnectIDs.contains(peripheral.identifier.uuidString) && peripheral.state == .disconnected {
+                log.debug("Reonnecting to autoconnect device")
+                manager.connect(peripheral, options: nil)
             }
         } else {
             log.info("Ignoring peripheral with advertisement data: %{public}@", advertisementData)
+        }
+        
+        if !discoveryModeEnabled && central.isScanning && hasDiscoveredAllAutoConnectDevices {
+            log.default("All peripherals discovered")
+            stopScanning()
         }
     }
 
