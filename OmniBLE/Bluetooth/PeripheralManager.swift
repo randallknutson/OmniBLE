@@ -66,13 +66,7 @@ class PeripheralManager: NSObject {
     // Confined to `queue`
     private var needsConfiguration = true
 
-    weak var delegate: PeripheralManagerDelegate? {
-        didSet {
-            queue.sync {
-                needsConfiguration = true
-            }
-        }
-    }
+    weak var delegate: PeripheralManagerDelegate?
 
     init(peripheral: CBPeripheral, configuration: Configuration, centralManager: CBCentralManager) {
         self.peripheral = peripheral
@@ -123,7 +117,7 @@ extension PeripheralManager {
     func configureAndRun(_ block: @escaping (_ manager: PeripheralManager) -> Void) -> (() -> Void) {
         return {
             if !self.needsConfiguration && self.peripheral.services == nil {
-                self.log.error("Configured peripheral has no services. Reconfiguring…")
+                self.log.error("Configured peripheral has no services. Reconfiguring %{public}@", self.peripheral)
             }
 
             if self.needsConfiguration || self.peripheral.services == nil {
@@ -257,7 +251,7 @@ extension PeripheralManager {
 
         try runCommand(timeout: timeout) {
             addCondition(.discoverServices)
-
+            
             peripheral.discoverServices(serviceUUIDs)
         }
     }
@@ -339,6 +333,7 @@ extension PeripheralManager {
 extension PeripheralManager: CBPeripheralDelegate {
 
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        log.debug("didDiscoverServices")
         commandLock.lock()
 
         if let index = commandConditions.firstIndex(where: { (condition) -> Bool in

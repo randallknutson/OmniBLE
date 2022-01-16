@@ -308,9 +308,6 @@ extension BluetoothManager: CBCentralManagerDelegate {
 
         log.default("%{public}@: %{public}@", #function, peripheral)
         
-        for device in devices where device.manager.peripheral.identifier == peripheral.identifier {
-        }
-        
         // Proxy connection events to peripheral manager
         for device in devices where device.manager.peripheral.identifier == peripheral.identifier {
             device.manager.centralManager(central, didConnect: peripheral)

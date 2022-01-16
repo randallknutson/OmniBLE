@@ -345,7 +345,6 @@ public class PodComms: CustomDebugStringConvertible {
                 guard let self = self else { fatalError() }
                 
                 try manager.sendHello(Ids.controllerId().address)
-                try manager.enableNotifications()
                 if (!self.isPaired) {
                     let ids = Ids(podState: self.podState)
                     try self.pairPod(ids: ids)
@@ -460,6 +459,17 @@ extension PodComms: PeripheralManagerDelegate {
     
     func completeConfiguration(for manager: PeripheralManager) throws {
         log.debug("completeConfiguration")
+        
+        if self.isPaired {
+            manager.runSession(withName: "establish pod session") { [weak self] in
+                do {
+                    try manager.sendHello(Ids.controllerId().address)
+                    try self?.establishSession(msgSeq: 1)
+                } catch {
+                    self?.log.error("Pod session sync error: %{public}@", String(describing: error))
+                }
+            }
+        }
     }
 }
 
