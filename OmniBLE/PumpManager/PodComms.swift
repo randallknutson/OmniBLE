@@ -453,10 +453,6 @@ extension PodComms: PeripheralManagerDelegate {
         log.debug("peripheralManagerDidUpdateName")
     }
     
-    func reconnectLatestPeripheral() {
-        log.debug("reconnectLatestPeripheral")
-    }
-    
     func completeConfiguration(for manager: PeripheralManager) throws {
         log.debug("completeConfiguration")
         

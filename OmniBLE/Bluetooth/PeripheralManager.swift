@@ -107,8 +107,6 @@ protocol PeripheralManagerDelegate: AnyObject {
     func peripheralManagerDidUpdateName(_ manager: PeripheralManager)
 
     func completeConfiguration(for manager: PeripheralManager) throws
-
-    func reconnectLatestPeripheral()
 }
 
 
@@ -310,7 +308,6 @@ extension PeripheralManager {
                 addCondition(.write(characteristic: characteristic))
             }
 
-            log.debug("Writing value: %{public}@ for characteristic %{public}@ type:%{public}@", String(describing: value), characteristic, String(describing: type))
             peripheral.writeValue(value, for: characteristic, type: type)
         }
     }
@@ -399,8 +396,6 @@ extension PeripheralManager: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
         commandLock.lock()
         
-        log.debug("didWriteValueFor: %{public}@", characteristic)
-
         if let index = commandConditions.firstIndex(where: { (condition) -> Bool in
             if case .write(characteristic: characteristic) = condition {
                 return true
@@ -522,18 +517,6 @@ extension CBPeripheral {
 extension PeripheralManager {
     public func runSession(withName name: String , _ block: @escaping () -> Void) {
         self.log.default("Scheduling session %{public}@", name)
-
-        // TODO: What about .disconnecting?
-        if self.peripheral.state == .disconnected || self.peripheral.state == .connecting {
-            sessionQueue.isSuspended = true
-            self.log.info("runSession - Peripheral is not connected...")
-            if self.peripheral.state == .disconnected {
-                if let delegate = self.delegate {
-                    self.log.debug("runSession - Peripheral is not connected - triggering reconnectLatestPeripheral...")
-                    delegate.reconnectLatestPeripheral()
-                }
-            }
-        }
 
         sessionQueue.addOperation({ [weak self] in
             self?.perform { (manager) in

@@ -341,10 +341,7 @@ extension BluetoothManager: CBCentralManagerDelegate {
 
 
 extension BluetoothManager: PeripheralManagerDelegate {
-    func reconnectLatestPeripheral() {
-        
-    }
-    
+
     func peripheralManager(_ manager: PeripheralManager, didReadRSSI RSSI: NSNumber, error: Error?) {
 
     }
