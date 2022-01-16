@@ -9,6 +9,8 @@
 import Foundation
 import LoopKit
 import os.log
+import UIKit
+import CoreBluetooth
 
 protocol PodCommsDelegate: AnyObject {
     func podComms(_ podComms: PodComms, didChange podState: PodState)
@@ -27,6 +29,9 @@ public class PodComms: CustomDebugStringConvertible {
     weak var messageLogger: MessageLogger?
 
     public let log = OSLog(category: "PodComms")
+    
+    /// The dispatch queue used to serialize PodComm operations
+    private let queue = DispatchQueue(label: "com.loopkit.PodComms.queue", qos: .unspecified)
 
     // Only valid to access on the session serial queue
     private var podState: PodState? {
@@ -43,14 +48,62 @@ public class PodComms: CustomDebugStringConvertible {
         }
     }
     
+    private let bluetoothManager = BluetoothManager()
+    
     init(podState: PodState?, lotNo: UInt64?, lotSeq: UInt32?) {
         self.podState = podState
         self.delegate = nil
         self.messageLogger = nil
         self.lotNo = lotNo
         self.lotSeq = lotSeq
+        bluetoothManager.connectionDelegate = self
+        if let podState = podState {
+            bluetoothManager.connectToDevice(uuidString: podState.bleIdentifier)
+        }
     }
+    
+    public func connectToNewPod(_ completion: @escaping (Result<Omnipod, Error>) -> Void) {
+        let discoveryStartTime = Date()
+        
+        bluetoothManager.discoverPods { error in
+            if let error = error {
+                completion(.failure(error))
+            } else {
+                Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
+                    let devices = self.bluetoothManager.getConnectedDevices()
 
+                    if devices.count > 1 {
+                        self.log.info("Multiple pods found while scanning")
+                        self.bluetoothManager.endPodDiscovery()
+                        completion(.failure(PodCommsError.tooManyPodsFound))
+                        timer.invalidate()
+                    }
+                        
+                    let elapsed = Date().timeIntervalSince(discoveryStartTime)
+                    
+                    // If we've found a pod by 2 seconds, let's go.
+                    if elapsed > TimeInterval(seconds: 2) && devices.count > 0 {
+                        self.log.debug("Found pod!")
+                        let targetPod = devices.first!
+                        self.bluetoothManager.connectToDevice(uuidString: targetPod.manager.peripheral.identifier.uuidString)
+                        self.manager = targetPod.manager
+                        targetPod.manager.delegate = self
+                        self.bluetoothManager.endPodDiscovery()
+                        completion(.success(devices.first!))
+                        timer.invalidate()
+                    }
+                    
+                    if elapsed > TimeInterval(seconds: 10) {
+                        self.log.info("No pods found while scanning")
+                        self.bluetoothManager.endPodDiscovery()
+                        completion(.failure(PodCommsError.noPodAvailable))
+                        timer.invalidate()
+                    }
+                }
+            }
+        }
+    }
+    
     // Handles all the common work to send and verify the version response for the two pairing pod commands, AssignAddress and SetupPod.
     private func sendPairMessage(transport: PodMessageTransport, message: Message) throws -> VersionResponse {
 
@@ -96,15 +149,16 @@ public class PodComms: CustomDebugStringConvertible {
         }
 
         // XXX need to rework things so that we don't have to create this temp PodState with the LTK to set up the encrypted transport
-        if self.podState == nil {
+        if podState == nil {
             log.debug("pairPod: creating a temp podState for LTK using response %@", String(describing: response))
-            self.podState = PodState(
+            podState = PodState(
                 address: response.address,
                 ltk: ltk,
                 firmwareVersion: "",
                 bleFirmwareVersion: "",
                 lotNo: 0,
-                lotSeq: 0
+                lotSeq: 0,
+                bleIdentifier: manager.peripheral.identifier.uuidString
             )
         }
 
@@ -156,7 +210,8 @@ public class PodComms: CustomDebugStringConvertible {
             bleFirmwareVersion: String(describing: versionResponse.piVersion),
             lotNo: UInt64(versionResponse.lot), // or self.lotNo?
             lotSeq: versionResponse.tid, // or self.lotSeq?
-            messageTransportState: podState!.messageTransportState
+            messageTransportState: podState!.messageTransportState,
+            bleIdentifier: manager.peripheral.identifier.uuidString
         )
         // podState setupProgress state should be addressAssigned
 
@@ -288,6 +343,15 @@ public class PodComms: CustomDebugStringConvertible {
         manager.runSession(withName: "Pair and setup pod") { [weak self] in
             do {
                 guard let self = self else { fatalError() }
+                
+                try manager.sendHello(Ids.controllerId().address)
+                if (!self.isPaired) {
+                    let ids = Ids(podState: self.podState)
+                    try self.pairPod(ids: ids)
+                }
+                else {
+                    try self.establishSession(msgSeq: 1)
+                }
 
                 guard self.podState != nil else {
                     block(.failure(PodCommsError.noPodPaired))
@@ -356,6 +420,53 @@ public class PodComms: CustomDebugStringConvertible {
         ].joined(separator: "\n")
     }
 
+}
+
+// MARK: - OmnipodConnectionDelegate
+
+extension PodComms: OmnipodConnectionDelegate {
+    func omnipodPeripheralDidConnect(manager: PeripheralManager) {
+        if let podState = podState, manager.peripheral.identifier.uuidString == podState.bleIdentifier {
+            self.manager = manager
+            manager.delegate = self
+        }
+    }
+    
+    func omnipodPeripheralDidDisconnect(peripheral: CBPeripheral) {
+        log.debug("omnipodPeripheralDidDisconnect... should auto-reconnect")
+    }
+    
+}
+
+// MARK: - PeripheralManagerDelegate
+
+extension PodComms: PeripheralManagerDelegate {
+    func peripheralManager(_ manager: PeripheralManager, didUpdateValueFor characteristic: CBCharacteristic) {
+        log.debug("peripheralManager didUpdateValueFor")
+    }
+    
+    func peripheralManager(_ manager: PeripheralManager, didReadRSSI RSSI: NSNumber, error: Error?) {
+        log.debug("peripheralManager didReadRSSI")
+    }
+    
+    func peripheralManagerDidUpdateName(_ manager: PeripheralManager) {
+        log.debug("peripheralManagerDidUpdateName")
+    }
+    
+    func completeConfiguration(for manager: PeripheralManager) throws {
+        log.debug("completeConfiguration")
+        
+        if self.isPaired {
+            manager.runSession(withName: "establish pod session") { [weak self] in
+                do {
+                    try manager.sendHello(Ids.controllerId().address)
+                    try self?.establishSession(msgSeq: 1)
+                } catch {
+                    self?.log.error("Pod session sync error: %{public}@", String(describing: error))
+                }
+            }
+        }
+    }
 }
 
 extension PodComms: PodCommsSessionDelegate {
