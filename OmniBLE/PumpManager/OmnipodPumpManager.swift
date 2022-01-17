@@ -1061,6 +1061,12 @@ extension OmnipodPumpManager: PumpManager {
     }
 
     // MARK: Methods
+    
+    public func completeOnboard() {
+        setState({ (state) in
+            state.isOnboarded = true
+        })
+    }
 
     public func suspendDelivery(completion: @escaping (Error?) -> Void) {
         let suspendTime: TimeInterval = 0 // Place holder for untimed suspends until interface is updated

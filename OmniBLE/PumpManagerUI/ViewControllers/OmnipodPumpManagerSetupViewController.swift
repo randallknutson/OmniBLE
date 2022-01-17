@@ -98,6 +98,7 @@ public class OmnipodPumpManagerSetupViewController: UINavigationController, Pump
 
     open func finishedSetup() {
         if let pumpManager = pumpManager {
+            pumpManager.completeOnboard()
             let settings = OmnipodSettingsViewController(pumpManager: pumpManager)
             setViewControllers([settings], animated: true)
         }
