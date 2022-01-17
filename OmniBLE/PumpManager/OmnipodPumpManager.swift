@@ -472,7 +472,7 @@ extension OmnipodPumpManager {
                 switch result {
                 case .failure(let error):
                     completion(.failure(.communication(error as? LocalizedError)))
-                case .success(let omnipod): // TODO: connect to specific omnipod
+                case .success:
                     // Create random address with 20 bits to match PDM, could easily use 24 bits instead
                     if self.state.pairingAttemptAddress == nil {
                         self.lockedState.mutate { (state) in
@@ -954,10 +954,19 @@ extension OmnipodPumpManager {
 
 // MARK: - PumpManager
 extension OmnipodPumpManager: PumpManager {
+    
     public static var onboardingMaximumBasalScheduleEntryCount: Int {
         return Pod.maximumBasalScheduleEntryCount
     }
-        
+
+    public static var onboardingSupportedMaximumBolusVolumes: [Double] {
+        return onboardingSupportedBolusVolumes
+    }
+
+    public var supportedMaximumBolusVolumes: [Double] {
+        return supportedBolusVolumes
+    }
+
     public static var onboardingSupportedBolusVolumes: [Double] {
         // 0.05 units for rates between 0.05-30U/hr
         // 0 is not a supported bolus volume
@@ -1441,6 +1450,11 @@ extension OmnipodPumpManager: PumpManager {
                 completion(.success(BasalRateSchedule(dailyItems: scheduleItems, timeZone: self.state.timeZone)!))
             }
         }
+    }
+    
+    // Delivery limits are not enforced/displayed on omnipods
+    public func syncDeliveryLimits(limits deliveryLimits: DeliveryLimits, completion: @escaping (Result<DeliveryLimits, Error>) -> Void) {
+        completion(.success(deliveryLimits))
     }
 
     // This cannot be called from within the lockedState lock!
