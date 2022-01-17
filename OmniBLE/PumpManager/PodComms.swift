@@ -448,7 +448,7 @@ extension PodComms: OmnipodConnectionDelegate {
     }
     
     func omnipodPeripheralDidDisconnect(peripheral: CBPeripheral) {
-        if let podState = podState, manager.peripheral.identifier.uuidString == podState.bleIdentifier {
+        if let podState = podState, peripheral.identifier.uuidString == podState.bleIdentifier {
             log.debug("omnipodPeripheralDidDisconnect... should auto-reconnect")
         }
     }    
