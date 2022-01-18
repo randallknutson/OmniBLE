@@ -478,26 +478,26 @@ extension OmnipodPumpManager {
                 switch result {
                 case .failure(let error):
                     completion(.failure(error))
-                case .success(let omnipod): // TODO: connect to specific omnipod
+                case .success:
                     // Create random address with 20 bits to match PDM, could easily use 24 bits instead
                     if self.state.pairingAttemptAddress == nil {
                         self.lockedState.mutate { (state) in
                             state.pairingAttemptAddress = 0x1f000000 | (arc4random() & 0x000fffff)
                         }
-                }
-            }
+                    }
 
-            self.podComms.pairAndSetupPod(address: self.state.pairingAttemptAddress!, timeZone: .currentFixed, messageLogger: self) { (result) in
+                    self.podComms.pairAndSetupPod(address: self.state.pairingAttemptAddress!, timeZone: .currentFixed, messageLogger: self) { (result) in
 
-                if case .success = result {
-                    self.lockedState.mutate { (state) in
-                        state.pairingAttemptAddress = nil
+                        if case .success = result {
+                            self.lockedState.mutate { (state) in
+                                state.pairingAttemptAddress = nil
+                            }
+                        }
+
+                        // Calls completion
+                        primeSession(result)
                     }
                 }
-
-                // Calls completion
-                primeSession(result)
-            }
             })
         } else {
             self.log.default("Pod already paired. Continuing.")
@@ -634,7 +634,7 @@ extension OmnipodPumpManager {
 
     // MARK: - Pump Commands
 
-    public func acknowledgeAlerts(_ alertsToAcknowledge: AlertSet, completion: @escaping (_ alerts: [AlertSlot: PodAlert]?) -> Void) {
+    public func acknowledgePodAlerts(_ alertsToAcknowledge: AlertSet, completion: @escaping (_ alerts: [AlertSlot: PodAlert]?) -> Void) {
         guard self.hasActivePod else {
             completion(nil)
             return
@@ -652,7 +652,7 @@ extension OmnipodPumpManager {
 
             do {
                 let beepType: BeepConfigType? = self.confirmationBeeps ? .bipBip : nil
-                let alerts = try session.acknowledgeAlerts(alerts: alertsToAcknowledge, confirmationBeepType: beepType)
+                let alerts = try session.acknowledgePodAlerts(alerts: alertsToAcknowledge, confirmationBeepType: beepType)
                 completion(alerts)
             } catch {
                 completion(nil)

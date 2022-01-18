@@ -33,7 +33,6 @@ public enum PodCommsError: Error {
     case rssiTooHigh
     case diagnosticMessage(str: String)
     case podIncompatible(str: String)
-    case noPodFound
     case tooManyPodsFound
 }
 
@@ -85,8 +84,6 @@ extension PodCommsError: LocalizedError {
             return str
         case .podIncompatible(let str):
             return str
-        case .noPodFound:
-            return LocalizedString("No pod found", comment: "Error message for PodCommsError.noPodFound")
         case .tooManyPodsFound:
             return LocalizedString("Too many pods found", comment: "Error message for PodCommsError.tooManyPodsFound")
 
@@ -143,10 +140,8 @@ extension PodCommsError: LocalizedError {
             return nil
         case .podIncompatible:
             return nil
-        case .noPodFound:
-            return LocalizedString("No pod found", comment: "Error message for PodCommsError.noPodFound")
         case .tooManyPodsFound:
-            return LocalizedString("Too many pods found", comment: "Error message for PodCommsError.tooManyPodsFound")
+            return LocalizedString("Move to a new area away from any other pods and try again.", comment: "Error message for PodCommsError.tooManyPodsFound")
         }
     }
 
@@ -792,7 +787,7 @@ public class PodCommsSession {
         }
     }
     
-    public func acknowledgeAlerts(alerts: AlertSet, confirmationBeepType: BeepConfigType? = nil) throws -> [AlertSlot: PodAlert] {
+    public func acknowledgePodAlerts(alerts: AlertSet, confirmationBeepType: BeepConfigType? = nil) throws -> [AlertSlot: PodAlert] {
         let cmd = AcknowledgeAlertCommand(nonce: podState.currentNonce, alerts: alerts)
         let status: StatusResponse = try send([cmd], confirmationBeepType: confirmationBeepType)
         podState.updateFromStatusResponse(status)

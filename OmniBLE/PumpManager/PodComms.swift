@@ -18,7 +18,12 @@ protocol PodCommsDelegate: AnyObject {
 
 public class PodComms: CustomDebugStringConvertible {
     
-    var manager: PeripheralManager?
+    var manager: PeripheralManager? {
+        didSet {
+            manager?.delegate = self
+        }
+    }
+    
     private let lotNo: UInt64?
     private let lotSeq: UInt32?
 
@@ -47,6 +52,8 @@ public class PodComms: CustomDebugStringConvertible {
             return self.podState?.ltk != nil && (self.podState?.ltk.count ?? 0) > 0
         }
     }
+    
+    private var needsSessionEstablishment: Bool = false
     
     private let bluetoothManager = BluetoothManager()
     
@@ -345,6 +352,8 @@ public class PodComms: CustomDebugStringConvertible {
                 guard let self = self else { fatalError() }
                 
                 try manager.sendHello(Ids.controllerId().address)
+                try manager.enableNotifications() // Seemingly this cannot be done before the hello command, or the pod disconnects
+
                 if (!self.isPaired) {
                     let ids = Ids(podState: self.podState)
                     try self.pairPod(ids: ids)
@@ -425,41 +434,38 @@ public class PodComms: CustomDebugStringConvertible {
 // MARK: - OmnipodConnectionDelegate
 
 extension PodComms: OmnipodConnectionDelegate {
-    func omnipodPeripheralDidConnect(manager: PeripheralManager) {
+    func omnipodPeripheralWasRestored(manager: PeripheralManager) {
         if let podState = podState, manager.peripheral.identifier.uuidString == podState.bleIdentifier {
             self.manager = manager
-            manager.delegate = self
+        }
+    }
+    
+    func omnipodPeripheralDidConnect(manager: PeripheralManager) {
+        if let podState = podState, manager.peripheral.identifier.uuidString == podState.bleIdentifier {
+            needsSessionEstablishment = true
+            self.manager = manager
         }
     }
     
     func omnipodPeripheralDidDisconnect(peripheral: CBPeripheral) {
-        log.debug("omnipodPeripheralDidDisconnect... should auto-reconnect")
-    }
-    
+        if let podState = podState, peripheral.identifier.uuidString == podState.bleIdentifier {
+            log.debug("omnipodPeripheralDidDisconnect... should auto-reconnect")
+        }
+    }    
 }
 
 // MARK: - PeripheralManagerDelegate
 
 extension PodComms: PeripheralManagerDelegate {
-    func peripheralManager(_ manager: PeripheralManager, didUpdateValueFor characteristic: CBCharacteristic) {
-        log.debug("peripheralManager didUpdateValueFor")
-    }
-    
-    func peripheralManager(_ manager: PeripheralManager, didReadRSSI RSSI: NSNumber, error: Error?) {
-        log.debug("peripheralManager didReadRSSI")
-    }
-    
-    func peripheralManagerDidUpdateName(_ manager: PeripheralManager) {
-        log.debug("peripheralManagerDidUpdateName")
-    }
     
     func completeConfiguration(for manager: PeripheralManager) throws {
         log.debug("completeConfiguration")
         
-        if self.isPaired {
+        if self.isPaired && needsSessionEstablishment {
             manager.runSession(withName: "establish pod session") { [weak self] in
                 do {
                     try manager.sendHello(Ids.controllerId().address)
+                    try manager.enableNotifications() // Seemingly this cannot be done before the hello command, or the pod disconnects
                     try self?.establishSession(msgSeq: 1)
                 } catch {
                     self?.log.error("Pod session sync error: %{public}@", String(describing: error))

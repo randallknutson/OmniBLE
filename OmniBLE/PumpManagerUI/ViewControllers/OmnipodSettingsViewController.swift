@@ -545,7 +545,7 @@ class OmnipodSettingsViewController: UITableViewController {
                     if activeSlots.count > 0 {
                         cell.isLoading = true
                         cell.isEnabled = false
-                        pumpManager.acknowledgeAlerts(activeSlots) { (updatedAlerts) in
+                        pumpManager.acknowledgePodAlerts(activeSlots) { (updatedAlerts) in
                             DispatchQueue.main.async {
                                 cell.isLoading = false
                                 cell.isEnabled = true

@@ -12,7 +12,7 @@ import os.log
 class PeripheralManager: NSObject {
 
     // TODO: Make private
-    let log = OSLog(category: "PeripheralManager")
+    let log = OSLog(category: "DashPeripheralManager")
 
     ///
     /// This is mutable, because CBPeripheral instances can seemingly become invalid, and need to be periodically re-fetched from CBCentralManager
@@ -100,12 +100,6 @@ extension PeripheralManager {
 }
 
 protocol PeripheralManagerDelegate: AnyObject {
-    func peripheralManager(_ manager: PeripheralManager, didUpdateValueFor characteristic: CBCharacteristic)
-
-    func peripheralManager(_ manager: PeripheralManager, didReadRSSI RSSI: NSNumber, error: Error?)
-
-    func peripheralManagerDidUpdateName(_ manager: PeripheralManager)
-
     func completeConfiguration(for manager: PeripheralManager) throws
 }
 
@@ -126,6 +120,7 @@ extension PeripheralManager {
 
                     if let delegate = self.delegate {
                         try delegate.completeConfiguration(for: self)
+                        
                         self.log.default("Delegate configuration notified")
                     }
 
@@ -394,7 +389,12 @@ extension PeripheralManager: CBPeripheralDelegate {
     }
 
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+        log.debug("didWriteValueFor b4 lock")
+        
         commandLock.lock()
+        
+        log.debug("didWriteValueFor after lock")
+
         
         if let index = commandConditions.firstIndex(where: { (condition) -> Bool in
             if case .write(characteristic: characteristic) = condition {
@@ -417,8 +417,6 @@ extension PeripheralManager: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         commandLock.lock()
 
-        var notifyDelegate = false
-
         if let macro = configuration.valueUpdateMacros[characteristic.uuid] {
             macro(self)
         }
@@ -436,25 +434,12 @@ extension PeripheralManager: CBPeripheralDelegate {
             if commandConditions.isEmpty {
                 commandLock.broadcast()
             }
-        } else if commandConditions.isEmpty {
-            notifyDelegate = true // execute after the unlock
         }
 
         commandLock.unlock()
 
-        if notifyDelegate {
-            // If we weren't expecting this notification, pass it along to the delegate
-            delegate?.peripheralManager(self, didUpdateValueFor: characteristic)
-        }
     }
 
-    func peripheral(_ peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {
-        delegate?.peripheralManager(self, didReadRSSI: RSSI, error: error)
-    }
-
-    func peripheralDidUpdateName(_ peripheral: CBPeripheral) {
-        delegate?.peripheralManagerDidUpdateName(self)
-    }
 }
 
 
@@ -463,14 +448,7 @@ extension PeripheralManager: CBCentralManagerDelegate {
         self.log.debug("PeripheralManager - centralManagerDidUpdateState: %@", central)
         switch central.state {
         case .poweredOn:
-            self.log.debug("PeripheralManager - centralManagerDidUpdateState - running assertConfiguration")
-            if peripheral.state != .connected {
-                sessionQueue.isSuspended = true
-            }
-            if peripheral.state == .connected {
-                sessionQueue.isSuspended = false
-                assertConfiguration()
-            }
+            assertConfiguration()
         default:
             break
         }
@@ -485,8 +463,6 @@ extension PeripheralManager: CBCentralManagerDelegate {
         self.log.debug("PeripheralManager - didConnect: %@", peripheral)
         switch peripheral.state {
         case .connected:
-            self.log.debug("PeripheralManager - didConnect - resuming sessionQueue")
-            sessionQueue.isSuspended = false
             self.log.debug("PeripheralManager - didConnect - running assertConfiguration")
             assertConfiguration()
         default:

@@ -46,8 +46,8 @@ extension PeripheralManager.Configuration {
             ],
             notifyingCharacteristics: [
                 OmnipodServiceUUID.service.cbUUID: [
-                    OmnipodCharacteristicUUID.command.cbUUID,
-                    OmnipodCharacteristicUUID.data.cbUUID,
+//                    OmnipodCharacteristicUUID.command.cbUUID,
+//                    OmnipodCharacteristicUUID.data.cbUUID,
                 ]
             ],
             valueUpdateMacros: [
