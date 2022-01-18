@@ -84,6 +84,7 @@ public class OmnipodPumpManagerSetupViewController: UINavigationController, Pump
                 let schedule = BasalSchedule(repeatingScheduleValues: basalSchedule.items)
                 let pumpManagerState = OmnipodPumpManagerState(isOnboarded: false, podState: nil, timeZone: .currentFixed, basalSchedule: schedule, insulinType: insulinType)
                 let pumpManager = OmnipodPumpManager(state: pumpManagerState)
+                pumpManager.completeOnboard()
                 vc.pumpManager = pumpManager
                 pumpManagerOnboardingDelegate?.pumpManagerOnboarding(didCreatePumpManager: pumpManager)
             }
@@ -98,7 +99,6 @@ public class OmnipodPumpManagerSetupViewController: UINavigationController, Pump
 
     open func finishedSetup() {
         if let pumpManager = pumpManager {
-            pumpManager.completeOnboard()
             let settings = OmnipodSettingsViewController(pumpManager: pumpManager)
             setViewControllers([settings], animated: true)
         }
