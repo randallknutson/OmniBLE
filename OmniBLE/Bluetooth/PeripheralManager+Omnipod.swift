@@ -33,7 +33,6 @@ extension PeripheralManager {
         try writeValue(Data([PodCommand.HELLO.rawValue, 0x01, 0x04]) + controllerId, for: characteristic, type: .withResponse, timeout: 5)
     }
     
-    
     func enableNotifications() throws {
         dispatchPrecondition(condition: .onQueue(queue))
         guard let cmdChar = peripheral.getCommandCharacteristic() else {
@@ -45,7 +44,7 @@ extension PeripheralManager {
         try setNotifyValue(true, for: cmdChar, timeout: .seconds(2))
         try setNotifyValue(true, for: dataChar, timeout: .seconds(2))
     }
-
+        
     /// - Throws: PeripheralManagerError
     func sendMessage(_ message: MessagePacket, _ forEncryption: Bool = false) throws -> MessageResult {
         dispatchPrecondition(condition: .onQueue(queue))
@@ -145,7 +144,7 @@ extension PeripheralManager {
     func readCommandType(_ command: PodCommand, timeout: TimeInterval = 5) throws {
         dispatchPrecondition(condition: .onQueue(queue))
 
-        log.debug("Checking Command %@", Data([command.rawValue]).hexadecimalString)
+        log.debug("Read Command %@", Data([command.rawValue]).hexadecimalString)
         
         // Wait for data to be read.
         queueLock.lock()
