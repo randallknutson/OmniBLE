@@ -14,8 +14,8 @@ import LoopKitUI
 import OmniKit
 
 // PumpManagerSetupViewController
-public class OmnipodPumpManagerSetupViewController: UINavigationController, PumpManagerSetupViewController, UINavigationControllerDelegate, CompletionNotifying {
-    public var setupDelegate: PumpManagerSetupViewControllerDelegate?
+public class OmnipodPumpManagerSetupViewController: UINavigationController, PumpManagerOnboarding, UINavigationControllerDelegate, CompletionNotifying {
+    public var pumpManagerOnboardingDelegate: PumpManagerOnboardingDelegate?
     
     public var maxBasalRateUnitsPerHour: Double?
     
@@ -46,6 +46,8 @@ public class OmnipodPumpManagerSetupViewController: UINavigationController, Pump
         
     private(set) var pumpManager: OmnipodPumpManager?
     
+    internal var insulinType: InsulinType?
+
     /*
      1. Basal Rates & Delivery Limits
      
@@ -78,12 +80,13 @@ public class OmnipodPumpManagerSetupViewController: UINavigationController, Pump
         // Set state values
         switch viewController {
         case let vc as PairPodSetupViewController:
-            if let basalSchedule = basalSchedule {
+            if let basalSchedule = basalSchedule, let insulinType = insulinType {
                 let schedule = BasalSchedule(repeatingScheduleValues: basalSchedule.items)
-                let pumpManagerState = OmnipodPumpManagerState(podState: nil, timeZone: .currentFixed, basalSchedule: schedule)
+                let pumpManagerState = OmnipodPumpManagerState(isOnboarded: false, podState: nil, timeZone: .currentFixed, basalSchedule: schedule, insulinType: insulinType)
                 let pumpManager = OmnipodPumpManager(state: pumpManagerState)
+                pumpManager.completeOnboard()
                 vc.pumpManager = pumpManager
-                setupDelegate?.pumpManagerSetupViewController(self, didSetUpPumpManager: pumpManager)
+                pumpManagerOnboardingDelegate?.pumpManagerOnboarding(didCreatePumpManager: pumpManager)
             }
         case let vc as InsertCannulaSetupViewController:
             vc.pumpManager = pumpManager
