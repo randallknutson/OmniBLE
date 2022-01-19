@@ -10,102 +10,103 @@ import Foundation
 import LoopKit
 import os.log
 
+public enum BluetoothManagerError: Error {
+    case bluetoothNotAvailable(CBManagerState)
+}
 
-protocol BluetoothManagerDelegate: AnyObject {
+extension BluetoothManagerError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .bluetoothNotAvailable(let state):
+            switch state {
+            case .poweredOff:
+                return LocalizedString("Bluetooth is powered off", comment: "Error description for BluetoothManagerError.bluetoothNotAvailable(.poweredOff)")
+            case .resetting:
+                return LocalizedString("Bluetooth is resetting", comment: "Error description for BluetoothManagerError.bluetoothNotAvailable(.resetting)")
+            case .unauthorized:
+                return LocalizedString("Bluetooth use is unauthorized", comment: "Error description for BluetoothManagerError.bluetoothNotAvailable(.unauthorized)")
+            case .unsupported:
+                return LocalizedString("Bluetooth use unsupported on this device", comment: "Error description for BluetoothManagerError.bluetoothNotAvailable(.unsupported)")
+            case .unknown:
+                return LocalizedString("Bluetooth is unavailable for an unknown reason.", comment: "Error description for BluetoothManagerError.bluetoothNotAvailable(.unknown)")
+            default:
+                return String(format: LocalizedString("Bluetooth is unavailable: %1$@", comment: "The format string for BluetoothManagerError.bluetoothNotAvailable for unknown state (1: the unknown state)"), String(describing: state))
+            }
+        }
+    }
+        
+    public var recoverySuggestion: String? {
+        switch self {
+        case .bluetoothNotAvailable(let state):
+            switch state {
+            case .poweredOff:
+                return LocalizedString("Turn bluetooth on", comment: "recoverySuggestion for BluetoothManagerError.bluetoothNotAvailable(.poweredOff)")
+            case .resetting:
+                return LocalizedString("Try again", comment: "recoverySuggestion for BluetoothManagerError.bluetoothNotAvailable(.resetting)")
+            case .unauthorized:
+                return LocalizedString("Please enable bluetooth permissions for this app in system settings", comment: "recoverySuggestion for BluetoothManagerError.bluetoothNotAvailable(.unauthorized)")
+            case .unsupported:
+                return LocalizedString("Please use a different device with bluetooth capabilities", comment: "recoverySuggestion for BluetoothManagerError.bluetoothNotAvailable(.unsupported)")
+            default:
+                return nil
+            }
+        }
+    }
+}
+
+protocol OmnipodConnectionDelegate: AnyObject {
 
     /**
-     Tells the delegate that the bluetooth manager has finished connecting to and discovering all required services of its peripheral, or that it failed to do so
+     Tells the delegate that a peripheral has been connected to
 
-     - parameter manager: The bluetooth manager
-     - parameter peripheralManager: The peripheral manager
-     - parameter error:   An error describing why bluetooth setup failed
+     - parameter manager: The manager for the peripheral that was connected
      */
-    func bluetoothManager(_ manager: BluetoothManager, peripheralManager: PeripheralManager, isReadyWithError error: Error?)
+    func omnipodPeripheralDidConnect(manager: PeripheralManager)
+    
+    /**
+     Tells the delegate that a connected peripheral has been restored from session restoration
+
+     - parameter manager: The manager for the peripheral that was connected
+     */
+    func omnipodPeripheralWasRestored(manager: PeripheralManager)
+
 
     /**
-     Asks the delegate whether the discovered or restored peripheral should be connected
+     Tells the delegate that a peripheral was disconnected
 
-     - parameter manager:    The bluetooth manager
-     - parameter peripheral: The found peripheral
-
-     - returns: True if the peripheral should connect
+     - parameter peripheral: The peripheral that was disconnected
      */
-    func bluetoothManager(_ manager: BluetoothManager, shouldConnectPeripheral peripheral: CBPeripheral, advertisementData: [String : Any]?) -> Bool
-
-    /// Informs the delegate that the bluetooth device has completed configuration
-    ///
-    /// - Parameters:
-    ///   - manager: The bluetooth manager
-    ///   - peripheralManager: The peripheral manager
-    ///   - response: The data received on the authentication characteristic
-    func bluetoothManager(_ manager: BluetoothManager, didCompleteConfiguration peripheralManager: PeripheralManager)
+    func omnipodPeripheralDidDisconnect(peripheral: CBPeripheral)
 }
 
 
 class BluetoothManager: NSObject {
 
-    var stayConnected: Bool {
-        get {
-            return lockedStayConnected.value
-        }
-        set {
-            lockedStayConnected.value = newValue
-        }
-    }
-    private let lockedStayConnected: Locked<Bool> = Locked(true)
-
-    private var isPermanentlyDisconnecting: Bool = false
-
-    weak var delegate: BluetoothManagerDelegate?
+    weak var connectionDelegate: OmnipodConnectionDelegate?
 
     private let log = OSLog(category: "BluetoothManager")
 
-    private let concurrentReconnectSemaphore = DispatchSemaphore(value: 1)
-
     /// Isolated to `managerQueue`
     private var manager: CBCentralManager! = nil
+    
+    /// Isolated to `managerQueue`
+    private var devices: [Omnipod] = []
+    
+    /// Isolated to `managerQueue`
+    private var discoveryModeEnabled: Bool = false
 
     /// Isolated to `managerQueue`
-    private var peripheral: CBPeripheral? {
-        get {
-            return peripheralManager?.peripheral
-        }
-        set {
-            guard let peripheral = newValue else {
-                peripheralManager = nil
-                return
-            }
-
-            if let peripheralManager = peripheralManager {
-                peripheralManager.peripheral = peripheral
-            } else {
-                peripheralManager = PeripheralManager(
-                    peripheral: peripheral,
-                    configuration: .omnipod,
-                    centralManager: manager
-                )
-            }
-        }
-    }
-
-    var peripheralIdentifier: UUID? {
-        get {
-            return lockedPeripheralIdentifier.value
-        }
-        set {
-            lockedPeripheralIdentifier.value = newValue
-        }
-    }
-    private let lockedPeripheralIdentifier: Locked<UUID?> = Locked(nil)
-
-    /// Isolated to `managerQueue`
-    private var peripheralManager: PeripheralManager? {
+    private var autoConnectIDs: Set<String> = [] {
         didSet {
-            oldValue?.delegate = nil
-            peripheralManager?.delegate = self
-
-            peripheralIdentifier = peripheralManager?.peripheral.identifier
+            updateConnections()
         }
+    }
+    
+    /// Isolated to `managerQueue`
+    private var hasDiscoveredAllAutoConnectDevices: Bool {
+        dispatchPrecondition(condition: .onQueue(managerQueue))
+
+        return autoConnectIDs.isSubset(of: devices.map { $0.manager.peripheral.identifier.uuidString })
     }
 
     // MARK: - Synchronization
@@ -118,154 +119,147 @@ class BluetoothManager: NSObject {
             self.manager = CBCentralManager(delegate: self, queue: managerQueue, options: [CBCentralManagerOptionRestoreIdentifierKey: "com.randallknutson.OmniBLE"])
         }
     }
-
-    // MARK: - Actions
-
-    func scanForPeripheral() {
-        dispatchPrecondition(condition: .notOnQueue(managerQueue))
-
-        managerQueue.sync {
-            self.managerQueue_scanForPeripheral()
-        }
-    }
-
-    // This is a actually `permanentDisconnect` - we do not plan on connecting to this device anymore
-    func permanentDisconnect() {
-        dispatchPrecondition(condition: .notOnQueue(managerQueue))
-
-        log.debug("permanentDisconnect called")
-
-        // TODO: This could also be async?
-        managerQueue.sync {
-            if manager.isScanning {
-                log.debug("permanentDisconnect - running stopScan")
-                manager.stopScan()
-            }
-
-            if let peripheral = peripheral {
-                isPermanentlyDisconnecting = true
-                log.debug("permanentDisconnect - running cancelPeripheralConnection")
-                manager.cancelPeripheralConnection(peripheral)
-            }
-        }
-    }
-
-    func reconnectPeripheral() {
-        dispatchPrecondition(condition: .notOnQueue(managerQueue))
-
-        // Make sure only one reconnect loop is happening concurrently
-        log.debug("reconnectPeripheral concurrency semaphore check")
-        concurrentReconnectSemaphore.wait()
-        log.debug("reconnectPeripheral concurrency semaphore check - is free, continuing")
-
-        guard manager.state == .poweredOn else {
-            log.debug("reconnectPeripheral error - manager.state != .poweredOn")
-            concurrentReconnectSemaphore.signal()
-            return
-        }
-
-        let currentState = peripheral?.state ?? .disconnected
-        guard currentState != .connected else {
-            if let _ = peripheral {
-                log.debug("reconnectPeripheral error - peripheral is already connected %@", peripheral!)
-            }
-            concurrentReconnectSemaphore.signal()
-            return
-        }
-
-        // Possible states are disconnected, disconnecting, connected and connecting
-        // We guard against connected earlier and in case of connecting we only need to wait for the semaphore
-        if currentState == .disconnected || currentState == .disconnecting {
-            if let _ = peripheral {
-                log.debug("reconnectPeripheral running managerQueue_scanForPeripheral for peripheral %@", peripheral!)
-            }
-            managerQueue.sync {
-                log.debug("reconnectPeripheral - in managerQueue.sync")
-                self.managerQueue_scanForPeripheral()
-                log.debug("reconnectPeripheral - finished managerQueue.sync")
-            }
-        }
-
-        // Release reconnect loop for other callers
-        log.debug("reconnectPeripheral concurrency semaphore signaling")
-        concurrentReconnectSemaphore.signal()
-    }
-
-    private func managerQueue_scanForPeripheral() {
+    
+    @discardableResult
+    private func addPeripheral(_ peripheral: CBPeripheral, podAdvertisement: PodAdvertisement?) -> Omnipod {
         dispatchPrecondition(condition: .onQueue(managerQueue))
 
-        guard manager.state == .poweredOn else {
-            return
-        }
+        var device: Omnipod! = devices.first(where: { $0.manager.peripheral.identifier == peripheral.identifier })
 
-        let currentState = peripheral?.state ?? .disconnected
-        guard currentState != .connected else {
-            return
-        }
-
-        guard currentState != .connecting else {
-            return
-        }
-
-        if let peripheral = manager.retrieveConnectedPeripherals(withServices: [
-            OmnipodServiceUUID.advertisement.cbUUID,
-            OmnipodServiceUUID.service.cbUUID
-        ]).first,
-        delegate == nil || delegate!.bluetoothManager(self, shouldConnectPeripheral: peripheral, advertisementData: nil)
-        {
-            log.debug("Found system-connected peripheral: %{public}@", peripheral.identifier.uuidString)
-            self.peripheral = peripheral
-            self.manager.connect(peripheral)
+        if let device = device {
+            log.info("Matched peripheral %{public}@ to existing device: %{public}@", peripheral, String(describing: device))
+            device.manager.peripheral = peripheral
+            if let podAdvertisement = podAdvertisement {
+                device.advertisement = podAdvertisement
+            }
         } else {
-            // TEST: There might be a race condition where PeripheralManager considers the device already connected, although it isn't
-            // TODO: Investigate more
-            // Related https://github.com/randallknutson/OmniBLE/pull/10#pullrequestreview-837692407
-            if let peripheralID = peripheralIdentifier, let peripheral = manager.retrievePeripherals(withIdentifiers: [peripheralID]).first {
-                log.debug("Re-connecting to known peripheral %{public}@", peripheral.identifier.uuidString)
-                self.peripheral = peripheral
-                self.manager.connect(peripheral)
+            device = Omnipod(peripheralManager: PeripheralManager(peripheral: peripheral, configuration: .omnipod, centralManager: manager), advertisement: podAdvertisement)
+            devices.append(device)
+            log.info("Created device")
+        }
+        return device
+    }
+    
+    // MARK: - Actions
+    
+    func discoverPods(completion: @escaping (BluetoothManagerError?) -> Void) {
+        dispatchPrecondition(condition: .notOnQueue(managerQueue))
+
+        managerQueue.sync {
+            self.discoverPods(completion)
+        }
+    }
+    
+    func endPodDiscovery() {
+        managerQueue.sync {
+            self.discoveryModeEnabled = false
+            self.manager.stopScan()
+            
+            // Disconnect from all devices not in our connection list
+            for device in devices {
+                let peripheral = device.manager.peripheral
+                if !autoConnectIDs.contains(peripheral.identifier.uuidString) &&
+                   (peripheral.state == .connected || peripheral.state == .connecting)
+                {
+                    log.info("Disconnecting from peripheral: %{public}@", peripheral)
+                    manager.cancelPeripheralConnection(peripheral)
+                }
+            }
+        }
+    }
+    
+    func connectToDevice(uuidString: String) {
+        managerQueue.async {
+            self.autoConnectIDs.insert(uuidString)
+        }
+    }
+    
+    func disconnectFromDevice(uuidString: String) {
+        managerQueue.async {
+            self.autoConnectIDs.remove(uuidString)
+        }
+    }
+    
+    private func updateConnections() {
+        guard manager.state == .poweredOn else {
+            log.debug("Skipping updateConnections until state is poweredOn")
+            return
+        }
+        
+        for device in devices {
+            let peripheral = device.manager.peripheral
+            if autoConnectIDs.contains(peripheral.identifier.uuidString) {
+                if peripheral.state == .disconnected || peripheral.state == .disconnecting {
+                    log.info("updateConnections: Connecting to peripheral: %{public}@", peripheral)
+                    manager.connect(peripheral, options: nil)
+                }
             } else {
-                log.debug("Scanning for peripherals")
-                manager.scanForPeripherals(withServices: [OmnipodServiceUUID.advertisement.cbUUID],
-                options: nil
-                )
+                if peripheral.state == .connected || peripheral.state == .connecting {
+                    log.info("updateConnections: Disconnecting from peripheral: %{public}@", peripheral)
+                    manager.cancelPeripheralConnection(peripheral)
+                }
             }
         }
     }
 
-    /**
+    private func discoverPods(_ completion: @escaping (BluetoothManagerError?) -> Void) {
+        dispatchPrecondition(condition: .onQueue(managerQueue))
 
-     Persistent connections don't seem to work with the transmitter shutoff: The OS won't re-wake the
-     app unless it's scanning.
+        log.debug("discoverPods()")
+        
 
-     The sleep gives the transmitter time to shut down, but keeps the app running.
-
-     */
-    fileprivate func scanAfterDelay() {
-        DispatchQueue.global(qos: .utility).async {
-            Thread.sleep(forTimeInterval: 2)
-
-            self.scanForPeripheral()
+        guard manager.state == .poweredOn else {
+            completion(.bluetoothNotAvailable(manager.state))
+            return
         }
+
+        // We will attempt to connect to all potential devices when in discovery mode
+        discoveryModeEnabled = true
+        for device in devices {
+            let peripheral = device.manager.peripheral
+            if peripheral.state == .disconnected || peripheral.state == .disconnecting {
+                log.info("discoverPods: Connecting to peripheral: %{public}@", peripheral)
+                manager.connect(peripheral, options: nil)
+            }
+        }
+        startScanning()
+
+        completion(nil)
+    }
+    
+    private func startScanning() {
+        log.info("Start scanning")
+        manager.scanForPeripherals(withServices: [OmnipodServiceUUID.advertisement.cbUUID], options: nil)
+    }
+
+    private func stopScanning() {
+        log.info("Stop scanning")
+        manager.stopScan()
     }
 
     // MARK: - Accessors
-
-    var isScanning: Bool {
-        dispatchPrecondition(condition: .notOnQueue(managerQueue))
-
-        var isScanning = false
+    
+    public func getConnectedDevices() -> [Omnipod] {
+        var connected: [Omnipod] = []
         managerQueue.sync {
-            isScanning = manager.isScanning
+            connected = self.devices.filter { $0.manager.peripheral.state == .connected }
         }
-        return isScanning
+        return connected
     }
 
     override var debugDescription: String {
-        return [
+        
+        var report = [
             "## BluetoothManager",
-            peripheralManager.map(String.init(reflecting:)) ?? "No peripheral",
-        ].joined(separator: "\n")
+            "central: \(manager!)"
+        ]
+
+        for device in devices {
+            report.append(String(reflecting: device))
+            report.append("")
+        }
+
+        return report.joined(separator: "\n\n")
     }
 }
 
@@ -274,18 +268,20 @@ extension BluetoothManager: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         dispatchPrecondition(condition: .onQueue(managerQueue))
 
-        peripheralManager?.centralManagerDidUpdateState(central)
         log.default("%{public}@: %{public}@", #function, String(describing: central.state.rawValue))
 
-        switch central.state {
-        case .poweredOn:
-            managerQueue_scanForPeripheral()
-        case .resetting, .poweredOff, .unauthorized, .unknown, .unsupported:
-            fallthrough
-        @unknown default:
-            if central.isScanning {
-                central.stopScan()
+        if case .poweredOn = central.state {
+            updateConnections()
+            
+            if (discoveryModeEnabled || !hasDiscoveredAllAutoConnectDevices) && !manager.isScanning {
+                startScanning()
+            } else if !discoveryModeEnabled && manager.isScanning {
+                stopScanning()
             }
+        }
+
+        for device in devices {
+            device.manager.centralManagerDidUpdateState(central)
         }
     }
 
@@ -295,10 +291,10 @@ extension BluetoothManager: CBCentralManagerDelegate {
 
         if let peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
             for peripheral in peripherals {
-                if delegate == nil || delegate!.bluetoothManager(self, shouldConnectPeripheral: peripheral, advertisementData: nil) {
-                    log.default("Restoring peripheral from state: %{public}@", peripheral.identifier.uuidString)
-                    self.peripheral = peripheral
-                    // TODO: Maybe connect to peripheral if its state is disconnected?
+                let device = addPeripheral(peripheral, podAdvertisement: nil)
+                
+                if autoConnectIDs.contains(peripheral.identifier.uuidString) && peripheral.state == .connected {
+                    connectionDelegate?.omnipodPeripheralWasRestored(manager: device.manager)
                 }
             }
         }
@@ -307,12 +303,26 @@ extension BluetoothManager: CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         dispatchPrecondition(condition: .onQueue(managerQueue))
 
-        log.info("%{public}@: %{public}@", #function, peripheral)
-        if delegate == nil || delegate!.bluetoothManager(self, shouldConnectPeripheral: peripheral, advertisementData: advertisementData) {
-            self.peripheral = peripheral
-
-            log.debug("connecting to peripheral %@", peripheral)
-            central.connect(peripheral, options: nil)
+        log.info("%{public}@: %{public}@, %{public}@", #function, peripheral, advertisementData)
+        
+        if let podAdvertisement = PodAdvertisement(advertisementData) {
+            addPeripheral(peripheral, podAdvertisement: podAdvertisement)
+            
+            if discoveryModeEnabled && peripheral.state == .disconnected {
+                // Auto-connect to any available, during discovery
+                log.debug("Connecting to device in discovery mode")
+                manager.connect(peripheral, options: nil)
+            } else if autoConnectIDs.contains(peripheral.identifier.uuidString) && peripheral.state == .disconnected {
+                log.debug("Reonnecting to autoconnect device")
+                manager.connect(peripheral, options: nil)
+            }
+        } else {
+            log.info("Ignoring peripheral with advertisement data: %{public}@", advertisementData)
+        }
+        
+        if !discoveryModeEnabled && central.isScanning && hasDiscoveredAllAutoConnectDevices {
+            log.default("All peripherals discovered")
+            stopScanning()
         }
     }
 
@@ -320,62 +330,41 @@ extension BluetoothManager: CBCentralManagerDelegate {
         dispatchPrecondition(condition: .onQueue(managerQueue))
 
         log.default("%{public}@: %{public}@", #function, peripheral)
-        if central.isScanning {
-            central.stopScan()
+        
+        // Proxy connection events to peripheral manager
+        for device in devices where device.manager.peripheral.identifier == peripheral.identifier {
+            device.manager.centralManager(central, didConnect: peripheral)
+            connectionDelegate?.omnipodPeripheralDidConnect(manager: device.manager)
         }
 
-        peripheralManager?.centralManager(central, didConnect: peripheral)
-
-        if case .poweredOn = manager.state, case .connected = peripheral.state, let peripheralManager = peripheralManager {
-            self.delegate?.bluetoothManager(self, peripheralManager: peripheralManager, isReadyWithError: nil)
-        }
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         dispatchPrecondition(condition: .onQueue(managerQueue))
         log.default("%{public}@: %{public}@", #function, peripheral)
-        // Ignore errors indicating the peripheral disconnected remotely, as that's expected behavior
-        if let error = error as NSError?, CBError(_nsError: error).code != .peripheralDisconnected {
-            log.error("%{public}@: %{public}@", #function, error)
-            if let peripheralManager = peripheralManager {
-                self.delegate?.bluetoothManager(self, peripheralManager: peripheralManager, isReadyWithError: error)
-            }
-        }
-
-        // Make sure if permanent disconnect is requested, we are actually permanently clearing the peripheral
-        if isPermanentlyDisconnecting {
-            log.debug("isPermanentlyDisconnecting is true - nullifying peripheral")
-            // nullify the peripheral if we don't want it anymore
-            // TODO: check why stayConnected is never set?
-            self.stayConnected = false
-            self.peripheral = nil // this should also nullify peripheralManager and peripheralIdentifier
-            log.debug("isPermanentlyDisconnecting done - setting isPermanentlyDisconnecting to false")
-            self.isPermanentlyDisconnecting = false
-        }
-
-        if stayConnected {
-            scanAfterDelay()
+        
+        connectionDelegate?.omnipodPeripheralDidDisconnect(peripheral: peripheral)
+        
+        if autoConnectIDs.contains(peripheral.identifier.uuidString) {
+            log.debug("Reconnecting disconnected autoconnect peripheral")
+            central.connect(peripheral, options: nil)
         }
     }
 
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         dispatchPrecondition(condition: .onQueue(managerQueue))
 
-        peripheralManager?.centralManager(central, didFailToConnect: peripheral, error: error)
-
         log.error("%{public}@: %{public}@", #function, String(describing: error))
-        if let error = error, let peripheralManager = peripheralManager {
-            self.delegate?.bluetoothManager(self, peripheralManager: peripheralManager, isReadyWithError: error)
-        }
-
-        if stayConnected {
-            scanAfterDelay()
+        
+        if autoConnectIDs.contains(peripheral.identifier.uuidString) {
+            central.connect(peripheral, options: nil)
         }
     }
 }
 
 
 extension BluetoothManager: PeripheralManagerDelegate {
+
     func peripheralManager(_ manager: PeripheralManager, didReadRSSI RSSI: NSNumber, error: Error?) {
 
     }
@@ -385,12 +374,7 @@ extension BluetoothManager: PeripheralManagerDelegate {
     }
 
     func completeConfiguration(for manager: PeripheralManager) throws {
-        self.delegate?.bluetoothManager(self, didCompleteConfiguration: manager)
-    }
-
-    // throws?
-    func reconnectLatestPeripheral() {
-        reconnectPeripheral()
+        //self.delegate?.bluetoothManager(self, didCompleteConfiguration: manager)
     }
 
     func peripheralManager(_ manager: PeripheralManager, didUpdateNotificationStateFor characteristic: CBCharacteristic) {

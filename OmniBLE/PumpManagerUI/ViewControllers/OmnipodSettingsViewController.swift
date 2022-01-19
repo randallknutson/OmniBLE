@@ -545,7 +545,7 @@ class OmnipodSettingsViewController: UITableViewController {
                     if activeSlots.count > 0 {
                         cell.isLoading = true
                         cell.isEnabled = false
-                        pumpManager.acknowledgeAlerts(activeSlots) { (updatedAlerts) in
+                        pumpManager.acknowledgePodAlerts(activeSlots) { (updatedAlerts) in
                             DispatchQueue.main.async {
                                 cell.isLoading = false
                                 cell.isEnabled = true
@@ -613,10 +613,11 @@ class OmnipodSettingsViewController: UITableViewController {
         case .podDetails:
             switch PodDetailsRow(rawValue: indexPath.row)! {
             case .displayState:
-                let omnipod = self.pumpManager.omnipod
-                let vc = CommandResponseViewController.displayState(pumpManager: pumpManager, omnipod: omnipod)
-                vc.title = sender?.textLabel?.text
-                show(vc, sender: indexPath)
+                //let omnipod = self.pumpManager.omnipod
+                //let vc = CommandResponseViewController.displayState(pumpManager: pumpManager, omnipod: omnipod)
+                //vc.title = sender?.textLabel?.text
+                //show(vc, sender: indexPath)
+                break
             default:
                 break
             }
