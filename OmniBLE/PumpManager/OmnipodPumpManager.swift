@@ -199,6 +199,7 @@ public class OmnipodPumpManager: DeviceManager {
     public var debugDescription: String {
         let lines = [
             "## OmniBLEPumpManager",
+            "omnipod: \(String(reflecting: omnipod))",
             "podComms: \(String(reflecting: podComms))",
             "state: \(String(reflecting: state))",
             "status: \(String(describing: status))",

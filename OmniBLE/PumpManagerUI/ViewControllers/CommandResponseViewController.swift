@@ -169,16 +169,9 @@ extension CommandResponseViewController {
         }
     }
 
-    static func displayState(pumpManager: OmnipodPumpManager, omnipod: Omnipod) -> T {
+    static func displayState(pumpManager: OmnipodPumpManager) -> T {
         return T { (completionHander) -> String in
-            var resultStr = ""
-            if let podId = omnipod.podId {
-                resultStr += String(format: "Pod UUID: 0x%0X\n\n", podId)
-            }
-            resultStr += String(reflecting: omnipod) + "\n\n\n"
-            resultStr += String(reflecting: pumpManager)
-
-            return resultStr
+            return String(reflecting: pumpManager)
         }
     }
 
